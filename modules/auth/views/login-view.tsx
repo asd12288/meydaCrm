@@ -1,9 +1,15 @@
 import { LoginForm } from '../ui/login-form';
+import { ThemeSwitcher } from '@/modules/shared';
 
 export function LoginView() {
   return (
     <div className="relative overflow-hidden h-screen">
-      <div className="grid grid-cols-12 gap-3 h-screen bg-white dark:bg-darkgray">
+      {/* Theme toggle in top right corner */}
+      <div className="absolute top-4 right-4 z-50">
+        <ThemeSwitcher />
+      </div>
+
+      <div className="grid grid-cols-12 gap-3 h-screen bg-white dark:bg-dark">
         {/* Left side - decorative */}
         <div className="xl:col-span-4 lg:col-span-4 col-span-12 bg-primary lg:block hidden relative overflow-hidden">
           <div className="flex flex-col items-center justify-center h-full text-white p-8">

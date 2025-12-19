@@ -1,10 +1,10 @@
 import { Sidebar } from '../components/sidebar';
 import { Header } from '../components/header';
-import type { Profile } from '@/db/types';
+import type { NormalizedProfile } from '@/lib/auth';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
-  profile: Profile;
+  profile: NormalizedProfile;
 }
 
 export function DashboardLayout({ children, profile }: DashboardLayoutProps) {

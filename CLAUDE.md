@@ -167,6 +167,24 @@ RLS expectations:
 - Profiles: admin read all; user read own.
 - Leads/comments/history: admin all; sales only assigned leads.
 
+### RLS Helper Function
+
+**IMPORTANT**: All admin-checking RLS policies use the `public.get_user_role()` function:
+
+```sql
+CREATE FUNCTION public.get_user_role()
+RETURNS text
+LANGUAGE sql
+SECURITY DEFINER
+STABLE
+SET search_path = public
+AS $$
+  SELECT role::text FROM public.profiles WHERE id = auth.uid()
+$$;
+```
+
+This function uses `SECURITY DEFINER` to bypass RLS and prevent infinite recursion when checking if a user is admin. All policies that need to check admin role MUST use `public.get_user_role() = 'admin'` instead of querying the profiles table directly.
+
 ---
 
 ## 5) Supabase Edge Functions (required)

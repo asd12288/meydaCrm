@@ -1,6 +1,11 @@
 @import "tailwindcss";
 
 /* ============================================
+   Tailwind v4 Dark Mode Configuration
+   ============================================ */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ============================================
    MaterialM Design System - CSS Variables
    ============================================ */
 
@@ -55,6 +60,23 @@
 /* Dark Mode Variables */
 .dark {
   --color-surface: #1A2537;
+  --color-border: #333F55;
+  --color-bordergray: #404d5e;
+  --color-muted: #2A3851;
+  --color-lightgray: #1A2537;
+  --color-lighthover: #2A3851;
+  --color-link: #c9d1d9;
+  --color-darklink: #a0aab4;
+}
+
+/* Theme Transition */
+html {
+  transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+}
+
+html.dark {
+  background-color: var(--color-dark);
+  color-scheme: dark;
 }
 
 /* ============================================
@@ -188,6 +210,20 @@ h1, h2, h3, h4, h5, h6 {
   background-color: var(--color-darkmuted);
 }
 
+/* Muted text - lighter in dark mode */
+.text-muted-ld {
+  color: var(--color-darklink);
+}
+
+/* Background utilities */
+.bg-surface {
+  background-color: var(--color-surface);
+}
+
+.bg-muted {
+  background-color: var(--color-muted);
+}
+
 /* ============================================
    Card Component
    ============================================ */
@@ -204,6 +240,9 @@ h1, h2, h3, h4, h5, h6 {
 .card-subtitle {
   font-size: 0.875rem;
   font-weight: 500;
+  color: var(--color-darklink);
+}
+.dark .card-subtitle {
   color: var(--color-darklink);
 }
 
@@ -226,6 +265,11 @@ h1, h2, h3, h4, h5, h6 {
 .dark .form-control-input {
   border-color: var(--color-darkborder);
   background-color: transparent;
+  color: var(--color-white);
+}
+
+.dark input::placeholder {
+  color: var(--color-darklink);
 }
 
 .form-control input:focus,
@@ -341,9 +385,17 @@ button.bg-info:hover,
   background-color: transparent;
   cursor: pointer;
   transition: all 0.15s ease-in-out;
+  color: var(--color-link);
+}
+.dark .btn-circle-hover {
+  color: var(--color-darklink);
 }
 .btn-circle-hover:hover {
   background-color: var(--color-lightprimary);
+  color: var(--color-primary);
+}
+.dark .btn-circle-hover:hover {
+  background-color: var(--color-darkmuted);
   color: var(--color-primary);
 }
 
@@ -471,6 +523,9 @@ button.bg-info:hover,
 .simplebar-scrollbar:before {
   background: var(--color-border) !important;
 }
+.dark .simplebar-scrollbar:before {
+  background: var(--color-darkborder) !important;
+}
 
 [data-simplebar],
 .simplebar-offset,
@@ -524,6 +579,11 @@ button.bg-info:hover,
 .dark body {
   background-color: var(--color-dark);
   color: var(--color-darklink);
+}
+
+/* Smooth transition for theme-aware elements */
+.dark * {
+  transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out;
 }
 
 /* Calendar picker in dark mode */

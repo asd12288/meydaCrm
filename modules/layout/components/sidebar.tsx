@@ -40,7 +40,7 @@ export function Sidebar({ userRole }: SidebarProps) {
               className={`flex items-center gap-3 px-4 py-3 rounded-md text-sm font-medium transition-colors ${
                 isActive
                   ? 'bg-lightprimary text-primary'
-                  : 'text-darklink hover:bg-hover hover:text-primary'
+                  : 'text-link dark:text-darklink hover:bg-lighthover dark:hover:bg-darkmuted hover:text-primary'
               }`}
             >
               <Icon size={20} />
