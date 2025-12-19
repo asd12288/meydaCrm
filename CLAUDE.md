@@ -490,10 +490,25 @@ All UI components MUST be copied/inspired from the MaterialM Next.js Admin Templ
 
 ### Color Palette (CSS Variables)
 
-- Primary: `--color-primary`, `--color-secondary`
+**Theme Colors:**
+- Primary: `--color-primary` (#00A1FF), `--color-secondary` (#8965E5)
 - Status: `--color-success`, `--color-warning`, `--color-error`, `--color-info`
 - Light variants: `--color-lightprimary`, `--color-lightsuccess`, etc.
-- Surface: `--color-surface`, `--color-bordergray`
+
+**Neutral Colors (Zinc-based palette):**
+| Variable | Light Mode | Dark Mode | Use For |
+|----------|------------|-----------|---------|
+| `--color-dark` | #18181b | - | Base dark color, card bg in dark |
+| `--color-lightgray` | #fafafa | #27272a | Page background |
+| `--color-surface` | #f4f4f5 | #27272a | Content surface |
+| `--color-border` | #e4e4e7 | #3f3f46 | Borders |
+| `--color-darkborder` | #3f3f46 | - | Dark mode borders |
+| `--color-darklink` | #71717a | #a1a1aa | Muted text |
+
+**Design Principles:**
+- Light mode: Gray background (#fafafa) with white cards for contrast
+- Dark mode: Neutral grays (Zinc) instead of blue-tinted colors
+- Cards use `bg-white dark:bg-dark` with subtle borders
 
 ### Pre-built CSS Classes (globals.css) - USE THESE FIRST
 

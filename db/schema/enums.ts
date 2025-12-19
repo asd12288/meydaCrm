@@ -5,14 +5,25 @@ export const userRoleEnum = pgEnum('user_role', ['admin', 'sales']);
 
 // Lead status - French labels stored, English keys for internal use
 export const leadStatusEnum = pgEnum('lead_status', [
-  'new', // Nouveau
-  'contacted', // Contacté
-  'qualified', // Qualifié
-  'proposal', // Proposition envoyée
-  'negotiation', // Négociation
-  'won', // Gagné
-  'lost', // Perdu
-  'no_answer', // Pas de réponse
+  // New statuses
+  'rdv', // RDV (Rendez-vous)
+  'no_answer_1', // Pas de réponse 1
+  'no_answer_2', // Pas de réponse 2
+  'wrong_number', // Faux numéro
+  'not_interested', // Pas intéressé
+  'deposit', // Dépôt
+  'callback', // Rappeler
+  'relance', // Relance
+  'mail', // Mail
+  // Legacy statuses (kept for data compatibility)
+  'new',
+  'contacted',
+  'qualified',
+  'proposal',
+  'negotiation',
+  'won',
+  'lost',
+  'no_answer',
 ]);
 
 // Import job status

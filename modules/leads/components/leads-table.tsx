@@ -49,16 +49,7 @@ export function LeadsTable({ leads, isAdmin, salesUsers }: LeadsTableProps) {
   };
 
   return (
-    <div>
-      {/* Bulk actions bar (admin only, shows when rows selected) */}
-      {isAdmin && selectedIds.length > 0 && (
-        <BulkActionsBar
-          selectedIds={selectedIds}
-          salesUsers={salesUsers}
-          onClearSelection={clearSelection}
-        />
-      )}
-
+    <>
       {/* Table container with sticky header support */}
       <div className="border rounded-md border-ld overflow-x-auto max-h-[calc(100vh-320px)]">
         <table className="w-full table-auto">
@@ -68,7 +59,7 @@ export function LeadsTable({ leads, isAdmin, salesUsers }: LeadsTableProps) {
                 {headerGroup.headers.map((header) => (
                   <th
                     key={header.id}
-                    className="px-4 py-3 text-left text-xs font-semibold text-darklink uppercase tracking-wider border-b border-ld"
+                    className="px-3 py-2.5 text-left text-xs font-semibold text-darklink uppercase tracking-wider border-b border-ld"
                     style={{ width: header.getSize() }}
                   >
                     {header.isPlaceholder
@@ -87,7 +78,7 @@ export function LeadsTable({ leads, isAdmin, salesUsers }: LeadsTableProps) {
               <tr>
                 <td
                   colSpan={columns.length}
-                  className="px-4 py-12 text-center text-darklink"
+                  className="px-3 py-12 text-center text-darklink"
                 >
                   Aucun lead trouve
                 </td>
@@ -103,7 +94,7 @@ export function LeadsTable({ leads, isAdmin, salesUsers }: LeadsTableProps) {
                   {row.getVisibleCells().map((cell) => (
                     <td
                       key={cell.id}
-                      className="px-4 py-3 whitespace-nowrap text-sm"
+                      className="px-3 py-2.5 whitespace-nowrap text-sm"
                       style={{ width: cell.column.getSize() }}
                     >
                       {flexRender(
@@ -118,6 +109,15 @@ export function LeadsTable({ leads, isAdmin, salesUsers }: LeadsTableProps) {
           </tbody>
         </table>
       </div>
-    </div>
+
+      {/* Floating bulk actions bar (admin only, shows when rows selected) */}
+      {isAdmin && selectedIds.length > 0 && (
+        <BulkActionsBar
+          selectedIds={selectedIds}
+          salesUsers={salesUsers}
+          onClearSelection={clearSelection}
+        />
+      )}
+    </>
   );
 }

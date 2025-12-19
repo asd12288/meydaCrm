@@ -6,7 +6,7 @@ interface CardBoxProps {
 export function CardBox({ children, className = '' }: CardBoxProps) {
   return (
     <div
-      className={`bg-white dark:bg-darkgray rounded-md shadow-md dark:shadow-dark-md border border-transparent dark:border-darkborder p-6 ${className}`}
+      className={`bg-white dark:bg-dark rounded-md shadow-sm dark:shadow-none border border-bordergray/50 dark:border-darkborder p-6 ${className}`}
     >
       {children}
     </div>

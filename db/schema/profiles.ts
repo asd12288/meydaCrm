@@ -35,20 +35,12 @@ export const profiles = pgTable(
 
     // RLS Policies
 
-    // Admin can read all profiles
-    pgPolicy('admin_read_all_profiles', {
+    // All authenticated users can read all profiles
+    // This is needed so users can see names in comments, history, and assignments
+    pgPolicy('all_users_read_profiles', {
       for: 'select',
       to: authenticatedRole,
-      using: sql`(
-        SELECT role FROM profiles WHERE id = (select auth.uid())
-      ) = 'admin'`,
-    }),
-
-    // Users can read their own profile
-    pgPolicy('user_read_own_profile', {
-      for: 'select',
-      to: authenticatedRole,
-      using: sql`${table.id} = (select auth.uid())`,
+      using: sql`true`,
     }),
 
     // Admin can update all profiles

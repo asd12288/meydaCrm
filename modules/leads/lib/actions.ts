@@ -10,7 +10,12 @@ import type {
   PaginatedLeadsResponse,
   LeadWithAssignee,
   SalesUser,
+  LeadWithFullDetails,
+  LeadUpdateInput,
+  CommentWithAuthor,
+  HistoryEventWithActor,
 } from '../types';
+import { leadUpdateSchema, commentSchema } from '../types';
 
 /**
  * Fetch paginated leads with filters
@@ -166,7 +171,7 @@ export async function updateLeadStatus(
  */
 export async function bulkAssignLeads(
   leadIds: string[],
-  assigneeId: string
+  assigneeId: string | null
 ): Promise<{ success?: boolean; error?: string; count?: number }> {
   const user = await requireAdmin();
   const supabase = await createClient();
@@ -217,4 +222,310 @@ export async function bulkAssignLeads(
 
   revalidatePath('/leads');
   return { success: true, count: leadIds.length };
+}
+
+// ============================================
+// Phase 4: Lead Detail Page Actions
+// ============================================
+
+/**
+ * Fetch a single lead with comments and history
+ * RLS automatically filters: user can only see leads they have access to
+ */
+export async function getLeadById(
+  leadId: string
+): Promise<{ lead: LeadWithFullDetails | null; error?: string }> {
+  const supabase = await createClient();
+  const user = await getCurrentUser();
+
+  if (!user) {
+    return { lead: null, error: 'Non authentifié' };
+  }
+
+  // Fetch lead with assignee
+  const { data: lead, error: leadError } = await supabase
+    .from('leads')
+    .select('*, assignee:profiles!leads_assigned_to_profiles_id_fk(id, display_name)')
+    .eq('id', leadId)
+    .is('deleted_at', null)
+    .single();
+
+  if (leadError || !lead) {
+    console.error('Error fetching lead:', leadError);
+    return { lead: null, error: 'Lead non trouvé' };
+  }
+
+  // Fetch comments with author (use author_id column for relation)
+  const { data: comments, error: commentsError } = await supabase
+    .from('lead_comments')
+    .select('*, author:profiles!author_id(id, display_name)')
+    .eq('lead_id', leadId)
+    .order('created_at', { ascending: false });
+
+  if (commentsError) {
+    console.error('Error fetching comments:', commentsError);
+  }
+
+  // Fetch history with actor (use actor_id column for relation)
+  const { data: history, error: historyError } = await supabase
+    .from('lead_history')
+    .select('*, actor:profiles!actor_id(id, display_name)')
+    .eq('lead_id', leadId)
+    .order('created_at', { ascending: false });
+
+  if (historyError) {
+    console.error('Error fetching history:', historyError);
+  }
+
+  return {
+    lead: {
+      ...lead,
+      comments: (comments as CommentWithAuthor[]) || [],
+      history: (history as HistoryEventWithActor[]) || [],
+    },
+  };
+}
+
+/**
+ * Update lead fields and create history entry
+ */
+export async function updateLead(
+  leadId: string,
+  data: LeadUpdateInput
+): Promise<{ success?: boolean; error?: string }> {
+  const supabase = await createClient();
+  const user = await getCurrentUser();
+
+  if (!user) {
+    return { error: 'Non authentifié' };
+  }
+
+  // Validate input
+  const validationResult = leadUpdateSchema.safeParse(data);
+  if (!validationResult.success) {
+    return { error: 'Données invalides' };
+  }
+
+  // Get current lead data for history
+  const { data: currentLead, error: fetchError } = await supabase
+    .from('leads')
+    .select('first_name, last_name, email, phone, company, job_title, address, city, postal_code, country, source, notes')
+    .eq('id', leadId)
+    .single();
+
+  if (fetchError || !currentLead) {
+    return { error: 'Lead non trouvé' };
+  }
+
+  // Calculate diff (only changed fields)
+  const beforeData: Record<string, unknown> = {};
+  const afterData: Record<string, unknown> = {};
+  const currentLeadRecord = currentLead as Record<string, unknown>;
+
+  for (const [key, newValue] of Object.entries(data)) {
+    if (newValue === undefined) continue;
+
+    const oldValue = currentLeadRecord[key];
+    // Convert empty strings to null for comparison
+    const normalizedNew = newValue === '' ? null : newValue;
+
+    if (oldValue !== normalizedNew) {
+      beforeData[key] = oldValue;
+      afterData[key] = normalizedNew;
+    }
+  }
+
+  // If nothing changed, return success without updating
+  if (Object.keys(afterData).length === 0) {
+    return { success: true };
+  }
+
+  // Prepare update data (convert empty strings to null)
+  const updateData: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  for (const [key, value] of Object.entries(afterData)) {
+    updateData[key] = value;
+  }
+
+  // Update lead
+  const { error: updateError } = await supabase
+    .from('leads')
+    .update(updateData)
+    .eq('id', leadId);
+
+  if (updateError) {
+    console.error('Error updating lead:', updateError);
+    return { error: 'Erreur lors de la mise à jour' };
+  }
+
+  // Create history entry
+  const { error: historyError } = await supabase.from('lead_history').insert({
+    lead_id: leadId,
+    actor_id: user.id,
+    event_type: 'updated',
+    before_data: beforeData,
+    after_data: afterData,
+  });
+
+  if (historyError) {
+    console.error('Error creating history entry:', historyError);
+  }
+
+  revalidatePath(`/leads/${leadId}`);
+  revalidatePath('/leads');
+  return { success: true };
+}
+
+/**
+ * Assign a single lead to a user (admin only)
+ */
+export async function assignLead(
+  leadId: string,
+  assigneeId: string | null
+): Promise<{ success?: boolean; error?: string }> {
+  const user = await requireAdmin();
+  const supabase = await createClient();
+
+  // Get current assignment for history
+  const { data: currentLead, error: fetchError } = await supabase
+    .from('leads')
+    .select('assigned_to')
+    .eq('id', leadId)
+    .single();
+
+  if (fetchError || !currentLead) {
+    return { error: 'Lead non trouvé' };
+  }
+
+  // Don't update if same assignee
+  if (currentLead.assigned_to === assigneeId) {
+    return { success: true };
+  }
+
+  // Update lead
+  const { error: updateError } = await supabase
+    .from('leads')
+    .update({
+      assigned_to: assigneeId,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', leadId);
+
+  if (updateError) {
+    console.error('Error assigning lead:', updateError);
+    return { error: 'Erreur lors de l\'assignation' };
+  }
+
+  // Create history entry
+  const { error: historyError } = await supabase.from('lead_history').insert({
+    lead_id: leadId,
+    actor_id: user.id,
+    event_type: 'assigned',
+    before_data: { assigned_to: currentLead.assigned_to },
+    after_data: { assigned_to: assigneeId },
+  });
+
+  if (historyError) {
+    console.error('Error creating history entry:', historyError);
+  }
+
+  revalidatePath(`/leads/${leadId}`);
+  revalidatePath('/leads');
+  return { success: true };
+}
+
+/**
+ * Add a comment to a lead
+ */
+export async function addComment(
+  leadId: string,
+  body: string
+): Promise<{ success?: boolean; comment?: CommentWithAuthor; error?: string }> {
+  const supabase = await createClient();
+  const user = await getCurrentUser();
+
+  if (!user) {
+    return { error: 'Non authentifié' };
+  }
+
+  // Validate input
+  const validationResult = commentSchema.safeParse({ body });
+  if (!validationResult.success) {
+    return { error: validationResult.error.issues[0]?.message || 'Commentaire invalide' };
+  }
+
+  // Insert comment
+  const { data: comment, error: insertError } = await supabase
+    .from('lead_comments')
+    .insert({
+      lead_id: leadId,
+      author_id: user.id,
+      body: body.trim(),
+    })
+    .select('*, author:profiles!author_id(id, display_name)')
+    .single();
+
+  if (insertError) {
+    console.error('Error adding comment:', insertError);
+    return { error: 'Erreur lors de l\'ajout du commentaire' };
+  }
+
+  // Create history entry
+  const { error: historyError } = await supabase.from('lead_history').insert({
+    lead_id: leadId,
+    actor_id: user.id,
+    event_type: 'comment_added',
+    metadata: { comment_id: comment.id },
+  });
+
+  if (historyError) {
+    console.error('Error creating history entry:', historyError);
+  }
+
+  revalidatePath(`/leads/${leadId}`);
+  return { success: true, comment: comment as CommentWithAuthor };
+}
+
+/**
+ * Delete a comment (own comments only, or admin)
+ */
+export async function deleteComment(
+  commentId: string
+): Promise<{ success?: boolean; error?: string }> {
+  const supabase = await createClient();
+  const user = await getCurrentUser();
+
+  if (!user) {
+    return { error: 'Non authentifié' };
+  }
+
+  // Get comment to verify ownership and get lead_id
+  const { data: comment, error: fetchError } = await supabase
+    .from('lead_comments')
+    .select('id, lead_id, author_id')
+    .eq('id', commentId)
+    .single();
+
+  if (fetchError || !comment) {
+    return { error: 'Commentaire non trouvé' };
+  }
+
+  // Check permission: own comment or admin
+  const isAdmin = user.profile?.role === 'admin';
+  if (comment.author_id !== user.id && !isAdmin) {
+    return { error: 'Vous ne pouvez supprimer que vos propres commentaires' };
+  }
+
+  // Delete comment (RLS will also enforce this)
+  const { error: deleteError } = await supabase
+    .from('lead_comments')
+    .delete()
+    .eq('id', commentId);
+
+  if (deleteError) {
+    console.error('Error deleting comment:', deleteError);
+    return { error: 'Erreur lors de la suppression' };
+  }
+
+  revalidatePath(`/leads/${comment.lead_id}`);
+  return { success: true };
 }

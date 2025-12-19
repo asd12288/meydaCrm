@@ -95,3 +95,94 @@ export interface SalesUser {
 
 // Re-export LeadStatus for convenience
 export type { LeadStatus };
+
+// ============================================
+// Phase 4: Lead Detail Page Types
+// ============================================
+
+// Lead update schema for form validation
+export const leadUpdateSchema = z.object({
+  first_name: z.string().max(100, 'Maximum 100 caractères').optional().nullable(),
+  last_name: z.string().max(100, 'Maximum 100 caractères').optional().nullable(),
+  email: z
+    .string()
+    .email('Email invalide')
+    .max(255, 'Maximum 255 caractères')
+    .optional()
+    .nullable()
+    .or(z.literal('')),
+  phone: z.string().max(50, 'Maximum 50 caractères').optional().nullable(),
+  company: z.string().max(200, 'Maximum 200 caractères').optional().nullable(),
+  job_title: z.string().max(100, 'Maximum 100 caractères').optional().nullable(),
+  address: z.string().max(500, 'Maximum 500 caractères').optional().nullable(),
+  city: z.string().max(100, 'Maximum 100 caractères').optional().nullable(),
+  postal_code: z.string().max(20, 'Maximum 20 caractères').optional().nullable(),
+  country: z.string().max(100, 'Maximum 100 caractères').optional().nullable(),
+  source: z.string().max(100, 'Maximum 100 caractères').optional().nullable(),
+  notes: z.string().max(5000, 'Maximum 5000 caractères').optional().nullable(),
+});
+
+export type LeadUpdateInput = z.infer<typeof leadUpdateSchema>;
+
+// Comment schema for form validation
+export const commentSchema = z.object({
+  body: z
+    .string()
+    .min(1, 'Le commentaire ne peut pas être vide')
+    .max(2000, 'Maximum 2000 caractères'),
+});
+
+export type CommentInput = z.infer<typeof commentSchema>;
+
+// Lead field labels in French
+export const LEAD_FIELD_LABELS: Record<keyof LeadUpdateInput, string> = {
+  first_name: 'Prénom',
+  last_name: 'Nom',
+  email: 'Email',
+  phone: 'Téléphone',
+  company: 'Entreprise',
+  job_title: 'Fonction',
+  address: 'Adresse',
+  city: 'Ville',
+  postal_code: 'Code postal',
+  country: 'Pays',
+  source: 'Source',
+  notes: 'Notes',
+};
+
+// Comment with author info (what Supabase returns)
+export interface CommentWithAuthor {
+  id: string;
+  lead_id: string;
+  author_id: string;
+  body: string;
+  created_at: string;
+  updated_at: string;
+  author: {
+    id: string;
+    display_name: string | null;
+  } | null;
+}
+
+// History event with actor info (what Supabase returns)
+export interface HistoryEventWithActor {
+  id: string;
+  lead_id: string;
+  actor_id: string | null;
+  event_type: 'created' | 'updated' | 'assigned' | 'status_changed' | 'imported' | 'comment_added';
+  before_data: Record<string, unknown> | null;
+  after_data: Record<string, unknown> | null;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
+  actor: {
+    id: string;
+    display_name: string | null;
+  } | null;
+}
+
+// Full lead details for detail page
+export interface LeadWithFullDetails extends SupabaseLead {
+  assignee: LeadAssignee | null;
+  comments: CommentWithAuthor[];
+  history: HistoryEventWithActor[];
+}

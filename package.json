@@ -16,6 +16,7 @@
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.2.2",
     "@radix-ui/react-toast": "^1.2.15",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.89.0",
@@ -30,6 +31,7 @@
     "postgres": "^3.4.7",
     "react": "19.2.3",
     "react-dom": "19.2.3",
+    "react-hook-form": "^7.68.0",
     "simplebar-react": "^3.3.2",
     "tailwind-merge": "^3.4.0",
     "use-debounce": "^10.0.6"

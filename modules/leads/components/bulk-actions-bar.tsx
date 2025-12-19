@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import { IconX, IconUserPlus } from '@tabler/icons-react';
+import { IconX } from '@tabler/icons-react';
 import { bulkAssignLeads } from '../lib/actions';
+import { AssignDropdown } from '../ui/assign-dropdown';
 import type { SalesUser } from '../types';
 
 interface BulkActionsBarProps {
@@ -16,62 +16,52 @@ export function BulkActionsBar({
   salesUsers,
   onClearSelection,
 }: BulkActionsBarProps) {
-  const [assigneeId, setAssigneeId] = useState('');
-
-  const handleAssign = () => {
-    if (!assigneeId) return;
+  const handleAssign = (userId: string | null) => {
+    if (selectedIds.length === 0) return;
 
     // Optimistic: clear immediately
     const idsToAssign = [...selectedIds];
-    setAssigneeId('');
     onClearSelection();
 
     // Fire and forget - server will revalidate
-    bulkAssignLeads(idsToAssign, assigneeId);
+    bulkAssignLeads(idsToAssign, userId);
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-4 p-3 bg-lightprimary dark:bg-darkborder rounded-md mb-4">
-      {/* Selection count */}
-      <span className="text-sm font-medium text-primary dark:text-white">
-        {selectedIds.length} lead{selectedIds.length > 1 ? 's' : ''} selectionne
-        {selectedIds.length > 1 ? 's' : ''}
-      </span>
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-4 duration-200">
+      <div className="flex items-center gap-4 px-5 py-3 bg-white dark:bg-darkgray border border-ld rounded-full shadow-xl dark:shadow-dark-lg">
+        {/* Selection indicator */}
+        <div className="flex items-center gap-2">
+          <span className="flex items-center justify-center w-7 h-7 rounded-full bg-primary text-white text-xs font-bold">
+            {selectedIds.length}
+          </span>
+          <span className="text-sm font-medium text-ld">
+            lead{selectedIds.length > 1 ? 's' : ''} sélectionné{selectedIds.length > 1 ? 's' : ''}
+          </span>
+        </div>
 
-      {/* Assign controls */}
-      <div className="flex items-center gap-2">
-        <IconUserPlus size={18} className="text-primary dark:text-white" />
-        <select
-          value={assigneeId}
-          onChange={(e) => setAssigneeId(e.target.value)}
-          className="select-md"
-        >
-          <option value="">Assigner a...</option>
-          {salesUsers.map((user) => (
-            <option key={user.id} value={user.id}>
-              {user.display_name || 'Sans nom'}
-            </option>
-          ))}
-        </select>
+        {/* Divider */}
+        <div className="w-px h-6 bg-bordergray dark:bg-darkborder" />
+
+        {/* Assign dropdown */}
+        <AssignDropdown
+          salesUsers={salesUsers}
+          onAssign={handleAssign}
+        />
+
+        {/* Divider */}
+        <div className="w-px h-6 bg-bordergray dark:bg-darkborder" />
+
+        {/* Clear selection */}
         <button
           type="button"
-          onClick={handleAssign}
-          disabled={!assigneeId}
-          className="ui-button-small bg-primary text-white hover:bg-primaryemphasis disabled:opacity-50 disabled:cursor-not-allowed"
+          onClick={onClearSelection}
+          className="flex items-center justify-center w-8 h-8 rounded-full text-darklink hover:bg-lighterror hover:text-error transition-colors"
+          title="Annuler la sélection"
         >
-          Assigner
+          <IconX size={18} />
         </button>
       </div>
-
-      {/* Clear selection */}
-      <button
-        type="button"
-        onClick={onClearSelection}
-        className="flex items-center gap-1 px-3 py-1.5 text-sm text-darklink hover:text-error transition-colors ml-auto"
-      >
-        <IconX size={16} />
-        Annuler
-      </button>
     </div>
   );
 }

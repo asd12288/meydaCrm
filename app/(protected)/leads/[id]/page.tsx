@@ -1,4 +1,4 @@
-import { CardBox, PageHeader } from '@/modules/shared';
+import { LeadDetailView } from '@/modules/leads/views/lead-detail-view';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -12,18 +12,5 @@ interface LeadDetailPageProps {
 export default async function LeadDetailPage({ params }: LeadDetailPageProps) {
   const { id } = await params;
 
-  return (
-    <div>
-      <PageHeader
-        title={`Lead #${id}`}
-        description="Details du lead"
-      />
-
-      <CardBox>
-        <p className="text-darklink">
-          Les details du lead seront implementes dans la Phase 4.
-        </p>
-      </CardBox>
-    </div>
-  );
+  return <LeadDetailView leadId={id} />;
 }

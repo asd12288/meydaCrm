@@ -4,6 +4,7 @@ import { createColumnHelper } from '@tanstack/react-table';
 import Link from 'next/link';
 import { Dropdown, DropdownItem } from 'flowbite-react';
 import { IconDots, IconEye, IconEdit } from '@tabler/icons-react';
+import { CopyableText } from '@/modules/shared';
 import { LeadStatusBadge } from '../ui/lead-status-badge';
 import { SortableHeader } from '../ui/sortable-header';
 import { COLUMN_LABELS } from './constants';
@@ -93,30 +94,38 @@ export function getLeadColumns({ isAdmin, includeSelection }: ColumnOptions) {
             {info.getValue()}
           </Link>
         ),
-        size: 180,
+        size: 150,
       }
     )
   );
 
-  // Email
+  // Email (with click to copy - inline variant for compact table)
   columns.push(
     columnHelper.accessor('email', {
       header: () => COLUMN_LABELS.email,
       cell: (info) => (
-        <span className="text-darklink text-sm">{info.getValue() || '-'}</span>
+        <CopyableText
+          text={info.getValue() || ''}
+          variant="inline"
+          className="text-darklink text-sm max-w-40"
+        />
       ),
-      size: 200,
+      size: 180,
     })
   );
 
-  // Phone
+  // Phone (with click to copy - inline variant for compact table)
   columns.push(
     columnHelper.accessor('phone', {
       header: () => COLUMN_LABELS.phone,
       cell: (info) => (
-        <span className="text-darklink text-sm">{info.getValue() || '-'}</span>
+        <CopyableText
+          text={info.getValue() || ''}
+          variant="inline"
+          className="text-darklink text-sm max-w-32"
+        />
       ),
-      size: 130,
+      size: 120,
     })
   );
 
@@ -125,9 +134,9 @@ export function getLeadColumns({ isAdmin, includeSelection }: ColumnOptions) {
     columnHelper.accessor('company', {
       header: () => <SortableHeader columnId="company" label={COLUMN_LABELS.company} />,
       cell: (info) => (
-        <span className="text-darklink text-sm">{info.getValue() || '-'}</span>
+        <span className="text-darklink text-sm truncate max-w-30 block">{info.getValue() || '-'}</span>
       ),
-      size: 150,
+      size: 130,
     })
   );
 
@@ -142,7 +151,7 @@ export function getLeadColumns({ isAdmin, includeSelection }: ColumnOptions) {
           statusLabel={info.row.original.status_label}
         />
       ),
-      size: 140,
+      size: 155,
     })
   );
 
@@ -151,11 +160,11 @@ export function getLeadColumns({ isAdmin, includeSelection }: ColumnOptions) {
     columnHelper.accessor('assignee', {
       header: () => COLUMN_LABELS.assignee,
       cell: (info) => (
-        <span className="text-darklink text-sm">
+        <span className="text-darklink text-sm truncate max-w-25 block">
           {info.getValue()?.display_name || 'Non assigne'}
         </span>
       ),
-      size: 140,
+      size: 110,
     })
   );
 
@@ -168,7 +177,7 @@ export function getLeadColumns({ isAdmin, includeSelection }: ColumnOptions) {
           {new Date(info.getValue()).toLocaleDateString('fr-FR')}
         </span>
       ),
-      size: 110,
+      size: 100,
     })
   );
 

@@ -10,16 +10,17 @@ import {
 
 describe('Lead Constants', () => {
   describe('STATUS_COLORS', () => {
-    it('should have a color for each status', () => {
+    it('should have a color for each new status', () => {
       const expectedStatuses = [
-        'new',
-        'contacted',
-        'qualified',
-        'proposal',
-        'negotiation',
-        'won',
-        'lost',
-        'no_answer',
+        'rdv',
+        'no_answer_1',
+        'no_answer_2',
+        'wrong_number',
+        'not_interested',
+        'deposit',
+        'callback',
+        'relance',
+        'mail',
       ];
 
       expectedStatuses.forEach((status) => {
@@ -36,20 +37,21 @@ describe('Lead Constants', () => {
   });
 
   describe('LEAD_STATUS_OPTIONS', () => {
-    it('should have 8 status options', () => {
-      expect(LEAD_STATUS_OPTIONS).toHaveLength(8);
+    it('should have 9 status options', () => {
+      expect(LEAD_STATUS_OPTIONS).toHaveLength(9);
     });
 
     it('should have French labels', () => {
       const frenchLabels = [
-        'Nouveau',
-        'Contacte',
-        'Qualifie',
-        'Proposition envoyee',
-        'Negociation',
-        'Gagne',
-        'Perdu',
-        'Pas de reponse',
+        'RDV',
+        'Pas de réponse 1',
+        'Pas de réponse 2',
+        'Faux numéro',
+        'Pas intéressé',
+        'Dépôt',
+        'Rappeler',
+        'Relance',
+        'Mail',
       ];
 
       LEAD_STATUS_OPTIONS.forEach((option, index) => {
@@ -59,14 +61,15 @@ describe('Lead Constants', () => {
 
     it('should have valid status values', () => {
       const validValues = [
-        'new',
-        'contacted',
-        'qualified',
-        'proposal',
-        'negotiation',
-        'won',
-        'lost',
-        'no_answer',
+        'rdv',
+        'no_answer_1',
+        'no_answer_2',
+        'wrong_number',
+        'not_interested',
+        'deposit',
+        'callback',
+        'relance',
+        'mail',
       ];
 
       LEAD_STATUS_OPTIONS.forEach((option, index) => {

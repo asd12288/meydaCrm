@@ -50,6 +50,17 @@ export type LeadWithDetails = Lead & {
 
 // Lead status labels in French
 export const LEAD_STATUS_LABELS: Record<LeadStatus, string> = {
+  // New statuses
+  rdv: 'RDV',
+  no_answer_1: 'Pas de réponse 1',
+  no_answer_2: 'Pas de réponse 2',
+  wrong_number: 'Faux numéro',
+  not_interested: 'Pas intéressé',
+  deposit: 'Dépôt',
+  callback: 'Rappeler',
+  relance: 'Relance',
+  mail: 'Mail',
+  // Legacy statuses
   new: 'Nouveau',
   contacted: 'Contacté',
   qualified: 'Qualifié',

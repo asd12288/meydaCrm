@@ -38,18 +38,18 @@
 
   /* Neutral Colors */
   --color-white: #fff;
-  --color-dark: #111c2d;
-  --color-border: #e0e6eb;
-  --color-bordergray: #cfd6db;
-  --color-darkborder: #333F55;
-  --color-link: #2a3547;
-  --color-muted: #EFF4FA;
-  --color-darkmuted: #2A3851;
-  --color-darklink: #7b8893;
-  --color-lightgray: #F8FAFD;
-  --color-lighthover: #F6F9FC;
-  --color-darkgray: #1A2537;
-  --color-surface: #ffffff;
+  --color-dark: #18181b;
+  --color-border: #e4e4e7;
+  --color-bordergray: #d4d4d8;
+  --color-darkborder: #3f3f46;
+  --color-link: #27272a;
+  --color-muted: #f4f4f5;
+  --color-darkmuted: #2e2e33;
+  --color-darklink: #71717a;
+  --color-lightgray: #fafafa;
+  --color-lighthover: #f4f4f5;
+  --color-darkgray: #27272a;
+  --color-surface: #f4f4f5;
 
   /* Layout */
   --radius: 0.5rem;
@@ -59,14 +59,14 @@
 
 /* Dark Mode Variables */
 .dark {
-  --color-surface: #1A2537;
-  --color-border: #333F55;
-  --color-bordergray: #404d5e;
-  --color-muted: #2A3851;
-  --color-lightgray: #1A2537;
-  --color-lighthover: #2A3851;
-  --color-link: #c9d1d9;
-  --color-darklink: #a0aab4;
+  --color-surface: #27272a;
+  --color-border: #3f3f46;
+  --color-bordergray: #52525b;
+  --color-muted: #3f3f46;
+  --color-lightgray: #27272a;
+  --color-lighthover: #3f3f46;
+  --color-link: #e4e4e7;
+  --color-darklink: #a1a1aa;
 }
 
 /* Theme Transition */
@@ -164,7 +164,7 @@ body {
   font-family: var(--font-sans);
   font-size: 14px;
   color: var(--color-darklink);
-  background-color: var(--color-surface);
+  background-color: var(--color-lightgray);
   overflow-x: hidden;
 }
 
@@ -687,6 +687,43 @@ button.bg-info:hover,
   color: white;
 }
 
+/* Text color utilities for status icons */
+.text-success {
+  color: var(--color-success) !important;
+}
+.text-warning {
+  color: var(--color-warning) !important;
+}
+.text-error {
+  color: var(--color-error) !important;
+}
+.text-info {
+  color: var(--color-info) !important;
+}
+.text-secondary {
+  color: var(--color-secondary) !important;
+}
+
+/* Hover text colors for filter dropdown options */
+.hover-text-success:hover {
+  color: var(--color-success) !important;
+}
+.hover-text-warning:hover {
+  color: var(--color-warning) !important;
+}
+.hover-text-error:hover {
+  color: var(--color-error) !important;
+}
+.hover-text-info:hover {
+  color: var(--color-info) !important;
+}
+.hover-text-primary:hover {
+  color: var(--color-primary) !important;
+}
+.hover-text-secondary:hover {
+  color: var(--color-secondary) !important;
+}
+
 .badge-solid-info {
   background-color: var(--color-info);
   color: white;
@@ -797,18 +834,24 @@ button.bg-info:hover,
 
 .form-select-filter {
   height: 2.5rem;
-  width: 11rem;
+  min-width: 11rem;
   padding: 0 0.75rem;
   font-size: 0.875rem;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   background-color: var(--color-white);
   cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  padding-right: 2rem;
 }
 .dark .form-select-filter {
   background-color: var(--color-darkgray);
   border-color: var(--color-darkborder);
   color: var(--color-white);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
 }
 .form-select-filter:focus {
   border-color: var(--color-primary);
@@ -940,4 +983,114 @@ button.bg-info:hover,
     transform: translateX(100%);
     opacity: 0;
   }
+}
+
+/* ============================================
+   Copy Feedback Animation
+   ============================================ */
+
+@keyframes bounce-once {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+}
+
+.animate-bounce-once {
+  animation: bounce-once 0.3s ease-out;
+}
+
+/* ============================================
+   Lead Profile Card Styles
+   ============================================ */
+
+/* Icon circle for contact info items */
+.icon-circle {
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-lightprimary);
+  color: var(--color-primary);
+}
+.dark .icon-circle {
+  background-color: rgba(0, 161, 255, 0.2);
+}
+
+.icon-circle-sm {
+  flex-shrink: 0;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-lightprimary);
+  color: var(--color-primary);
+}
+.dark .icon-circle-sm {
+  background-color: rgba(0, 161, 255, 0.2);
+}
+
+/* Comment bubble styling */
+.comment-bubble {
+  padding: 0.75rem;
+  border-radius: var(--radius-md);
+  background-color: var(--color-lightgray);
+}
+.dark .comment-bubble {
+  background-color: var(--color-darkborder);
+}
+
+/* Tab button states */
+.tab-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s ease-in-out;
+  color: var(--color-darklink);
+}
+.tab-button:hover {
+  color: var(--color-dark);
+}
+.dark .tab-button:hover {
+  color: var(--color-white);
+}
+
+.tab-button-active {
+  border-bottom-color: var(--color-primary);
+  color: var(--color-primary) !important;
+}
+
+/* Contact info row */
+.contact-info-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+/* Profile section divider */
+.profile-divider {
+  height: 1px;
+  background-color: var(--color-border);
+  margin: 1rem 0;
+}
+.dark .profile-divider {
+  background-color: var(--color-darkborder);
+}
+
+/* Large avatar for profile card */
+.avatar-xl {
+  width: 4rem;
+  height: 4rem;
+  font-size: 1.5rem;
 }

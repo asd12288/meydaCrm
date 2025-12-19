@@ -1,10 +1,10 @@
-import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
 import {
-  LeadsTableSkeleton,
   LeadsFiltersSkeleton,
-  LeadsPaginationSkeleton,
   LeadsPageSkeleton,
+  LeadsPaginationSkeleton,
+  LeadsTableSkeleton,
 } from '../ui/leads-table-skeleton';
 
 describe('Skeleton Components', () => {

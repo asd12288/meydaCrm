@@ -190,15 +190,16 @@ describe('RLS Policies - Profiles', () => {
     expect(data!.length).toBeGreaterThanOrEqual(2)
   })
 
-  it('sales can only read their own profile', async () => {
+  it('sales can read all profiles (for assignee dropdown)', async () => {
     const client = await signInAsUser(sales.email, sales.password)
     const { data, error } = await client.from('profiles').select('*')
 
     expect(error).toBeNull()
     expect(data).toBeDefined()
-    // Sales should only see their own profile
-    expect(data!.length).toBe(1)
-    expect(data![0].id).toBe(sales.id)
+    // Sales can read all profiles (needed for assignee dropdown)
+    expect(data!.length).toBeGreaterThanOrEqual(2)
+    // Their own profile should be included
+    expect(data!.some((p) => p.id === sales.id)).toBe(true)
   })
 
   it('sales can update their own profile', async () => {
