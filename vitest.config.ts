@@ -5,10 +5,10 @@ import path from 'path'
 export default defineConfig({
   plugins: [react()],
   test: {
-    environment: 'node',
+    environment: 'happy-dom',
     globals: true,
     setupFiles: ['./tests/setup.ts'],
-    include: ['tests/**/*.test.ts'],
+    include: ['tests/**/*.test.ts', 'modules/**/__tests__/*.test.{ts,tsx}'],
     exclude: ['node_modules', 'design'],
     testTimeout: 30000,
     hookTimeout: 30000,

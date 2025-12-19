@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Dropdown, DropdownItem } from 'flowbite-react';
 import { IconDots, IconEye, IconEdit } from '@tabler/icons-react';
 import { LeadStatusBadge } from '../ui/lead-status-badge';
+import { SortableHeader } from '../ui/sortable-header';
 import { COLUMN_LABELS } from './constants';
 import type { LeadWithAssignee } from '../types';
 
@@ -76,14 +77,14 @@ export function getLeadColumns({ isAdmin, includeSelection }: ColumnOptions) {
     );
   }
 
-  // Name column with link
+  // Name column with link (sortable by last_name)
   columns.push(
     columnHelper.accessor(
       (row) =>
         `${row.last_name || ''} ${row.first_name || ''}`.trim() || 'Sans nom',
       {
         id: 'name',
-        header: () => COLUMN_LABELS.name,
+        header: () => <SortableHeader columnId="last_name" label={COLUMN_LABELS.name} />,
         cell: (info) => (
           <Link
             href={`/leads/${info.row.original.id}`}
@@ -119,10 +120,10 @@ export function getLeadColumns({ isAdmin, includeSelection }: ColumnOptions) {
     })
   );
 
-  // Company
+  // Company (sortable)
   columns.push(
     columnHelper.accessor('company', {
-      header: () => COLUMN_LABELS.company,
+      header: () => <SortableHeader columnId="company" label={COLUMN_LABELS.company} />,
       cell: (info) => (
         <span className="text-darklink text-sm">{info.getValue() || '-'}</span>
       ),
@@ -130,10 +131,10 @@ export function getLeadColumns({ isAdmin, includeSelection }: ColumnOptions) {
     })
   );
 
-  // Status badge (clickable)
+  // Status badge (clickable, sortable)
   columns.push(
     columnHelper.accessor('status', {
-      header: () => COLUMN_LABELS.status,
+      header: () => <SortableHeader columnId="status" label={COLUMN_LABELS.status} />,
       cell: (info) => (
         <LeadStatusBadge
           leadId={info.row.original.id}
@@ -158,10 +159,10 @@ export function getLeadColumns({ isAdmin, includeSelection }: ColumnOptions) {
     })
   );
 
-  // Updated at
+  // Updated at (sortable)
   columns.push(
     columnHelper.accessor('updated_at', {
-      header: () => COLUMN_LABELS.updatedAt,
+      header: () => <SortableHeader columnId="updated_at" label={COLUMN_LABELS.updatedAt} />,
       cell: (info) => (
         <span className="text-sm text-darklink">
           {new Date(info.getValue()).toLocaleDateString('fr-FR')}

@@ -27,7 +27,12 @@
       "Bash(gh run view:*)",
       "Bash(git commit:*)",
       "Bash(git push:*)",
-      "Bash(gh run watch:*)"
+      "Bash(gh run watch:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(taskkill:*)",
+      "Bash(cmd //c \"taskkill /PID 35784 /F\")",
+      "Bash(npm ls:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

@@ -1,12 +1,12 @@
 'use client';
 
-import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import {
   IconChevronLeft,
   IconChevronRight,
   IconChevronsLeft,
   IconChevronsRight,
 } from '@tabler/icons-react';
+import { useFilterNavigation } from '../hooks/use-filter-navigation';
 import { PAGE_SIZE_OPTIONS } from '../config/constants';
 
 interface LeadsPaginationProps {
@@ -22,22 +22,7 @@ export function LeadsPagination({
   pageSize,
   totalPages,
 }: LeadsPaginationProps) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-
-  const goToPage = (newPage: number) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('page', String(newPage));
-    router.push(`${pathname}?${params.toString()}`);
-  };
-
-  const setPageSize = (newSize: number) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('pageSize', String(newSize));
-    params.set('page', '1'); // Reset to first page
-    router.push(`${pathname}?${params.toString()}`);
-  };
+  const { goToPage, setPageSize } = useFilterNavigation();
 
   const canGoPrevious = page > 1;
   const canGoNext = page < totalPages;

@@ -1,6 +1,7 @@
 import { Sidebar } from '../components/sidebar';
 import { Header } from '../components/header';
-import { Toaster } from '@/modules/shared';
+import { MainContent } from '../components/main-content';
+import { SidebarProvider } from '../context/sidebar-context';
 import type { NormalizedProfile } from '@/lib/auth';
 
 interface DashboardLayoutProps {
@@ -10,17 +11,16 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children, profile }: DashboardLayoutProps) {
   return (
-    <div className="flex min-h-screen bg-lightgray dark:bg-dark">
-      <Sidebar userRole={profile.role} />
+    <SidebarProvider>
+      <div className="flex min-h-screen bg-lightgray dark:bg-dark">
+        <Sidebar userRole={profile.role} />
 
-      <div className="flex-1 ml-64">
-        <Header displayName={profile.displayName} role={profile.role} />
+        <MainContent>
+          <Header displayName={profile.displayName} role={profile.role} />
 
-        <main className="p-6 min-h-[calc(100vh-70px)]">{children}</main>
+          <main className="p-6 min-h-[calc(100vh-70px)]">{children}</main>
+        </MainContent>
       </div>
-
-      {/* Global toast notifications */}
-      <Toaster />
-    </div>
+    </SidebarProvider>
   );
 }

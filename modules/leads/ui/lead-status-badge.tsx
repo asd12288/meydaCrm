@@ -1,9 +1,8 @@
 'use client';
 
-import { useTransition } from 'react';
+import { useOptimistic, startTransition } from 'react';
 import { Dropdown, DropdownItem } from 'flowbite-react';
 import { IconChevronDown } from '@tabler/icons-react';
-import { toast } from '@/modules/shared';
 import { STATUS_COLORS, LEAD_STATUS_OPTIONS } from '../config/constants';
 import { updateLeadStatus } from '../lib/actions';
 import type { LeadStatus } from '@/db/types';
@@ -21,19 +20,18 @@ export function LeadStatusBadge({
   statusLabel,
   editable = true,
 }: LeadStatusBadgeProps) {
-  const [isPending, startTransition] = useTransition();
-  const colorClass = STATUS_COLORS[status] || 'badge-primary';
+  const [optimisticStatus, setOptimisticStatus] = useOptimistic(status);
+
+  const currentOption = LEAD_STATUS_OPTIONS.find((o) => o.value === optimisticStatus);
+  const currentLabel = currentOption?.label || statusLabel;
+  const colorClass = STATUS_COLORS[optimisticStatus] || 'badge-primary';
 
   const handleStatusChange = (newStatus: LeadStatus) => {
-    if (newStatus === status) return;
+    if (newStatus === optimisticStatus) return;
 
     startTransition(async () => {
-      const result = await updateLeadStatus(leadId, newStatus);
-      if (result.error) {
-        toast.error('Erreur', result.error);
-      } else {
-        toast.success('Statut mis a jour');
-      }
+      setOptimisticStatus(newStatus);
+      await updateLeadStatus(leadId, newStatus);
     });
   };
 
@@ -55,12 +53,9 @@ export function LeadStatusBadge({
       renderTrigger={() => (
         <button
           type="button"
-          disabled={isPending}
-          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold cursor-pointer hover:opacity-80 transition-opacity ${colorClass} ${
-            isPending ? 'opacity-50' : ''
-          }`}
+          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold cursor-pointer hover:opacity-80 transition-opacity ${colorClass}`}
         >
-          {isPending ? 'Mise a jour...' : statusLabel}
+          {currentLabel}
           <IconChevronDown size={12} />
         </button>
       )}
@@ -70,7 +65,7 @@ export function LeadStatusBadge({
           key={option.value}
           onClick={() => handleStatusChange(option.value)}
           className={`flex items-center gap-2 ${
-            option.value === status ? 'font-medium bg-lightgray dark:bg-darkborder' : ''
+            option.value === optimisticStatus ? 'font-medium bg-lightgray dark:bg-darkborder' : ''
           }`}
         >
           <span

@@ -28,6 +28,9 @@ export const LEAD_STATUS_OPTIONS: { value: LeadStatus; label: string }[] = [
 export const DEFAULT_PAGE_SIZE = 20;
 export const PAGE_SIZE_OPTIONS = [20, 50, 100];
 
+// Search debounce delay in milliseconds
+export const SEARCH_DEBOUNCE_MS = 300;
+
 // Table column labels (French)
 export const COLUMN_LABELS = {
   selection: '',

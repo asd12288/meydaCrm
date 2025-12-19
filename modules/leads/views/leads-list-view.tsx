@@ -35,7 +35,7 @@ export async function LeadsListView({ searchParams }: LeadsListViewProps) {
   ]);
 
   return (
-    <div>
+    <div className="max-w-full overflow-hidden">
       <PageHeader
         title="Leads"
         description={

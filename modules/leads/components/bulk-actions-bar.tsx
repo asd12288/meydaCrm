@@ -1,8 +1,7 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState } from 'react';
 import { IconX, IconUserPlus } from '@tabler/icons-react';
-import { toast } from '@/modules/shared';
 import { bulkAssignLeads } from '../lib/actions';
 import type { SalesUser } from '../types';
 
@@ -18,24 +17,17 @@ export function BulkActionsBar({
   onClearSelection,
 }: BulkActionsBarProps) {
   const [assigneeId, setAssigneeId] = useState('');
-  const [isPending, startTransition] = useTransition();
 
   const handleAssign = () => {
     if (!assigneeId) return;
 
-    startTransition(async () => {
-      const result = await bulkAssignLeads(selectedIds, assigneeId);
-      if (result.error) {
-        toast.error('Erreur d\'assignation', result.error);
-      } else {
-        toast.success(
-          'Leads assignes',
-          `${result.count} lead${result.count && result.count > 1 ? 's' : ''} assigne${result.count && result.count > 1 ? 's' : ''} avec succes`
-        );
-        setAssigneeId('');
-        onClearSelection();
-      }
-    });
+    // Optimistic: clear immediately
+    const idsToAssign = [...selectedIds];
+    setAssigneeId('');
+    onClearSelection();
+
+    // Fire and forget - server will revalidate
+    bulkAssignLeads(idsToAssign, assigneeId);
   };
 
   return (
@@ -53,7 +45,6 @@ export function BulkActionsBar({
           value={assigneeId}
           onChange={(e) => setAssigneeId(e.target.value)}
           className="select-md"
-          disabled={isPending}
         >
           <option value="">Assigner a...</option>
           {salesUsers.map((user) => (
@@ -65,15 +56,12 @@ export function BulkActionsBar({
         <button
           type="button"
           onClick={handleAssign}
-          disabled={!assigneeId || isPending}
+          disabled={!assigneeId}
           className="ui-button-small bg-primary text-white hover:bg-primaryemphasis disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {isPending ? 'Assignation...' : 'Assigner'}
+          Assigner
         </button>
       </div>
-
-      {/* Error message */}
-      {error && <span className="text-sm text-error">{error}</span>}
 
       {/* Clear selection */}
       <button

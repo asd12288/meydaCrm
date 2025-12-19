@@ -1,9 +1,9 @@
 'use client';
 
-import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useDebouncedCallback } from 'use-debounce';
 import { IconSearch, IconX } from '@tabler/icons-react';
-import { LEAD_STATUS_OPTIONS } from '../config/constants';
+import { useFilterNavigation } from '../hooks/use-filter-navigation';
+import { LEAD_STATUS_OPTIONS, SEARCH_DEBOUNCE_MS } from '../config/constants';
 import type { SalesUser } from '../types';
 
 interface LeadFiltersProps {
@@ -12,33 +12,15 @@ interface LeadFiltersProps {
 }
 
 export function LeadFilters({ salesUsers, isAdmin }: LeadFiltersProps) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const { searchParams, updateFilter, clearFilters } = useFilterNavigation();
 
   const currentSearch = searchParams.get('search') || '';
   const currentStatus = searchParams.get('status') || '';
   const currentAssignee = searchParams.get('assignedTo') || '';
 
-  const updateFilters = (key: string, value: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    if (value) {
-      params.set(key, value);
-    } else {
-      params.delete(key);
-    }
-    // Reset to page 1 on filter change
-    params.set('page', '1');
-    router.push(`${pathname}?${params.toString()}`);
-  };
-
   const handleSearch = useDebouncedCallback((term: string) => {
-    updateFilters('search', term);
-  }, 300);
-
-  const clearFilters = () => {
-    router.push(pathname);
-  };
+    updateFilter('search', term);
+  }, SEARCH_DEBOUNCE_MS);
 
   const hasActiveFilters = currentSearch || currentStatus || currentAssignee;
 
@@ -62,8 +44,8 @@ export function LeadFilters({ salesUsers, isAdmin }: LeadFiltersProps) {
       {/* Status filter */}
       <select
         value={currentStatus}
-        onChange={(e) => updateFilters('status', e.target.value)}
-        className="h-10 w-44 px-3 text-sm border border-ld rounded-md bg-white dark:bg-darkgray dark:text-white focus:border-primary focus:outline-none cursor-pointer"
+        onChange={(e) => updateFilter('status', e.target.value)}
+        className="form-select-filter"
       >
         <option value="">Tous les statuts</option>
         {LEAD_STATUS_OPTIONS.map((opt) => (
@@ -77,8 +59,8 @@ export function LeadFilters({ salesUsers, isAdmin }: LeadFiltersProps) {
       {isAdmin && (
         <select
           value={currentAssignee}
-          onChange={(e) => updateFilters('assignedTo', e.target.value)}
-          className="h-10 w-48 px-3 text-sm border border-ld rounded-md bg-white dark:bg-darkgray dark:text-white focus:border-primary focus:outline-none cursor-pointer"
+          onChange={(e) => updateFilter('assignedTo', e.target.value)}
+          className="form-select-filter w-48"
         >
           <option value="">Tous les commerciaux</option>
           {salesUsers.map((user) => (
