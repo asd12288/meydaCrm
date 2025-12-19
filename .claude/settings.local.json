@@ -1,13 +1,23 @@
 {
-  "enableAllProjectMcpServers": true,
-  "enabledMcpjsonServers": [
-    "supabase"
-  ],
   "permissions": {
     "allow": [
       "mcp__notion__*",
       "mcp__supabase__*",
-      "mcp__Ref__*"
+      "mcp__Ref__*",
+      "Bash(cat:*)",
+      "Web Fetch",
+      "Bash(npm install:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run db:generate:*)",
+      "Bash(find:*)",
+      "Bash(head:*)",
+      "Bash(curl:*)",
+      "Bash(ls:*)",
+      "Bash(grep:*)"
     ]
-  }
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "supabase"
+  ]
 }

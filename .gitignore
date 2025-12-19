@@ -10,6 +10,14 @@
 !.yarn/releases
 !.yarn/versions
 
+
+# AI / Claude Code
+.claude/
+.claude
+
+# Design template (reference only, not part of build)
+/design
+
 # testing
 /coverage
 
@@ -19,7 +27,6 @@
 
 # production
 /build
-/design
 
 # misc
 .DS_Store

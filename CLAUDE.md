@@ -105,12 +105,15 @@ We are replacing an old CRM with a simpler, more reliable CRM.
 
 ## 3) Repository Structure (module-oriented)
 
+**IMPORTANT: Next.js 16 does NOT use a `/src` folder. All code lives at the project root.**
+
 We prefer a module system organization.
 
 Use:
 
-- `/src/modules/<domain>/...` for domain features
-- `/src/shared/...` for cross-cutting utilities
+- `/modules/<domain>/...` for domain features
+- `/lib/...` for cross-cutting utilities
+- `/db/...` for database schema, types, and connection (Drizzle)
 
 Each module follows this convention:
 
@@ -124,6 +127,13 @@ Each module follows this convention:
 - `views/` page-level view components rendered by app routes
 - `index.ts` barrel exports for the module
 
+Database folder structure (`/db`):
+
+- `schema/` - Drizzle table definitions with RLS policies
+- `relations.ts` - Drizzle relations for type-safe joins
+- `types.ts` - Inferred TypeScript types
+- `index.ts` - Database connection singleton
+
 App Router (`/app`) should stay thin:
 
 - route file renders a View from a module
@@ -132,7 +142,7 @@ App Router (`/app`) should stay thin:
 Example:
 
 - `app/(protected)/leads/page.tsx` -> `return <LeadsListView />`
-- `src/modules/leads/views/leads-list-view.tsx`
+- `modules/leads/views/leads-list-view.tsx`
 
 ---
 
@@ -347,14 +357,45 @@ If commands differ, update this section.
 
 ## 12) Implementation Roadmap (MVP order)
 
-1. Supabase schema + RLS + profiles bootstrapping
-2. Auth (login + protected routes + role guard)
+1. ~~Supabase schema + RLS + profiles bootstrapping~~ ✅ DONE
+2. ~~Auth (login + protected routes + role guard)~~ ✅ DONE
 3. Leads table (assigned-only for sales; all for admin)
 4. Lead detail (edit all fields + comments + history)
 5. Admin users screen (create user + reset password)
 6. Import v1: CSV end-to-end (upload -> parse -> commit)
 7. Import v2: XLSX support + mapping polish
 8. Dashboard widgets (history feed + leads by status)
+
+### Phase 1 & 2 Implementation Notes
+
+**Database (Phase 1):**
+- 6 tables: profiles, leads, lead_comments, lead_history, import_jobs, import_rows
+- RLS policies for admin/sales roles
+- Profile creation trigger on auth.users insert
+- Storage bucket `imports` for file uploads
+- Migrations: `initial_schema_with_rls`, `add_profile_trigger_and_storage`, `fix_profile_trigger`
+
+**Auth (Phase 2):**
+- Username-based login (no email required) - internally uses `username@crm.local`
+- Next.js 16 `proxy.ts` for session management (not middleware.ts)
+- Supabase SSR with `@supabase/ssr` package
+- Protected routes with role guards
+- Edge Function `admin-create-user` for user creation
+
+**Module Structure Created:**
+- `modules/auth/` - login, logout, session management
+- `modules/layout/` - sidebar, header, dashboard layout
+- `modules/shared/` - CardBox, Spinner, PageHeader
+- `lib/supabase/` - client, server, proxy utilities
+
+**Routes Created:**
+- `/login` - Login page
+- `/dashboard` - Dashboard (placeholder)
+- `/leads` - Leads list (placeholder)
+- `/leads/[id]` - Lead detail (placeholder)
+- `/users` - Admin only (placeholder)
+- `/import` - Admin only (placeholder)
+- `/account` - Account settings (placeholder)
 
 ---
 
@@ -382,6 +423,189 @@ The Notion page contains project management, task tracking, and progress.
 - Add export and reporting
 - Add soft disable user and lead reassignment tools
 - Add full-text search and saved filters
+
+---
+
+## 15) Design System (MaterialM Template - MANDATORY)
+
+All UI components MUST be copied/inspired from the MaterialM Next.js Admin Template.
+
+### Design Source Location
+
+- **Template Path**: `/design/MaterialM-nextjs-admin-template-main/`
+- **Main Package**: `packages/main/` (use this as primary reference)
+- **Components**: `packages/main/src/app/components/`
+
+### Required UI Libraries (match template)
+
+- Flowbite React - Primary component library
+- shadcn/ui (Radix UI) - Advanced components (Dialog, Dropdown, Tabs)
+- Tailwind CSS - Styling
+- Tabler Icons - Icon set (`@tabler/icons-react`)
+- TanStack React Table - Data tables
+- React Hook Form + Zod - Form handling
+- ApexCharts - Charts and visualizations
+
+### Component Reference Paths
+
+| Need | Use Template Path |
+|------|-------------------|
+| Data tables (leads list) | `components/react-tables/pagination/` |
+| Forms | `components/form-components/` |
+| Cards/Containers | `components/shared/CardBox.tsx` |
+| Modals/Dialogs | `components/shadcn-ui/Dialog/` |
+| Dropdowns | `components/shadcn-ui/Dropdown/` |
+| Sidebar navigation | `components/ui-components/Sidebar/` |
+| Badges/Status | `components/shadcn-ui/Badge/` |
+| Dashboard widgets | `components/dashboards/crm/` |
+| Charts | `components/charts/` |
+
+### Design Rules (MUST follow)
+
+1. **Never create custom UI** - Always copy/adapt from template first
+2. **Use CardBox wrapper** - All page sections use `CardBox` component
+3. **Follow Tailwind classes** - Use template's class patterns exactly
+4. **Match color palette** - Use CSS variables from template (primary, secondary, success, warning, error)
+5. **Use Tabler Icons** - Import from `@tabler/icons-react`
+6. **Table component** - Use TanStack React Table with template patterns
+7. **Form validation** - Use React Hook Form + Zod (template pattern)
+
+### Color Palette (CSS Variables)
+
+- Primary: `--color-primary`, `--color-secondary`
+- Status: `--color-success`, `--color-warning`, `--color-error`, `--color-info`
+- Light variants: `--color-lightprimary`, `--color-lightsuccess`, etc.
+- Surface: `--color-surface`, `--color-bordergray`
+
+### Pre-built CSS Classes (globals.css) - USE THESE FIRST
+
+The `app/globals.css` contains pre-built utility classes. **Always use these before writing inline Tailwind.**
+
+#### Text & Colors
+| Class | Use For |
+|-------|---------|
+| `.text-ld` | Dark/light adaptive text color |
+| `.text-primary-ld` | Text that turns primary on hover |
+| `.border-ld` | Dark/light adaptive border |
+| `.bg-hover` | Background highlight on hover |
+
+#### Cards & Titles
+| Class | Use For |
+|-------|---------|
+| `.card-title` | Card heading (18px, semibold) |
+| `.card-subtitle` | Card subheading (14px, medium) |
+
+#### Form Controls
+| Class | Use For |
+|-------|---------|
+| `.form-control` | Wrapper for input with border |
+| `.form-control-input` | Standalone styled input |
+| `.form-control-rounded` | Pill-shaped input |
+| `.select-md` | Styled select dropdown |
+| `.checkbox` | Styled checkbox |
+
+#### Buttons
+| Class | Use For |
+|-------|---------|
+| `.ui-button` | Primary action button (rounded pill) |
+| `.ui-button-small` | Smaller action button |
+| `.btn-circle` | Round icon button (32px) |
+| `.btn-circle-hover` | Round icon button with hover effect |
+| `.btn-primary`, `.btn-success`, etc. | Colored buttons with hover states |
+
+#### Dropdowns
+| Class | Use For |
+|-------|---------|
+| `.dropdown` | Dropdown container with shadow |
+| `.ui-dropdown` | Styled dropdown menu |
+| `.ui-dropdown-item` | Dropdown menu item |
+| `.ui-dropdown-animation` | Dropdown animation |
+
+#### Badges (Status indicators)
+| Class | Use For |
+|-------|---------|
+| `.badge-primary`, `.badge-secondary` | Light background badges |
+| `.badge-success`, `.badge-warning`, `.badge-error`, `.badge-info` | Status badges |
+| `.badge-solid-*` | Solid background variants |
+
+#### Layout
+| Class | Use For |
+|-------|---------|
+| `.container` | Centered container (1200px max) |
+| `.left-part` | Sidebar panel (320px) |
+| `.h-n80` | Full height minus header |
+
+### DRY Principle - Add Reusable Classes to globals.css
+
+**When you find yourself repeating the same Tailwind pattern 3+ times, ADD IT TO globals.css.**
+
+Example workflow:
+```css
+/* BAD: Repeating the same pattern everywhere */
+<div className="flex items-center gap-2 text-sm text-darklink">
+<div className="flex items-center gap-2 text-sm text-darklink">
+<div className="flex items-center gap-2 text-sm text-darklink">
+
+/* GOOD: Add to globals.css */
+.meta-text {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--color-darklink);
+}
+
+/* Then use */
+<div className="meta-text">
+```
+
+**Rules for adding new classes:**
+1. Must be used in 3+ places
+2. Use CSS variables for colors (not hardcoded)
+3. Support dark mode with `.dark` prefix
+4. Add comment describing purpose
+5. Follow existing naming patterns (`.ui-*`, `.form-*`, `.badge-*`)
+
+### Typography
+
+- Font: Inter (Google Fonts)
+- Headings: Use template's heading classes
+- Body: text-sm (14px), text-base (16px)
+
+### Layout Pattern
+
+```tsx
+// Page layout pattern (from template)
+import CardBox from '@/components/shared/CardBox';
+
+export default function PageName() {
+  return (
+    <CardBox>
+      <div className="flex items-center justify-between mb-4">
+        <h4 className="text-lg font-semibold">Page Title</h4>
+        {/* Actions */}
+      </div>
+      {/* Content */}
+    </CardBox>
+  );
+}
+```
+
+### Component Copy Strategy
+
+When building UI:
+
+1. Find the component in `design/.../packages/main/src/app/components/`
+2. Copy to `/src/shared/` or `/src/modules/<domain>/ui/`
+3. Adapt for CRM needs (French labels, Supabase data binding)
+4. Remove unused features from copied component
+
+### Before Building Any UI
+
+1. Check if template has a similar component
+2. Copy the component structure
+3. Adapt for CRM needs (French labels, data binding)
+4. Maintain template's styling patterns
 
 ---
 

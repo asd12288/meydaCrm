@@ -1,26 +1,617 @@
 @import "tailwindcss";
 
+/* ============================================
+   MaterialM Design System - CSS Variables
+   ============================================ */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Primary Theme: Blue (default) */
+  --color-primary: #00A1FF;
+  --color-secondary: #8965E5;
+  --color-primary-emphasis: #0091E5;
+  --color-secondary-emphasis: #7c57d9;
+  --color-lightprimary: #00A1FF20;
+  --color-lightsecondary: #8965E520;
+
+  /* Status Colors */
+  --color-info: #46caeb;
+  --color-success: #00ceb6;
+  --color-warning: #FFB900;
+  --color-error: #FF6692;
+
+  /* Light Status Variants */
+  --color-lightsuccess: #00ceb625;
+  --color-lighterror: #FF669230;
+  --color-lightinfo: #46caeb25;
+  --color-lightwarning: #FFB90025;
+
+  /* Emphasis (hover) variants */
+  --color-error-emphasis: #d9577c;
+  --color-warning-emphasis: #d9941a;
+  --color-success-emphasis: #10bd9d;
+  --color-info-emphasis: #3cacc8;
+
+  /* Neutral Colors */
+  --color-white: #fff;
+  --color-dark: #111c2d;
+  --color-border: #e0e6eb;
+  --color-bordergray: #cfd6db;
+  --color-darkborder: #333F55;
+  --color-link: #2a3547;
+  --color-muted: #EFF4FA;
+  --color-darkmuted: #2A3851;
+  --color-darklink: #7b8893;
+  --color-lightgray: #F8FAFD;
+  --color-lighthover: #F6F9FC;
+  --color-darkgray: #1A2537;
+  --color-surface: #ffffff;
+
+  /* Layout */
+  --radius: 0.5rem;
+  --sidebar-width: 270px;
+  --header-height: 70px;
 }
+
+/* Dark Mode Variables */
+.dark {
+  --color-surface: #1A2537;
+}
+
+/* ============================================
+   Tailwind v4 Theme Extension
+   ============================================ */
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Colors */
+  --color-primary: var(--color-primary);
+  --color-secondary: var(--color-secondary);
+  --color-info: var(--color-info);
+  --color-success: var(--color-success);
+  --color-warning: var(--color-warning);
+  --color-error: var(--color-error);
+
+  /* Light variants */
+  --color-lightprimary: var(--color-lightprimary);
+  --color-lightsecondary: var(--color-lightsecondary);
+  --color-lightsuccess: var(--color-lightsuccess);
+  --color-lighterror: var(--color-lighterror);
+  --color-lightinfo: var(--color-lightinfo);
+  --color-lightwarning: var(--color-lightwarning);
+
+  /* Emphasis variants */
+  --color-primaryemphasis: var(--color-primary-emphasis);
+  --color-secondaryemphasis: var(--color-secondary-emphasis);
+  --color-erroremphasis: var(--color-error-emphasis);
+  --color-warningemphasis: var(--color-warning-emphasis);
+  --color-successemphasis: var(--color-success-emphasis);
+  --color-infoemphasis: var(--color-info-emphasis);
+
+  /* Neutrals */
+  --color-dark: var(--color-dark);
+  --color-border: var(--color-border);
+  --color-bordergray: var(--color-bordergray);
+  --color-darkborder: var(--color-darkborder);
+  --color-link: var(--color-link);
+  --color-muted: var(--color-muted);
+  --color-darkmuted: var(--color-darkmuted);
+  --color-darklink: var(--color-darklink);
+  --color-lightgray: var(--color-lightgray);
+  --color-lighthover: var(--color-lighthover);
+  --color-darkgray: var(--color-darkgray);
+  --color-surface: var(--color-surface);
+
+  /* Font */
+  --font-sans: "Inter", system-ui, sans-serif;
+
+  /* Font sizes */
+  --text-13: 13px;
+  --text-15: 15px;
+  --text-17: 17px;
+  --text-22: 22px;
+  --text-28: 28px;
+  --text-34: 34px;
+  --text-40: 40px;
+  --text-44: 44px;
+  --text-50: 50px;
+  --text-56: 56px;
+  --text-64: 64px;
+
+  /* Border radius */
+  --radius-sm: 7px;
+  --radius-md: 9px;
+  --radius-lg: 24px;
+  --radius-tw: 12px;
+
+  /* Shadows */
+  --shadow-md: 0px 1px 4px 0px rgba(133, 146, 173, 0.2);
+  --shadow-lg: 0 1rem 3rem rgba(0, 0, 0, 0.175);
+  --shadow-sm: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  --shadow-dark-md: rgba(145, 158, 171, 0.3) 0px 0px 2px 0px, rgba(145, 158, 171, 0.02) 0px 12px 24px -4px;
+  --shadow-tw: rgba(175, 182, 201, 0.2) 0px 2px 4px -1px;
+  --shadow-elevation1: 0px 12px 30px -2px rgba(58, 75, 116, 0.14);
+  --shadow-elevation2: 0px 24px 24px -12px rgba(0, 0, 0, 0.05);
+  --shadow-elevation3: 0px 24px 24px -12px rgba(99, 91, 255, 0.15);
+  --shadow-elevation4: 0px 12px 12px -6px rgba(0, 0, 0, 0.15);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+/* ============================================
+   Base Styles
+   ============================================ */
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: var(--color-darklink);
+  background-color: var(--color-surface);
+  overflow-x: hidden;
+}
+
+/* Headings */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--color-dark);
+  font-weight: 600;
+}
+
+.dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6 {
+  color: var(--color-white);
+}
+
+/* ============================================
+   Utility Classes
+   ============================================ */
+
+/* Text utilities */
+.text-ld {
+  color: var(--color-dark);
+}
+.dark .text-ld {
+  color: var(--color-white);
+}
+
+.text-primary-ld:hover {
+  color: var(--color-primary);
+}
+
+/* Border utilities */
+.border-ld {
+  border-color: var(--color-border);
+}
+.dark .border-ld {
+  border-color: var(--color-darkborder);
+}
+
+/* Background hover */
+.bg-hover:hover {
+  background-color: var(--color-lighthover);
+}
+.dark .bg-hover:hover {
+  background-color: var(--color-darkmuted);
+}
+
+/* ============================================
+   Card Component
+   ============================================ */
+
+.card-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-dark);
+}
+.dark .card-title {
+  color: var(--color-white);
+}
+
+.card-subtitle {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-darklink);
+}
+
+/* ============================================
+   Form Controls
+   ============================================ */
+
+.form-control input,
+.form-control-input {
+  border: 1px solid var(--color-border);
+  background-color: transparent;
+  width: 100%;
+  font-size: 0.875rem;
+  border-radius: var(--radius-md);
+  padding: 0.625rem 0.875rem;
+  transition: border-color 0.15s ease-in-out;
+}
+
+.dark .form-control input,
+.dark .form-control-input {
+  border-color: var(--color-darkborder);
+  background-color: transparent;
+}
+
+.form-control input:focus,
+.form-control-input:focus {
+  border-color: var(--color-primary);
+  outline: none;
+  box-shadow: none;
+  ring: none;
+}
+
+.form-control-rounded input {
+  border-radius: 9999px;
+}
+
+input::placeholder {
+  color: var(--color-darklink);
+}
+
+/* Checkbox */
+.checkbox {
+  height: 18px;
+  width: 18px;
+  border: 1px solid var(--color-bordergray);
+  background-color: transparent;
+}
+.dark .checkbox {
+  border-color: var(--color-darkborder);
+}
+
+[type='checkbox']:checked,
+[type='radio']:checked {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+[type='checkbox'],
+[type='radio'] {
+  color: var(--color-primary);
+}
+
+/* Select */
+.select-md select {
+  border: 1px solid var(--color-border);
+  background-color: transparent;
+  width: 100%;
+  font-size: 0.875rem;
+  border-radius: var(--radius-md);
+  padding: 0.625rem 2.5rem 0.625rem 1rem;
+}
+.dark .select-md select {
+  border-color: var(--color-darkborder);
+  background-color: var(--color-darkgray);
+}
+.select-md select:focus {
+  border-color: var(--color-primary);
+  outline: none;
+  ring: none;
+}
+
+/* ============================================
+   Button Styles
+   ============================================ */
+
+/* Primary button hover */
+button.bg-primary:hover,
+.btn-primary:hover {
+  background-color: var(--color-primary-emphasis);
+}
+
+button.bg-secondary:hover,
+.btn-secondary:hover {
+  background-color: var(--color-secondary-emphasis);
+}
+
+button.bg-success:hover,
+.btn-success:hover {
+  background-color: var(--color-success-emphasis);
+}
+
+button.bg-warning:hover,
+.btn-warning:hover {
+  background-color: var(--color-warning-emphasis);
+}
+
+button.bg-error:hover,
+.btn-error:hover {
+  background-color: var(--color-error-emphasis);
+}
+
+button.bg-info:hover,
+.btn-info:hover {
+  background-color: var(--color-info-emphasis);
+}
+
+/* Circle button */
+.btn-circle {
+  height: 2rem;
+  width: 2rem;
+  border-radius: 9999px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0;
+}
+
+.btn-circle-hover {
+  height: 2.25rem;
+  width: 2.25rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 9999px;
+  background-color: transparent;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+}
+.btn-circle-hover:hover {
+  background-color: var(--color-lightprimary);
+  color: var(--color-primary);
+}
+
+/* UI Button (Headless UI style) */
+.ui-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.625rem 1.25rem;
+  color: white;
+  font-weight: 500;
+  border-radius: 9999px;
+  transition: all 0.15s ease-in-out;
+}
+
+.ui-button-small {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1.5rem;
+  color: white;
+  font-weight: 500;
+  border-radius: 9999px;
+}
+
+/* ============================================
+   Dropdown
+   ============================================ */
+
+.dropdown {
+  box-shadow: var(--shadow-md);
+  background-color: var(--color-white);
+  border-radius: var(--radius-sm);
+  position: relative;
+}
+.dark .dropdown {
+  background-color: var(--color-dark);
+  box-shadow: var(--shadow-dark-md);
+}
+
+.ui-dropdown {
+  width: 100%;
+  max-width: 14rem;
+  background-color: var(--color-white);
+  box-shadow: var(--shadow-md);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 0;
+}
+.dark .ui-dropdown {
+  background-color: var(--color-dark);
+  box-shadow: var(--shadow-dark-md);
+}
+
+.ui-dropdown-item {
+  display: flex;
+  width: 100%;
+  gap: 0.75rem;
+  cursor: pointer;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  color: var(--color-dark);
+  transition: all 0.15s ease-in-out;
+}
+.dark .ui-dropdown-item {
+  color: var(--color-white);
+}
+.ui-dropdown-item:hover {
+  color: var(--color-primary);
+  background-color: var(--color-lighthover);
+}
+.dark .ui-dropdown-item:hover {
+  background-color: var(--color-darkmuted);
+}
+
+.ui-dropdown-animation {
+  transform-origin: top right;
+  transition: opacity 100ms ease-out, transform 100ms ease-out;
+}
+
+/* ============================================
+   Table Styles
+   ============================================ */
+
+.sorting button {
+  background-color: transparent;
+  color: var(--color-dark);
+  padding: 0;
+}
+.dark .sorting button {
+  color: var(--color-white);
+}
+.sorting button:hover {
+  background-color: transparent;
+}
+
+/* ============================================
+   Apps Layout
+   ============================================ */
+
+.left-part {
+  width: 20rem;
+  border-right: 1px solid var(--color-border);
+  padding: 1.5rem;
+}
+.dark .left-part {
+  border-color: var(--color-darkborder);
+}
+
+/* ============================================
+   Avatar
+   ============================================ */
+
+.avatar-full img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ============================================
+   Scrollbar
+   ============================================ */
+
+.simplebar-scrollbar:before {
+  background: var(--color-border) !important;
+}
+
+[data-simplebar],
+.simplebar-offset,
+.simplebar-content,
+.simplebar-wrapper,
+.simplebar-mask,
+.simplebar-content-wrapper {
+  outline: none !important;
+  border: none !important;
+}
+
+/* ============================================
+   Focus States
+   ============================================ */
+
+:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+/* ============================================
+   Animation Classes
+   ============================================ */
+
+.dropdown-enter {
+  opacity: 0;
+  transform: scale(0.95);
+}
+
+.dropdown-enter-active {
+  opacity: 1;
+  transform: translate(0);
+  transition: opacity 150ms, transform 150ms;
+}
+
+.dropdown-leave {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.dropdown-leave-active {
+  opacity: 0;
+  transform: scale(0.95);
+  transition: opacity 150ms, transform 150ms;
+}
+
+/* ============================================
+   Dark Mode Specific Overrides
+   ============================================ */
+
+.dark body {
+  background-color: var(--color-dark);
+  color: var(--color-darklink);
+}
+
+/* Calendar picker in dark mode */
+.dark ::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+}
+
+/* ============================================
+   Height Utilities
+   ============================================ */
+
+.h-n80 {
+  height: calc(100vh - 80px);
+}
+
+/* ============================================
+   Container
+   ============================================ */
+
+.container {
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 30px;
+  padding-right: 30px;
+}
+
+/* ============================================
+   Status Badge Classes
+   ============================================ */
+
+.badge-primary {
+  background-color: var(--color-lightprimary);
+  color: var(--color-primary);
+}
+
+.badge-secondary {
+  background-color: var(--color-lightsecondary);
+  color: var(--color-secondary);
+}
+
+.badge-success {
+  background-color: var(--color-lightsuccess);
+  color: var(--color-success);
+}
+
+.badge-warning {
+  background-color: var(--color-lightwarning);
+  color: var(--color-warning);
+}
+
+.badge-error {
+  background-color: var(--color-lighterror);
+  color: var(--color-error);
+}
+
+.badge-info {
+  background-color: var(--color-lightinfo);
+  color: var(--color-info);
+}
+
+/* Solid badges */
+.badge-solid-primary {
+  background-color: var(--color-primary);
+  color: white;
+}
+
+.badge-solid-secondary {
+  background-color: var(--color-secondary);
+  color: white;
+}
+
+.badge-solid-success {
+  background-color: var(--color-success);
+  color: white;
+}
+
+.badge-solid-warning {
+  background-color: var(--color-warning);
+  color: white;
+}
+
+.badge-solid-error {
+  background-color: var(--color-error);
+  color: white;
+}
+
+.badge-solid-info {
+  background-color: var(--color-info);
+  color: white;
 }

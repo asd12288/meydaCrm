@@ -6,20 +6,32 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
+    "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.89.0",
+    "@tabler/icons-react": "^3.36.0",
     "drizzle-orm": "^0.45.1",
+    "flowbite": "^4.0.1",
+    "flowbite-react": "^0.12.14",
     "next": "16.1.0",
+    "postgres": "^3.4.7",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "simplebar-react": "^3.3.2"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^17.2.3",
+    "drizzle-kit": "^0.31.8",
     "eslint": "^9",
     "eslint-config-next": "16.1.0",
     "tailwindcss": "^4",

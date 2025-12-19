@@ -1,0 +1,139 @@
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "jsr:@supabase/supabase-js@2";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
+};
+
+interface CreateUserRequest {
+  username: string;
+  password: string;
+  displayName: string;
+  role: "admin" | "sales";
+}
+
+Deno.serve(async (req: Request) => {
+  // Handle CORS preflight
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+
+  try {
+    // Create admin client with service role
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+        },
+      }
+    );
+
+    // Verify caller is admin (except for initial setup)
+    const authHeader = req.headers.get("Authorization");
+    if (authHeader) {
+      const token = authHeader.replace("Bearer ", "");
+      const {
+        data: { user: caller },
+      } = await supabaseAdmin.auth.getUser(token);
+
+      if (caller) {
+        const { data: callerProfile } = await supabaseAdmin
+          .from("profiles")
+          .select("role")
+          .eq("id", caller.id)
+          .single();
+
+        if (callerProfile?.role !== "admin") {
+          return new Response(
+            JSON.stringify({ error: "Acces non autorise" }),
+            {
+              status: 403,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            }
+          );
+        }
+      }
+    }
+
+    // Parse request body
+    const { username, password, displayName, role }: CreateUserRequest =
+      await req.json();
+
+    if (!username || !password || !displayName || !role) {
+      return new Response(
+        JSON.stringify({ error: "Champs requis manquants" }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // Create fake email from username
+    const email = `${username.toLowerCase().replace(/\s+/g, ".")}@crm.local`;
+
+    // Create auth user
+    const { data: authData, error: authError } =
+      await supabaseAdmin.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true, // Auto-confirm since we don't use real emails
+        user_metadata: {
+          username,
+          display_name: displayName,
+          role,
+        },
+      });
+
+    if (authError) {
+      return new Response(
+        JSON.stringify({ error: authError.message }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // Profile is created automatically by trigger, but let's update it with correct values
+    if (authData.user) {
+      await supabaseAdmin
+        .from("profiles")
+        .update({
+          role,
+          display_name: displayName,
+        })
+        .eq("id", authData.user.id);
+    }
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        user: {
+          id: authData.user?.id,
+          email,
+          username,
+          displayName,
+          role,
+        },
+      }),
+      {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
+  } catch (error) {
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
+  }
+});
