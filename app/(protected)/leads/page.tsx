@@ -1,23 +1,14 @@
-import { CardBox, PageHeader } from '@/modules/shared';
+import { LeadsListView } from '@/modules/leads';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Leads - Meyda',
 };
 
-export default function LeadsPage() {
-  return (
-    <div>
-      <PageHeader
-        title="Leads"
-        description="Gerez tous vos leads"
-      />
+interface PageProps {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}
 
-      <CardBox>
-        <p className="text-darklink">
-          La liste des leads sera implementee dans la Phase 3.
-        </p>
-      </CardBox>
-    </div>
-  );
+export default function LeadsPage({ searchParams }: PageProps) {
+  return <LeadsListView searchParams={searchParams} />;
 }

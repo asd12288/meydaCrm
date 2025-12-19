@@ -1,0 +1,220 @@
+'use server';
+
+import { revalidatePath } from 'next/cache';
+import { createClient } from '@/lib/supabase/server';
+import { getCurrentUser, requireAdmin } from '@/modules/auth';
+import { LEAD_STATUS_LABELS } from '@/db/types';
+import type { LeadStatus } from '@/db/types';
+import type {
+  LeadFilters,
+  PaginatedLeadsResponse,
+  LeadWithAssignee,
+  SalesUser,
+} from '../types';
+
+/**
+ * Fetch paginated leads with filters
+ * RLS automatically filters: admin sees all, sales sees only assigned
+ */
+export async function getLeads(
+  filters: LeadFilters
+): Promise<PaginatedLeadsResponse> {
+  const supabase = await createClient();
+
+  // Build base query with assignee join
+  let query = supabase
+    .from('leads')
+    .select('*, assignee:profiles!leads_assigned_to_profiles_id_fk(id, display_name)', {
+      count: 'exact',
+    })
+    .is('deleted_at', null);
+
+  // Apply search filter (across multiple fields)
+  if (filters.search) {
+    const searchTerm = `%${filters.search}%`;
+    query = query.or(
+      `first_name.ilike.${searchTerm},last_name.ilike.${searchTerm},email.ilike.${searchTerm},phone.ilike.${searchTerm},company.ilike.${searchTerm}`
+    );
+  }
+
+  // Apply status filter
+  if (filters.status) {
+    query = query.eq('status', filters.status);
+  }
+
+  // Apply assignee filter (admin only - sales can't filter by assignee)
+  if (filters.assignedTo) {
+    query = query.eq('assigned_to', filters.assignedTo);
+  }
+
+  // Apply sorting
+  const sortColumn = filters.sortBy || 'updated_at';
+  const ascending = filters.sortOrder === 'asc';
+  query = query.order(sortColumn, { ascending });
+
+  // Apply pagination
+  const pageSize = filters.pageSize || 20;
+  const page = filters.page || 1;
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+  query = query.range(from, to);
+
+  const { data, error, count } = await query;
+
+  if (error) {
+    console.error('Error fetching leads:', error);
+    return {
+      leads: [],
+      total: 0,
+      page,
+      pageSize,
+      totalPages: 0,
+    };
+  }
+
+  const total = count || 0;
+  const totalPages = Math.ceil(total / pageSize);
+
+  return {
+    leads: (data as LeadWithAssignee[]) || [],
+    total,
+    page,
+    pageSize,
+    totalPages,
+  };
+}
+
+/**
+ * Get all users for assignee dropdown (admin only)
+ */
+export async function getSalesUsers(): Promise<SalesUser[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, display_name, role')
+    .order('display_name');
+
+  if (error) {
+    console.error('Error fetching sales users:', error);
+    return [];
+  }
+
+  return data || [];
+}
+
+/**
+ * Update lead status and create history entry
+ */
+export async function updateLeadStatus(
+  leadId: string,
+  newStatus: LeadStatus
+): Promise<{ success?: boolean; error?: string }> {
+  const supabase = await createClient();
+  const user = await getCurrentUser();
+
+  if (!user) {
+    return { error: 'Non authentifie' };
+  }
+
+  // Get current lead data for history
+  const { data: currentLead, error: fetchError } = await supabase
+    .from('leads')
+    .select('status, status_label')
+    .eq('id', leadId)
+    .single();
+
+  if (fetchError || !currentLead) {
+    return { error: 'Lead non trouve' };
+  }
+
+  // Update lead with new status
+  const { error: updateError } = await supabase
+    .from('leads')
+    .update({
+      status: newStatus,
+      status_label: LEAD_STATUS_LABELS[newStatus],
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', leadId);
+
+  if (updateError) {
+    console.error('Error updating lead status:', updateError);
+    return { error: 'Erreur lors de la mise a jour du statut' };
+  }
+
+  // Create history entry
+  const { error: historyError } = await supabase.from('lead_history').insert({
+    lead_id: leadId,
+    actor_id: user.id,
+    event_type: 'status_changed',
+    before_data: { status: currentLead.status, status_label: currentLead.status_label },
+    after_data: { status: newStatus, status_label: LEAD_STATUS_LABELS[newStatus] },
+  });
+
+  if (historyError) {
+    console.error('Error creating history entry:', historyError);
+    // Don't fail the operation for history errors
+  }
+
+  revalidatePath('/leads');
+  return { success: true };
+}
+
+/**
+ * Bulk assign leads to a user (admin only)
+ */
+export async function bulkAssignLeads(
+  leadIds: string[],
+  assigneeId: string
+): Promise<{ success?: boolean; error?: string; count?: number }> {
+  const user = await requireAdmin();
+  const supabase = await createClient();
+
+  if (!leadIds.length) {
+    return { error: 'Aucun lead selectionne' };
+  }
+
+  // Get current assignment data for history
+  const { data: currentLeads } = await supabase
+    .from('leads')
+    .select('id, assigned_to')
+    .in('id', leadIds);
+
+  // Bulk update leads
+  const { error: updateError } = await supabase
+    .from('leads')
+    .update({
+      assigned_to: assigneeId,
+      updated_at: new Date().toISOString(),
+    })
+    .in('id', leadIds);
+
+  if (updateError) {
+    console.error('Error bulk assigning leads:', updateError);
+    return { error: 'Erreur lors de l\'assignation' };
+  }
+
+  // Create history entries for each lead
+  if (currentLeads) {
+    const historyEntries = currentLeads.map((lead) => ({
+      lead_id: lead.id,
+      actor_id: user.id,
+      event_type: 'assigned' as const,
+      before_data: { assigned_to: lead.assigned_to },
+      after_data: { assigned_to: assigneeId },
+    }));
+
+    const { error: historyError } = await supabase
+      .from('lead_history')
+      .insert(historyEntries);
+
+    if (historyError) {
+      console.error('Error creating history entries:', historyError);
+      // Don't fail the operation for history errors
+    }
+  }
+
+  revalidatePath('/leads');
+  return { success: true, count: leadIds.length };
+}

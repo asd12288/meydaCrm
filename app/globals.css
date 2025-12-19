@@ -311,22 +311,38 @@ input::placeholder {
 }
 
 /* Select */
-.select-md select {
+.select-md select,
+select.select-md {
   border: 1px solid var(--color-border);
-  background-color: transparent;
+  background-color: var(--color-white);
   width: 100%;
   font-size: 0.875rem;
   border-radius: var(--radius-md);
   padding: 0.625rem 2.5rem 0.625rem 1rem;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%237b8893' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 0.5rem center;
+  background-repeat: no-repeat;
+  background-size: 1.5em 1.5em;
 }
-.dark .select-md select {
+.dark .select-md select,
+.dark select.select-md {
   border-color: var(--color-darkborder);
   background-color: var(--color-darkgray);
+  color: var(--color-white);
 }
-.select-md select:focus {
+.select-md select:focus,
+select.select-md:focus {
   border-color: var(--color-primary);
   outline: none;
   ring: none;
+}
+
+/* Native select option styling for dark mode */
+.dark select option {
+  background-color: var(--color-dark);
+  color: var(--color-white);
 }
 
 /* ============================================
@@ -674,4 +690,103 @@ button.bg-info:hover,
 .badge-solid-info {
   background-color: var(--color-info);
   color: white;
+}
+
+/* ============================================
+   Flowbite React Dropdown Overrides
+   ============================================ */
+
+/* Flowbite dropdown container */
+[data-testid="flowbite-dropdown"] {
+  background-color: var(--color-white);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-md);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0;
+}
+.dark [data-testid="flowbite-dropdown"] {
+  background-color: var(--color-dark);
+  border-color: var(--color-darkborder);
+  box-shadow: var(--shadow-dark-md);
+}
+
+/* Flowbite dropdown items */
+[data-testid="flowbite-dropdown"] button,
+[data-testid="flowbite-dropdown"] a {
+  display: flex;
+  width: 100%;
+  gap: 0.75rem;
+  cursor: pointer;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  color: var(--color-dark);
+  background-color: transparent;
+  transition: all 0.15s ease-in-out;
+}
+.dark [data-testid="flowbite-dropdown"] button,
+.dark [data-testid="flowbite-dropdown"] a {
+  color: var(--color-white);
+}
+
+[data-testid="flowbite-dropdown"] button:hover,
+[data-testid="flowbite-dropdown"] a:hover {
+  color: var(--color-primary);
+  background-color: var(--color-lighthover);
+}
+.dark [data-testid="flowbite-dropdown"] button:hover,
+.dark [data-testid="flowbite-dropdown"] a:hover {
+  background-color: var(--color-darkmuted);
+}
+
+/* Flowbite tooltip/floating elements */
+[data-floating-ui-portal] > div {
+  z-index: 50;
+}
+
+[data-floating-ui-portal] [role="tooltip"],
+[data-floating-ui-portal] [role="menu"] {
+  background-color: var(--color-white) !important;
+  border: 1px solid var(--color-border) !important;
+  box-shadow: var(--shadow-md) !important;
+  border-radius: var(--radius-sm) !important;
+}
+.dark [data-floating-ui-portal] [role="tooltip"],
+.dark [data-floating-ui-portal] [role="menu"] {
+  background-color: var(--color-dark) !important;
+  border-color: var(--color-darkborder) !important;
+  box-shadow: var(--shadow-dark-md) !important;
+}
+
+/* Flowbite dropdown item styling */
+[data-floating-ui-portal] [role="menuitem"],
+[data-floating-ui-portal] li > button,
+[data-floating-ui-portal] li > a {
+  display: flex;
+  width: 100%;
+  gap: 0.75rem;
+  cursor: pointer;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  color: var(--color-dark);
+  background-color: transparent;
+  transition: all 0.15s ease-in-out;
+}
+.dark [data-floating-ui-portal] [role="menuitem"],
+.dark [data-floating-ui-portal] li > button,
+.dark [data-floating-ui-portal] li > a {
+  color: var(--color-white);
+}
+
+[data-floating-ui-portal] [role="menuitem"]:hover,
+[data-floating-ui-portal] li > button:hover,
+[data-floating-ui-portal] li > a:hover {
+  color: var(--color-primary);
+  background-color: var(--color-lighthover);
+}
+.dark [data-floating-ui-portal] [role="menuitem"]:hover,
+.dark [data-floating-ui-portal] li > button:hover,
+.dark [data-floating-ui-portal] li > a:hover {
+  background-color: var(--color-darkmuted);
 }
