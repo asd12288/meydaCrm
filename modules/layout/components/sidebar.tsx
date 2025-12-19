@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { navigationItems } from '../config/navigation';
+import { Logo } from '@/modules/shared';
 import type { UserRole } from '@/db/types';
 
 interface SidebarProps {
@@ -20,9 +21,9 @@ export function Sidebar({ userRole }: SidebarProps) {
   return (
     <aside className="fixed left-0 top-0 z-40 h-screen w-64 bg-white dark:bg-darkgray border-r border-ld">
       {/* Logo */}
-      <div className="h-[70px] flex items-center px-6 border-b border-ld">
-        <Link href="/dashboard" className="text-xl font-bold text-primary">
-          Meyda
+      <div className="h-[60px] flex items-center justify-center border-b border-ld">
+        <Link href="/dashboard">
+          <Logo width={120} height={32} />
         </Link>
       </div>
 
