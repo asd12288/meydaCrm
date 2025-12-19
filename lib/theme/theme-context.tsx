@@ -68,12 +68,14 @@ export function ThemeProvider({
     const stored = getStoredTheme();
     const resolved = stored === 'system' ? getSystemTheme() : stored;
 
-    // Batch state updates
+    // Batch state updates - this is intentional for hydration sync
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setThemeState(stored);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setResolvedTheme(resolved);
     applyTheme(resolved);
-    setMounted(true);
     // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMounted(true);
   }, []);
 
   // Handle theme changes after mount
@@ -81,10 +83,10 @@ export function ThemeProvider({
     if (!mounted) return;
 
     const resolved = theme === 'system' ? getSystemTheme() : theme;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setResolvedTheme(resolved);
     applyTheme(resolved);
     localStorage.setItem(STORAGE_KEY, theme);
-    // eslint-disable-next-line react-hooks/set-state-in-effect
   }, [theme, mounted]);
 
   // Listen for system theme changes when in system mode
