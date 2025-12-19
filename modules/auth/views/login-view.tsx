@@ -13,7 +13,7 @@ export function LoginView() {
         {/* Left side - decorative */}
         <div className="xl:col-span-4 lg:col-span-4 col-span-12 bg-primary lg:block hidden relative overflow-hidden">
           <div className="flex flex-col items-center justify-center h-full text-white p-8">
-            <h1 className="text-3xl font-bold mb-4">CRM Medya</h1>
+            <h1 className="text-3xl font-bold mb-4">Meyda</h1>
             <p className="text-center opacity-90">
               Gerez vos leads efficacement
             </p>
@@ -26,7 +26,7 @@ export function LoginView() {
             <div className="max-w-[420px] w-full mx-auto">
               {/* Logo */}
               <div className="mb-6">
-                <h2 className="text-2xl font-bold text-primary">CRM Medya</h2>
+                <h2 className="text-2xl font-bold text-primary">Meyda</h2>
               </div>
 
               <h3 className="text-2xl font-bold my-3 text-ld">Connexion</h3>

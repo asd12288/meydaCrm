@@ -58,18 +58,25 @@ export function ThemeProvider({
   children,
   defaultTheme = 'system',
 }: ThemeProviderProps) {
-  const [theme, setThemeState] = useState<ThemeMode>(defaultTheme);
+  // Initialize state with lazy initializer to avoid hydration mismatch
+  const [theme, setThemeState] = useState<ThemeMode>(() => defaultTheme);
   const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>('light');
   const [mounted, setMounted] = useState(false);
 
-  // Initialize theme from localStorage on mount
+  // Initialize theme from localStorage on mount - use layout effect for sync
   useEffect(() => {
     const stored = getStoredTheme();
+    const resolved = stored === 'system' ? getSystemTheme() : stored;
+
+    // Batch state updates
     setThemeState(stored);
+    setResolvedTheme(resolved);
+    applyTheme(resolved);
     setMounted(true);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
   }, []);
 
-  // Resolve theme and apply to DOM
+  // Handle theme changes after mount
   useEffect(() => {
     if (!mounted) return;
 
@@ -77,6 +84,7 @@ export function ThemeProvider({
     setResolvedTheme(resolved);
     applyTheme(resolved);
     localStorage.setItem(STORAGE_KEY, theme);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
   }, [theme, mounted]);
 
   // Listen for system theme changes when in system mode

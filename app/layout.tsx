@@ -9,7 +9,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'CRM Medya',
+  title: 'Meyda - CRM Solution',
   description: 'Systeme de gestion des leads',
 };
 

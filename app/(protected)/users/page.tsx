@@ -4,7 +4,7 @@ import { CardBox, PageHeader } from '@/modules/shared';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Utilisateurs - CRM Medya',
+  title: 'Utilisateurs - Meyda',
 };
 
 export default async function UsersPage() {

@@ -2,7 +2,7 @@ import { CardBox, PageHeader } from '@/modules/shared';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Tableau de bord - CRM Medya',
+  title: 'Tableau de bord - Meyda',
 };
 
 export default function DashboardPage() {

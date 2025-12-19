@@ -4,7 +4,7 @@ import { CardBox, PageHeader } from '@/modules/shared';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Import - CRM Medya',
+  title: 'Import - Meyda',
 };
 
 export default async function ImportPage() {
@@ -35,7 +35,7 @@ export default async function ImportPage() {
 
       <CardBox>
         <p className="text-darklink">
-          L'import de leads sera implemente dans les Phases 6-7.
+          {"L'import de leads sera implemente dans les Phases 6-7."}
         </p>
       </CardBox>
     </div>

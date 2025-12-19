@@ -1,4 +1,4 @@
-# CLAUDE.md — CRM Medya (Next.js 16 + Supabase + Netlify)
+# CLAUDE.md — Meyda - CRM Solution (Next.js 16 + Supabase + Netlify)
 
 This file provides persistent context for Claude Code while developing this repository.
 It defines the product scope, architecture, folder conventions, coding standards, and safe workflows.
@@ -421,7 +421,7 @@ If commands differ, update this section.
 
 The detailed project plan, phases, and task tracking are maintained in Notion:
 
-- **Notion Page**: [CRM Medya - Project Plan & Task Management](https://www.notion.so/2ce0795a035381999f76f6e2e6468800)
+- **Notion Page**: [Meyda - Project Plan & Task Management](https://www.notion.so/2ce0795a035381999f76f6e2e6468800)
 - **Tasks Database**: 63 tasks across 8 phases with Status, Priority, and Estimated Hours
 
 When working on this project:

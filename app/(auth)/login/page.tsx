@@ -2,7 +2,7 @@ import { LoginView } from '@/modules/auth';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Connexion - CRM Medya',
+  title: 'Connexion - Meyda',
   description: 'Connectez-vous a votre CRM',
 };
 

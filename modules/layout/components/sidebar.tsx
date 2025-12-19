@@ -22,7 +22,7 @@ export function Sidebar({ userRole }: SidebarProps) {
       {/* Logo */}
       <div className="h-[70px] flex items-center px-6 border-b border-ld">
         <Link href="/dashboard" className="text-xl font-bold text-primary">
-          CRM Medya
+          Meyda
         </Link>
       </div>
 

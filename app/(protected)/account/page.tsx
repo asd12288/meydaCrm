@@ -2,7 +2,7 @@ import { CardBox, PageHeader } from '@/modules/shared';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Mon compte - CRM Medya',
+  title: 'Mon compte - Meyda',
 };
 
 export default function AccountPage() {
