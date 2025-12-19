@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { IconX, IconUserPlus } from '@tabler/icons-react';
+import { toast } from '@/modules/shared';
 import { bulkAssignLeads } from '../lib/actions';
 import type { SalesUser } from '../types';
 
@@ -18,17 +19,19 @@ export function BulkActionsBar({
 }: BulkActionsBarProps) {
   const [assigneeId, setAssigneeId] = useState('');
   const [isPending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
 
   const handleAssign = () => {
     if (!assigneeId) return;
 
-    setError(null);
     startTransition(async () => {
       const result = await bulkAssignLeads(selectedIds, assigneeId);
       if (result.error) {
-        setError(result.error);
+        toast.error('Erreur d\'assignation', result.error);
       } else {
+        toast.success(
+          'Leads assignes',
+          `${result.count} lead${result.count && result.count > 1 ? 's' : ''} assigne${result.count && result.count > 1 ? 's' : ''} avec succes`
+        );
         setAssigneeId('');
         onClearSelection();
       }

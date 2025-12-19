@@ -1,5 +1,6 @@
 import { Sidebar } from '../components/sidebar';
 import { Header } from '../components/header';
+import { Toaster } from '@/modules/shared';
 import type { NormalizedProfile } from '@/lib/auth';
 
 interface DashboardLayoutProps {
@@ -17,6 +18,9 @@ export function DashboardLayout({ children, profile }: DashboardLayoutProps) {
 
         <main className="p-6 min-h-[calc(100vh-70px)]">{children}</main>
       </div>
+
+      {/* Global toast notifications */}
+      <Toaster />
     </div>
   );
 }

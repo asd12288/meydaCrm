@@ -67,13 +67,11 @@ export const leads = pgTable(
 
     // RLS Policies
 
-    // Admin can read all leads
+    // Admin can read all leads (uses get_user_role() to prevent RLS recursion)
     pgPolicy('admin_read_all_leads', {
       for: 'select',
       to: authenticatedRole,
-      using: sql`(
-        SELECT role FROM profiles WHERE id = (select auth.uid())
-      ) = 'admin'`,
+      using: sql`public.get_user_role() = 'admin'`,
     }),
 
     // Sales can only read assigned leads
@@ -83,25 +81,19 @@ export const leads = pgTable(
       using: sql`${table.assignedTo} = (select auth.uid())`,
     }),
 
-    // Admin can insert leads
+    // Admin can insert leads (uses get_user_role() to prevent RLS recursion)
     pgPolicy('admin_insert_leads', {
       for: 'insert',
       to: authenticatedRole,
-      withCheck: sql`(
-        SELECT role FROM profiles WHERE id = (select auth.uid())
-      ) = 'admin'`,
+      withCheck: sql`public.get_user_role() = 'admin'`,
     }),
 
-    // Admin can update all leads
+    // Admin can update all leads (uses get_user_role() to prevent RLS recursion)
     pgPolicy('admin_update_all_leads', {
       for: 'update',
       to: authenticatedRole,
-      using: sql`(
-        SELECT role FROM profiles WHERE id = (select auth.uid())
-      ) = 'admin'`,
-      withCheck: sql`(
-        SELECT role FROM profiles WHERE id = (select auth.uid())
-      ) = 'admin'`,
+      using: sql`public.get_user_role() = 'admin'`,
+      withCheck: sql`public.get_user_role() = 'admin'`,
     }),
 
     // Sales can update assigned leads
@@ -112,13 +104,11 @@ export const leads = pgTable(
       withCheck: sql`${table.assignedTo} = (select auth.uid())`,
     }),
 
-    // Only admin can delete (soft delete)
+    // Only admin can delete (soft delete) - uses get_user_role() to prevent RLS recursion
     pgPolicy('admin_delete_leads', {
       for: 'delete',
       to: authenticatedRole,
-      using: sql`(
-        SELECT role FROM profiles WHERE id = (select auth.uid())
-      ) = 'admin'`,
+      using: sql`public.get_user_role() = 'admin'`,
     }),
   ]
 );

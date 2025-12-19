@@ -3,6 +3,7 @@
 import { useTransition } from 'react';
 import { Dropdown, DropdownItem } from 'flowbite-react';
 import { IconChevronDown } from '@tabler/icons-react';
+import { toast } from '@/modules/shared';
 import { STATUS_COLORS, LEAD_STATUS_OPTIONS } from '../config/constants';
 import { updateLeadStatus } from '../lib/actions';
 import type { LeadStatus } from '@/db/types';
@@ -29,7 +30,9 @@ export function LeadStatusBadge({
     startTransition(async () => {
       const result = await updateLeadStatus(leadId, newStatus);
       if (result.error) {
-        console.error(result.error);
+        toast.error('Erreur', result.error);
+      } else {
+        toast.success('Statut mis a jour');
       }
     });
   };

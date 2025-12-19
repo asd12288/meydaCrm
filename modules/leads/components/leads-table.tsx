@@ -59,10 +59,10 @@ export function LeadsTable({ leads, isAdmin, salesUsers }: LeadsTableProps) {
         />
       )}
 
-      {/* Table container */}
-      <div className="border rounded-md border-ld overflow-x-auto">
+      {/* Table container with sticky header support */}
+      <div className="border rounded-md border-ld overflow-auto max-h-[calc(100vh-320px)]">
         <table className="min-w-full">
-          <thead className="bg-lightgray dark:bg-darkgray">
+          <thead className="bg-lightgray dark:bg-darkgray sticky top-0 z-10 shadow-sm">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (

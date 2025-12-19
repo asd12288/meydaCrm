@@ -16,10 +16,13 @@
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
+    "@radix-ui/react-toast": "^1.2.15",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.89.0",
     "@tabler/icons-react": "^3.36.0",
     "@tanstack/react-table": "^8.21.3",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "drizzle-orm": "^0.45.1",
     "flowbite": "^4.0.1",
     "flowbite-react": "^0.12.14",
@@ -28,6 +31,7 @@
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "simplebar-react": "^3.3.2",
+    "tailwind-merge": "^3.4.0",
     "use-debounce": "^10.0.6"
   },
   "devDependencies": {
