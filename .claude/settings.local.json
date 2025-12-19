@@ -1,0 +1,13 @@
+{
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "supabase"
+  ],
+  "permissions": {
+    "allow": [
+      "mcp__notion__*",
+      "mcp__supabase__*",
+      "mcp__Ref__*"
+    ]
+  }
+}
