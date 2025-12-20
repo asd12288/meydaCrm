@@ -1,6 +1,7 @@
 'use client';
 
 import { IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
+import { Button } from '@/components/ui/button';
 import { useFilterNavigation } from '../hooks/use-filter-navigation';
 
 interface TicketsPaginationProps {
@@ -32,15 +33,16 @@ export function TicketsPagination({
       </div>
 
       <div className="flex items-center gap-2">
-        <button
+        <Button
           type="button"
+          variant="circleHover"
+          size="circle"
           onClick={() => goToPage(page - 1)}
           disabled={page === 1}
-          className="btn-circle-hover disabled:opacity-50 disabled:cursor-not-allowed"
           aria-label="Page précédente"
         >
           <IconChevronLeft size={18} />
-        </button>
+        </Button>
 
         <div className="flex items-center gap-1">
           {Array.from({ length: totalPages }, (_, i) => i + 1)
@@ -60,31 +62,30 @@ export function TicketsPagination({
                   {showEllipsisBefore && (
                     <span className="px-2 text-darklink">...</span>
                   )}
-                  <button
+                  <Button
                     type="button"
+                    variant={p === page ? 'default' : 'ghost'}
+                    size="sm"
                     onClick={() => goToPage(p)}
-                    className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
-                      p === page
-                        ? 'bg-primary text-white'
-                        : 'text-darklink hover:bg-hover'
-                    }`}
+                    className={p === page ? 'bg-primary text-white' : 'text-darklink'}
                   >
                     {p}
-                  </button>
+                  </Button>
                 </div>
               );
             })}
         </div>
 
-        <button
+        <Button
           type="button"
+          variant="circleHover"
+          size="circle"
           onClick={() => goToPage(page + 1)}
           disabled={page === totalPages}
-          className="btn-circle-hover disabled:opacity-50 disabled:cursor-not-allowed"
           aria-label="Page suivante"
         >
           <IconChevronRight size={18} />
-        </button>
+        </Button>
       </div>
     </div>
   );

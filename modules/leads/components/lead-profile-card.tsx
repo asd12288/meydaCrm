@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
-import { Dropdown, DropdownItem } from 'flowbite-react';
+import { useTransition, useOptimistic } from 'react';
 import {
   IconMail,
   IconPhone,
@@ -15,7 +14,15 @@ import {
   IconEdit,
   IconId,
 } from '@tabler/icons-react';
-import { CardBox, UserAvatar } from '@/modules/shared';
+import { Button } from '@/components/ui/button';
+import {
+  CardBox,
+  UserAvatar,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  useToast,
+} from '@/modules/shared';
 import { LeadStatusBadge } from '../ui/lead-status-badge';
 import { ContactInfoItem } from '../ui/contact-info-item';
 import { assignLead } from '../lib/actions';
@@ -28,14 +35,21 @@ interface LeadProfileCardProps {
   onEditClick: () => void;
 }
 
+type AssigneeType = { id: string; display_name: string | null } | null;
+
 export function LeadProfileCard({
   lead,
   isAdmin,
   salesUsers,
   onEditClick,
 }: LeadProfileCardProps) {
+  const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
-  const [currentAssignee, setCurrentAssignee] = useState(lead.assignee);
+
+  // Optimistic assignee state
+  const [optimisticAssignee, setOptimisticAssignee] = useOptimistic<AssigneeType>(
+    lead.assignee
+  );
 
   // Build display name
   const displayName =
@@ -58,19 +72,22 @@ export function LeadProfileCard({
   };
 
   const handleAssigneeChange = (userId: string | null) => {
-    if (userId === lead.assigned_to) return;
+    // Compute new assignee for optimistic update
+    const newAssignee: AssigneeType = userId
+      ? (() => {
+          const user = salesUsers.find((u) => u.id === userId);
+          return user ? { id: user.id, display_name: user.display_name } : null;
+        })()
+      : null;
 
     startTransition(async () => {
+      // Optimistic: update immediately
+      setOptimisticAssignee(newAssignee);
+
       const result = await assignLead(lead.id, userId);
-      if (result.success) {
-        const newAssignee = userId
-          ? salesUsers.find((u) => u.id === userId)
-          : null;
-        setCurrentAssignee(
-          newAssignee
-            ? { id: newAssignee.id, display_name: newAssignee.display_name }
-            : null
-        );
+      if (result.error) {
+        toast.error(result.error);
+        // Revalidation will restore the correct state
       }
     });
   };
@@ -103,60 +120,65 @@ export function LeadProfileCard({
       {isAdmin && (
         <div className="flex items-center gap-2 pb-4">
           <span className="text-xs text-darklink">Assigné à:</span>
-          <Dropdown
-            label=""
-            dismissOnClick
-            renderTrigger={() => (
+          <DropdownMenu
+            position="bottom-left"
+            widthClass="w-56"
+            trigger={(isOpen) => (
               <button
                 type="button"
                 disabled={isPending}
                 className="inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm bg-lightgray dark:bg-darkborder hover:bg-lightprimary dark:hover:bg-primary/20 transition-colors disabled:opacity-50"
               >
-                {currentAssignee ? (
+                {optimisticAssignee ? (
                   <UserAvatar
-                    name={currentAssignee.display_name}
-                    avatar={salesUsers.find((u) => u.id === currentAssignee.id)?.avatar}
+                    name={optimisticAssignee.display_name}
+                    avatar={salesUsers.find((u) => u.id === optimisticAssignee.id)?.avatar}
                     size="sm"
                   />
                 ) : (
                   <IconUser size={14} />
                 )}
-                {currentAssignee?.display_name || 'Non assigné'}
-                <IconChevronDown size={14} />
+                {optimisticAssignee?.display_name || 'Non assigné'}
+                <IconChevronDown
+                  size={14}
+                  className={`transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                />
               </button>
             )}
           >
-            <DropdownItem
-              onClick={() => handleAssigneeChange(null)}
-              className={!currentAssignee ? 'font-medium bg-lightgray dark:bg-darkborder' : ''}
-            >
-              <span className="flex items-center gap-2">
-                <span className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center">
-                  <IconUser size={12} />
-                </span>
-                Non assigné
-              </span>
-            </DropdownItem>
-            {salesUsers.map((user) => (
-              <DropdownItem
-                key={user.id}
-                onClick={() => handleAssigneeChange(user.id)}
-                className={
-                  user.id === currentAssignee?.id
-                    ? 'font-medium bg-lightgray dark:bg-darkborder'
-                    : ''
-                }
+            <DropdownMenuContent maxHeight="300px">
+              <DropdownMenuItem
+                onClick={() => handleAssigneeChange(null)}
+                className={!optimisticAssignee ? 'font-medium bg-lightgray dark:bg-darkborder' : ''}
               >
                 <span className="flex items-center gap-2">
-                  <UserAvatar name={user.display_name} avatar={user.avatar} size="sm" />
-                  <span>{user.display_name || user.id.slice(0, 8)}</span>
-                  {user.role === 'admin' && (
-                    <span className="text-xs text-darklink">(Admin)</span>
-                  )}
+                  <span className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center">
+                    <IconUser size={12} />
+                  </span>
+                  Non assigné
                 </span>
-              </DropdownItem>
-            ))}
-          </Dropdown>
+              </DropdownMenuItem>
+              {salesUsers.map((user) => (
+                <DropdownMenuItem
+                  key={user.id}
+                  onClick={() => handleAssigneeChange(user.id)}
+                  className={
+                    user.id === optimisticAssignee?.id
+                      ? 'font-medium bg-lightgray dark:bg-darkborder'
+                      : ''
+                  }
+                >
+                  <span className="flex items-center gap-2">
+                    <UserAvatar name={user.display_name} avatar={user.avatar} size="sm" />
+                    <span>{user.display_name || user.id.slice(0, 8)}</span>
+                    {user.role === 'admin' && (
+                      <span className="text-xs text-darklink">(Admin)</span>
+                    )}
+                  </span>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       )}
 
@@ -222,14 +244,15 @@ export function LeadProfileCard({
       </div>
 
       {/* Edit Button */}
-      <button
+      <Button
         type="button"
+        variant="primary"
         onClick={onEditClick}
-        className="ui-button bg-primary text-white w-full mt-4 gap-2"
+        className="w-full mt-4"
       >
         <IconEdit size={18} />
         Modifier
-      </button>
+      </Button>
     </CardBox>
   );
 }

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
+import { Button } from "@/components/ui/button";
 import { navigationItems, navGroups } from "../config/navigation";
 import { Logo } from "@/modules/shared";
 import { useSidebar } from "../context/sidebar-context";
@@ -51,9 +52,10 @@ export function Sidebar({ userRole }: SidebarProps) {
             <Logo size="md" />
           </Link>
         )}
-        <button
+        <Button
+          variant="ghost"
+          size="iconSm"
           onClick={toggleSidebar}
-          className="p-2 rounded-lg hover:bg-lightgray dark:hover:bg-darkgray transition-colors"
           title={isCollapsed ? "Agrandir le menu" : "Réduire le menu"}
         >
           {isCollapsed ? (
@@ -61,7 +63,7 @@ export function Sidebar({ userRole }: SidebarProps) {
           ) : (
             <IconChevronLeft size={18} className="text-darklink" />
           )}
-        </button>
+        </Button>
       </div>
 
       {/* Navigation */}

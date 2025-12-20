@@ -19,6 +19,7 @@ import {
   IconMail,
 } from '@tabler/icons-react';
 import { FilterDropdown, type FilterOption, UserAvatar } from '@/modules/shared';
+import { Button } from '@/components/ui/button';
 import { useFilterNavigation } from '../hooks/use-filter-navigation';
 import { LEAD_STATUS_OPTIONS, STATUS_COLORS, SEARCH_DEBOUNCE_MS, MIN_SEARCH_LENGTH } from '../config/constants';
 import { UNASSIGNED_FILTER_VALUE } from '../types';
@@ -50,9 +51,10 @@ const BADGE_TO_TEXT_COLOR: Record<string, string> = {
 interface LeadFiltersProps {
   salesUsers: SalesUser[];
   isAdmin: boolean;
+  hideStatusFilter?: boolean;
 }
 
-export function LeadFilters({ salesUsers, isAdmin }: LeadFiltersProps) {
+export function LeadFilters({ salesUsers, isAdmin, hideStatusFilter = false }: LeadFiltersProps) {
   const { searchParams, updateFilter, clearFilters } = useFilterNavigation();
   const [searchValue, setSearchValue] = useState(searchParams.get('search') || '');
 
@@ -75,7 +77,7 @@ export function LeadFilters({ salesUsers, isAdmin }: LeadFiltersProps) {
     handleSearch(value);
   };
 
-  const hasActiveFilters = currentSearch || currentStatus || currentAssignee;
+  const hasActiveFilters = currentSearch || (!hideStatusFilter && currentStatus) || currentAssignee;
 
   // Convert status options to FilterOption format with icons and colors
   const statusOptions: FilterOption[] = useMemo(
@@ -146,14 +148,16 @@ export function LeadFilters({ salesUsers, isAdmin }: LeadFiltersProps) {
         )}
       </div>
 
-      {/* Status filter dropdown */}
-      <FilterDropdown
-        options={statusOptions}
-        value={currentStatus}
-        onChange={(value) => updateFilter('status', value)}
-        placeholder="Tous les statuts"
-        icon={IconFilter}
-      />
+      {/* Status filter dropdown (hidden in kanban view where columns are statuses) */}
+      {!hideStatusFilter && (
+        <FilterDropdown
+          options={statusOptions}
+          value={currentStatus}
+          onChange={(value) => updateFilter('status', value)}
+          placeholder="Tous les statuts"
+          icon={IconFilter}
+        />
+      )}
 
       {/* Assignee filter (admin only) */}
       {isAdmin && (
@@ -207,14 +211,16 @@ export function LeadFilters({ salesUsers, isAdmin }: LeadFiltersProps) {
 
       {/* Clear filters button */}
       {hasActiveFilters && (
-        <button
+        <Button
           type="button"
+          variant="ghostDanger"
+          size="sm"
           onClick={clearFilters}
-          className="h-10 flex items-center gap-1 px-3 text-sm text-darklink hover:text-error transition-colors"
+          className="h-10"
         >
           <IconX size={16} />
           Effacer
-        </button>
+        </Button>
       )}
     </div>
   );

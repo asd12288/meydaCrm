@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
 /* ============================================
    Tailwind v4 Dark Mode Configuration
@@ -145,9 +146,50 @@
   --color-surface: #f4f4f5;
 
   /* Layout */
-  --radius: 0.5rem;
+  --radius: 0.625rem;
   --sidebar-width: 270px;
   --header-height: 70px;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+  --kanban-board-circle-blue: oklch(0.6232 0.1879 259.80);
+  --kanban-board-circle-cyan: oklch(0.7146 0.1256 215.13);
+  --kanban-board-circle-gray: oklch(0.5513 0.0233 264.36);
+  --kanban-board-circle-green: oklch(0.7229 0.1921 149.58);
+  --kanban-board-circle-indigo: oklch(0.5860 0.2037 277.12);
+  --kanban-board-circle-pink: oklch(0.6559 0.2117 354.34);
+  --kanban-board-circle-purple: oklch(0.6267 0.2325 303.86);
+  --kanban-board-circle-red: oklch(0.6368 0.2078 25.33);
+  --kanban-board-circle-violet: oklch(0.6059 0.2187 292.72);
+  --kanban-board-circle-yellow: oklch(0.7959 0.1618 86.05);
 }
 
 /* Dark Mode Variables */
@@ -162,6 +204,47 @@
   --color-darklink: #a1a1aa;
   --color-dark: #2a2a2e;
   --color-darkgray: #1a1a1f;
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+  --kanban-board-circle-blue: oklch(0.7135 0.1435 254.61);
+  --kanban-board-circle-cyan: oklch(0.7973 0.1339 211.45);
+  --kanban-board-circle-gray: oklch(0.7137 0.0192 261.33);
+  --kanban-board-circle-green: oklch(0.8003 0.1823 151.70);
+  --kanban-board-circle-indigo: oklch(0.6797 0.1586 276.96);
+  --kanban-board-circle-pink: oklch(0.7253 0.1752 349.74);
+  --kanban-board-circle-purple: oklch(0.7218 0.1766 305.51);
+  --kanban-board-circle-red: oklch(0.7108 0.1660 22.21);
+  --kanban-board-circle-violet: oklch(0.7093 0.1589 293.52);
+  --kanban-board-circle-yellow: oklch(0.8601 0.1730 91.84);
 }
 
 /* Theme Transition */
@@ -249,6 +332,48 @@ html.dark {
   --shadow-elevation2: 0px 24px 24px -12px rgba(0, 0, 0, 0.05);
   --shadow-elevation3: 0px 24px 24px -12px rgba(99, 91, 255, 0.15);
   --shadow-elevation4: 0px 12px 12px -6px rgba(0, 0, 0, 0.15);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+  --kanban-board-circle-primary: var(--primary);
+  --color-kanban-board-circle-yellow: var(--kanban-board-circle-yellow);
+  --color-kanban-board-circle-violet: var(--kanban-board-circle-violet);
+  --color-kanban-board-circle-red: var(--kanban-board-circle-red);
+  --color-kanban-board-circle-purple: var(--kanban-board-circle-purple);
+  --color-kanban-board-circle-pink: var(--kanban-board-circle-pink);
+  --color-kanban-board-circle-indigo: var(--kanban-board-circle-indigo);
+  --color-kanban-board-circle-green: var(--kanban-board-circle-green);
+  --color-kanban-board-circle-gray: var(--kanban-board-circle-gray);
+  --color-kanban-board-circle-cyan: var(--kanban-board-circle-cyan);
+  --color-kanban-board-circle-blue: var(--kanban-board-circle-blue);
 }
 
 /* ============================================
@@ -773,6 +898,42 @@ button.bg-info:hover,
   transition: opacity 100ms ease-out, transform 100ms ease-out;
 }
 
+/* Dropdown item stagger animation */
+@keyframes dropdown-item-enter {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.dropdown-item-stagger {
+  opacity: 0;
+  animation: dropdown-item-enter 150ms ease-out forwards;
+}
+
+.dropdown-item-stagger:nth-child(1) { animation-delay: 0ms; }
+.dropdown-item-stagger:nth-child(2) { animation-delay: 30ms; }
+.dropdown-item-stagger:nth-child(3) { animation-delay: 60ms; }
+.dropdown-item-stagger:nth-child(4) { animation-delay: 90ms; }
+.dropdown-item-stagger:nth-child(5) { animation-delay: 120ms; }
+.dropdown-item-stagger:nth-child(6) { animation-delay: 150ms; }
+.dropdown-item-stagger:nth-child(7) { animation-delay: 180ms; }
+.dropdown-item-stagger:nth-child(8) { animation-delay: 210ms; }
+
+/* Dropdown item hover slide effect */
+.dropdown-item-slide {
+  position: relative;
+  transition: padding-left 150ms ease, background-color 150ms ease;
+}
+
+.dropdown-item-slide:hover {
+  padding-left: 1.25rem;
+}
+
 /* ============================================
    Table Styles
    ============================================ */
@@ -1142,6 +1303,76 @@ button.bg-info:hover,
    Table Utilities
    ============================================ */
 
+/* Table row animations */
+@keyframes row-highlight {
+  0% {
+    background-color: var(--color-lightprimary);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+@keyframes checkbox-check {
+  0% {
+    transform: scale(0.8);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.animate-row-highlight {
+  animation: row-highlight 600ms ease-out;
+}
+
+.animate-checkbox-check {
+  animation: checkbox-check 200ms ease-out;
+}
+
+/* Table row hover effect with left accent */
+.table-row-animated {
+  position: relative;
+  transition: background-color 150ms ease, transform 100ms ease;
+}
+
+.table-row-animated::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background-color: var(--color-primary);
+  transform: scaleY(0);
+  transition: transform 150ms ease;
+}
+
+.table-row-animated:hover::before {
+  transform: scaleY(1);
+}
+
+.table-row-animated:hover {
+  background-color: var(--color-lighthover);
+}
+.dark .table-row-animated:hover {
+  background-color: var(--color-darkgray);
+}
+
+.table-row-selected {
+  background-color: var(--color-lightprimary) !important;
+}
+.dark .table-row-selected {
+  background-color: var(--color-darkborder) !important;
+}
+
+.table-row-selected::before {
+  transform: scaleY(1) !important;
+}
+
 .table-header-sticky {
   position: sticky;
   top: 0;
@@ -1244,6 +1475,63 @@ button.bg-info:hover,
    Toast Animations (for Radix Toast)
    ============================================ */
 
+/* Modal animations */
+@keyframes modal-backdrop-enter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modal-content-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes modal-backdrop-exit {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes modal-content-exit {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
+  }
+}
+
+.animate-modal-backdrop-enter {
+  animation: modal-backdrop-enter 200ms ease-out forwards;
+}
+
+.animate-modal-content-enter {
+  animation: modal-content-enter 200ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.animate-modal-backdrop-exit {
+  animation: modal-backdrop-exit 150ms ease-in forwards;
+}
+
+.animate-modal-content-exit {
+  animation: modal-content-exit 150ms ease-in forwards;
+}
+
 @keyframes toast-slide-in {
   from {
     transform: translateX(100%);
@@ -1264,6 +1552,10 @@ button.bg-info:hover,
     transform: translateX(100%);
     opacity: 0;
   }
+}
+
+.animate-slide-out-right {
+  animation: toast-slide-out 0.15s ease-in forwards;
 }
 
 /* ============================================
@@ -1659,17 +1951,17 @@ button.bg-info:hover,
   /* Primary brand gradient for welcome card */
   --dashboard-gradient-from: #3b82f6;
   --dashboard-gradient-to: #1d4ed8;
-  
+
   /* Chart colors - limited palette */
   --dashboard-chart-1: var(--color-primary);
   --dashboard-chart-2: #94a3b8; /* slate-400 - neutral secondary */
   --dashboard-chart-3: #cbd5e1; /* slate-300 - neutral tertiary */
-  
+
   /* Semantic colors (keep these for meaning) */
   --dashboard-positive: var(--color-success);
   --dashboard-negative: var(--color-error);
   --dashboard-neutral: #64748b; /* slate-500 */
-  
+
   /* Icon backgrounds - subtle, professional */
   --dashboard-icon-bg: var(--color-lightgray);
   --dashboard-icon-color: var(--color-darklink);
@@ -1725,6 +2017,54 @@ button.bg-info:hover,
   flex-shrink: 0;
   background-color: var(--dashboard-icon-bg);
   color: var(--dashboard-icon-color);
+}
+
+/* Dashboard stagger animations - subtle fade only */
+@keyframes dashboard-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-dashboard-card {
+  animation: dashboard-fade-in 300ms ease-out forwards;
+}
+
+.animate-dashboard-stat {
+  animation: dashboard-fade-in 200ms ease-out forwards;
+}
+
+/* No floating animation - static avatar */
+.animate-float {
+  /* Disabled - was too distracting */
+}
+
+/* Removed pulse-glow - too distracting */
+.animate-pulse-glow {
+  /* Disabled */
+}
+
+/* Dashboard stat stagger delays - faster, subtler */
+.dashboard-stat-1 { animation-delay: 0ms; }
+.dashboard-stat-2 { animation-delay: 50ms; }
+.dashboard-stat-3 { animation-delay: 100ms; }
+.dashboard-stat-4 { animation-delay: 150ms; }
+
+/* Dashboard activity items - simple fade, no stagger */
+.dashboard-activity-item {
+  /* No animation by default - content shows immediately */
+}
+
+/* Dashboard action hover effect - very subtle */
+.dashboard-action-item {
+  transition: background-color 150ms ease;
+}
+
+.dashboard-action-item:hover {
+  /* No transform - just background change handled by hover:bg-* */
 }
 
 /* Dashboard progress bar */
@@ -1822,4 +2162,202 @@ button.bg-info:hover,
 .dark .dashboard-period-btn.active {
   background-color: var(--color-dark);
   color: var(--color-white);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  :root {
+    --color-kanban-board-circle-blue: var(--kanban-board-circle-blue);
+    --color-kanban-board-circle-cyan: var(--kanban-board-circle-cyan);
+    --color-kanban-board-circle-gray: var(--kanban-board-circle-gray);
+    --color-kanban-board-circle-green: var(--kanban-board-circle-green);
+    --color-kanban-board-circle-indigo: var(--kanban-board-circle-indigo);
+    --color-kanban-board-circle-pink: var(--kanban-board-circle-pink);
+    --color-kanban-board-circle-primary: var(--kanban-board-circle-primary);
+    --color-kanban-board-circle-purple: var(--kanban-board-circle-purple);
+    --color-kanban-board-circle-red: var(--kanban-board-circle-red);
+    --color-kanban-board-circle-violet: var(--kanban-board-circle-violet);
+    --color-kanban-board-circle-yellow: var(--kanban-board-circle-yellow);
+  }
+}
+
+/* ==========================================
+   Kanban Board Styles
+   ========================================== */
+
+/* Kanban card micro-animations */
+@keyframes kanban-card-drop {
+  0% {
+    transform: scale(1.03) rotate(2deg);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(0.98) rotate(0deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+@keyframes kanban-card-appear {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes count-badge-pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.15);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.animate-kanban-drop {
+  animation: kanban-card-drop 250ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.animate-kanban-appear {
+  animation: kanban-card-appear 200ms ease-out;
+}
+
+.animate-count-pulse {
+  animation: count-badge-pulse 300ms ease-out;
+}
+
+/* Kanban column styling - columns should be darker than cards */
+[data-slot="kanban-column"],
+section[aria-labelledby^="column-"] {
+  background-color: var(--color-lightgray) !important;
+  border-color: var(--color-border) !important;
+}
+.dark [data-slot="kanban-column"],
+.dark section[aria-labelledby^="column-"] {
+  background-color: #1a1a1f !important; /* Darker than cards */
+  border-color: var(--color-darkborder) !important;
+}
+
+/* Kanban card styling - cards should be lighter than column background */
+[data-slot="kanban-card"],
+button[aria-roledescription="draggable"] {
+  background-color: var(--color-white) !important;
+  border-color: var(--color-border) !important;
+  color: var(--color-dark) !important;
+}
+.dark [data-slot="kanban-card"],
+.dark button[aria-roledescription="draggable"] {
+  background-color: #2a2a2e !important; /* Slightly lighter than column */
+  border-color: var(--color-darkborder) !important;
+  color: var(--color-white) !important;
+}
+
+/* Kanban card hover */
+[data-slot="kanban-card"]:hover,
+button[aria-roledescription="draggable"]:hover {
+  box-shadow: var(--shadow-sm);
+}
+.dark [data-slot="kanban-card"]:hover,
+.dark button[aria-roledescription="draggable"]:hover {
+  box-shadow: var(--shadow-dark-sm);
+}
+
+/* Kanban card title */
+[data-slot="kanban-card"] h3 {
+  color: var(--color-dark);
+}
+.dark [data-slot="kanban-card"] h3 {
+  color: var(--color-white);
+}
+
+/* Kanban column title */
+[data-slot="kanban-column"] h2,
+section[aria-labelledby^="column-"] h2 {
+  color: var(--color-darklink);
+}
+.dark [data-slot="kanban-column"] h2,
+.dark section[aria-labelledby^="column-"] h2 {
+  color: var(--color-white);
+}
+
+/* Kanban popover styling */
+[data-slot="popover-content"] {
+  background-color: var(--color-white);
+  border-color: var(--color-border);
+}
+.dark [data-slot="popover-content"] {
+  background-color: var(--color-dark);
+  border-color: var(--color-darkborder);
+}
+
+/* Kanban card button group */
+[data-slot="kanban-card"] [role="button"] {
+  background-color: var(--color-white);
+  border-color: var(--color-border);
+}
+.dark [data-slot="kanban-card"] [role="button"] {
+  background-color: var(--color-darkgray);
+  border-color: var(--color-darkborder);
+}
+
+/* Kanban drag styles - cleaner animation */
+button[aria-roledescription="draggable"][data-dragging="true"],
+button[aria-roledescription="draggable"]:active {
+  opacity: 0.8;
+  transform: scale(1.02) rotate(2deg);
+  box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.2), 0 4px 10px -5px rgba(0, 0, 0, 0.1);
+  cursor: grabbing !important;
+  z-index: 100;
+}
+.dark button[aria-roledescription="draggable"][data-dragging="true"],
+.dark button[aria-roledescription="draggable"]:active {
+  box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.5), 0 4px 10px -5px rgba(0, 0, 0, 0.3);
+}
+
+/* Smooth transition for cards */
+button[aria-roledescription="draggable"] {
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+}
+
+/* Drop target indicator */
+[data-slot="kanban-column"][data-drop-target="true"],
+section[aria-labelledby^="column-"][data-drop-target="true"] {
+  border-color: var(--color-primary) !important;
+  background-color: color-mix(in srgb, var(--color-primary) 5%, transparent) !important;
+}
+
+/* Column list scrollbar styling */
+[data-slot="kanban-column"] ul {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
+}
+.dark [data-slot="kanban-column"] ul {
+  scrollbar-color: var(--color-darkborder) transparent;
+}
+[data-slot="kanban-column"] ul::-webkit-scrollbar {
+  width: 6px;
+}
+[data-slot="kanban-column"] ul::-webkit-scrollbar-track {
+  background: transparent;
+}
+[data-slot="kanban-column"] ul::-webkit-scrollbar-thumb {
+  background-color: var(--color-border);
+  border-radius: 3px;
+}
+.dark [data-slot="kanban-column"] ul::-webkit-scrollbar-thumb {
+  background-color: var(--color-darkborder);
 }

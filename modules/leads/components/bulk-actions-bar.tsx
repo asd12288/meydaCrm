@@ -1,6 +1,9 @@
 'use client';
 
+import { useTransition } from 'react';
 import { IconX } from '@tabler/icons-react';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/modules/shared';
 import { bulkAssignLeads } from '../lib/actions';
 import { AssignDropdown } from '../ui/assign-dropdown';
 import type { SalesUser } from '../types';
@@ -16,45 +19,80 @@ export function BulkActionsBar({
   salesUsers,
   onClearSelection,
 }: BulkActionsBarProps) {
+  const [isPending, startTransition] = useTransition();
+  const { toast } = useToast();
+
   const handleAssign = (userIds: string | string[] | null) => {
     if (selectedIds.length === 0) return;
 
-    // Optimistic: clear immediately
+    // Save IDs before clearing
     const idsToAssign = [...selectedIds];
+    const totalLeads = idsToAssign.length;
+
+    // Optimistic: clear selection immediately
     onClearSelection();
 
-    // Handle single user assignment (including unassign with null)
-    if (userIds === null || typeof userIds === 'string') {
-      bulkAssignLeads(idsToAssign, userIds);
-      return;
-    }
+    startTransition(async () => {
+      try {
+        // Handle single user assignment (including unassign with null)
+        if (userIds === null || typeof userIds === 'string') {
+          const result = await bulkAssignLeads(idsToAssign, userIds);
+          if (result.error) {
+            toast.error(result.error);
+          } else {
+            const count = result.count ?? 0;
+            const action = userIds === null ? 'désassignés' : 'assignés';
+            toast.success(`${count} lead${count > 1 ? 's' : ''} ${action}`);
+          }
+          return;
+        }
 
-    // Multi-user: distribute leads evenly (round-robin)
-    const assigneeIds = userIds;
-    if (assigneeIds.length === 0) return;
+        // Multi-user: distribute leads evenly (round-robin)
+        const assigneeIds = userIds;
+        if (assigneeIds.length === 0) return;
 
-    // Group leads by assignee for efficient batch calls
-    const assignmentsByUser: Record<string, string[]> = {};
-    for (let i = 0; i < idsToAssign.length; i++) {
-      const assigneeId = assigneeIds[i % assigneeIds.length];
-      if (!assignmentsByUser[assigneeId]) {
-        assignmentsByUser[assigneeId] = [];
+        // Group leads by assignee for efficient batch calls
+        const assignmentsByUser: Record<string, string[]> = {};
+        for (let i = 0; i < idsToAssign.length; i++) {
+          const assigneeId = assigneeIds[i % assigneeIds.length];
+          if (!assignmentsByUser[assigneeId]) {
+            assignmentsByUser[assigneeId] = [];
+          }
+          assignmentsByUser[assigneeId].push(idsToAssign[i]);
+        }
+
+        // Fire assignments in parallel and wait for all
+        const results = await Promise.all(
+          Object.entries(assignmentsByUser).map(([assigneeId, leadIds]) =>
+            bulkAssignLeads(leadIds, assigneeId)
+          )
+        );
+
+        // Calculate totals
+        const totalAssigned = results.reduce((sum, r) => sum + (r.count || 0), 0);
+        const errors = results.filter((r) => r.error);
+
+        if (errors.length > 0) {
+          if (totalAssigned > 0) {
+            toast.warning(`${totalAssigned}/${totalLeads} leads assignés`);
+          } else {
+            toast.error('Erreur lors de l\'assignation');
+          }
+        } else {
+          toast.success(`${totalAssigned} lead${totalAssigned > 1 ? 's' : ''} assigné${totalAssigned > 1 ? 's' : ''}`);
+        }
+      } catch {
+        toast.error('Erreur lors de l\'assignation');
       }
-      assignmentsByUser[assigneeId].push(idsToAssign[i]);
-    }
-
-    // Fire assignments in parallel
-    Object.entries(assignmentsByUser).forEach(([assigneeId, leadIds]) => {
-      bulkAssignLeads(leadIds, assigneeId);
     });
   };
 
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-4 duration-200">
-      <div className="flex items-center gap-4 px-5 py-3 bg-white dark:bg-darkgray border border-ld rounded-full shadow-xl dark:shadow-dark-lg">
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-4 zoom-in-95 duration-300">
+      <div className="flex items-center gap-4 px-5 py-3 bg-white dark:bg-darkgray border border-ld rounded-full shadow-xl dark:shadow-dark-lg hover:shadow-2xl transition-shadow duration-200">
         {/* Selection indicator */}
         <div className="flex items-center gap-2">
-          <span className="flex items-center justify-center w-7 h-7 rounded-full bg-primary text-white text-xs font-bold">
+          <span className="flex items-center justify-center w-7 h-7 rounded-full bg-primary text-white text-xs font-bold transition-transform duration-200 hover:scale-110">
             {selectedIds.length}
           </span>
           <span className="text-sm font-medium text-ld">
@@ -70,20 +108,24 @@ export function BulkActionsBar({
           salesUsers={salesUsers}
           onAssign={handleAssign}
           enableMultiSelect
+          disabled={isPending}
         />
 
         {/* Divider */}
         <div className="w-px h-6 bg-bordergray dark:bg-darkborder" />
 
         {/* Clear selection */}
-        <button
+        <Button
           type="button"
+          variant="ghostDanger"
+          size="iconSm"
           onClick={onClearSelection}
-          className="flex items-center justify-center w-8 h-8 rounded-full text-darklink hover:bg-lighterror hover:text-error transition-colors"
+          className="rounded-full"
           title="Annuler la sélection"
+          disabled={isPending}
         >
           <IconX size={18} />
-        </button>
+        </Button>
       </div>
     </div>
   );

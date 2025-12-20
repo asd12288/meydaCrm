@@ -26,4 +26,4 @@ export * from './types';
 export { ROLE_COLORS, COLUMN_LABELS } from './config/constants';
 
 // Re-export from centralized constants
-export { ROLE_OPTIONS, ROLE_LABELS } from '@/lib/constants';
+export { ROLE_OPTIONS, USER_ROLE_OPTIONS, ROLE_LABELS } from '@/lib/constants';

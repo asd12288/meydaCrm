@@ -57,6 +57,29 @@ export const LEAD_STATUS_OPTIONS: { value: LeadStatus; label: string }[] = [
   { value: 'mail', label: 'Mail' },
 ];
 
+// Kanban column configuration (order reflects sales workflow)
+// Colors map to KanbanBoardCircleColor from shadcn-kanban-board
+import type { KanbanBoardCircleColor } from '@/components/kanban';
+
+export const KANBAN_COLUMNS: {
+  status: LeadStatus;
+  label: string;
+  color: KanbanBoardCircleColor;
+}[] = [
+  { status: 'callback', label: 'Rappeler', color: 'cyan' },
+  { status: 'relance', label: 'Relance', color: 'blue' },
+  { status: 'no_answer_1', label: 'Pas de réponse 1', color: 'yellow' },
+  { status: 'no_answer_2', label: 'Pas de réponse 2', color: 'red' },
+  { status: 'mail', label: 'Mail', color: 'purple' },
+  { status: 'rdv', label: 'RDV', color: 'green' },
+  { status: 'deposit', label: 'Dépôt', color: 'green' },
+  { status: 'not_interested', label: 'Pas intéressé', color: 'gray' },
+  { status: 'wrong_number', label: 'Faux numéro', color: 'gray' },
+];
+
+// Kanban page size (show more leads per column for better overview)
+export const KANBAN_PAGE_SIZE = 200;
+
 // Pagination defaults
 export const DEFAULT_PAGE_SIZE = 20;
 export const PAGE_SIZE_OPTIONS = [20, 50, 100];

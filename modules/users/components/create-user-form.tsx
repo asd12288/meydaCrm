@@ -1,12 +1,12 @@
 'use client';
 
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { IconUserPlus } from '@tabler/icons-react';
 import {
   FormField,
   FormPasswordField,
-  FormSelect,
+  FormSelectDropdown,
   FormErrorAlert,
   FormSuccessAlert,
   FormActions,
@@ -14,7 +14,7 @@ import {
 } from '@/modules/shared';
 import { createUserSchema, USER_FIELD_LABELS } from '../types';
 import type { CreateUserInput } from '../types';
-import { ROLE_OPTIONS, ROLES } from '@/lib/constants';
+import { USER_ROLE_OPTIONS } from '@/lib/constants';
 import { createUser } from '../lib/actions';
 
 interface CreateUserFormProps {
@@ -29,6 +29,7 @@ export function CreateUserForm({ onSuccess, onCancel }: CreateUserFormProps) {
   const {
     register,
     handleSubmit,
+    control,
     reset,
     formState: { errors },
   } = useForm<CreateUserInput>({
@@ -73,11 +74,18 @@ export function CreateUserForm({ onSuccess, onCancel }: CreateUserFormProps) {
         {...register('displayName')}
       />
 
-      <FormSelect
-        label={USER_FIELD_LABELS.role}
-        options={ROLE_OPTIONS.filter((option) => option.value !== ROLES.DEVELOPER)}
-        error={errors.role?.message}
-        {...register('role')}
+      <Controller
+        name="role"
+        control={control}
+        render={({ field }) => (
+          <FormSelectDropdown
+            label={USER_FIELD_LABELS.role}
+            options={[...USER_ROLE_OPTIONS]}
+            value={field.value}
+            onChange={field.onChange}
+            error={errors.role?.message}
+          />
+        )}
       />
 
       <FormPasswordField

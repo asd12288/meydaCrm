@@ -21,13 +21,13 @@ export default function NotFound() {
             priority
           />
         </div>
-        <h1 className="text-3xl font-semibold mb-4 text-ld">Page non trouvée</h1>
-        <p className="text-darklink mb-8">
+        <h1 className="text-3xl font-semibold mb-4 text-gray-900 dark:text-white">Page non trouvée</h1>
+        <p className="text-gray-600 dark:text-gray-400 mb-8">
           Désolé, la page que vous recherchez n&apos;existe pas ou a été déplacée.
         </p>
         <Link
           href="/dashboard"
-          className="ui-button btn-primary inline-flex items-center gap-2"
+          className="btn-primary-action inline-flex items-center gap-2"
         >
           Retour au tableau de bord
         </Link>

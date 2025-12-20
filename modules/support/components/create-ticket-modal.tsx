@@ -1,18 +1,18 @@
 'use client';
 
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { IconTicket } from '@tabler/icons-react';
 import {
   Modal,
   FormField,
   FormTextarea,
-  FormSelect,
+  FormSelectDropdown,
   FormErrorAlert,
-  FormSuccessAlert,
   FormActions,
-  useFormState,
+  useToast,
 } from '@/modules/shared';
+import { useTransition, useState } from 'react';
 import { z } from 'zod';
 import { createTicket } from '../lib/actions';
 import { TICKET_CATEGORY_OPTIONS } from '../config/constants';
@@ -36,12 +36,14 @@ export function CreateTicketModal({
   onClose,
   onSuccess,
 }: CreateTicketModalProps) {
-  const { isPending, startTransition, error, setError, success, handleFormSuccess, resetAll } =
-    useFormState();
+  const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const {
     register,
     handleSubmit,
+    control,
     reset,
     formState: { errors },
   } = useForm<CreateTicketFormData>({
@@ -54,7 +56,7 @@ export function CreateTicketModal({
   });
 
   const onSubmit = (data: CreateTicketFormData) => {
-    resetAll();
+    setError(null);
 
     startTransition(async () => {
       const result = await createTicket(data);
@@ -62,21 +64,18 @@ export function CreateTicketModal({
       if (result.error) {
         setError(result.error);
       } else {
+        // Close immediately and show toast
         reset();
-        handleFormSuccess({ onSuccess, onSuccessDelay: 1000 });
-        if (onSuccess) {
-          setTimeout(() => {
-            onClose();
-            onSuccess();
-          }, 1000);
-        }
+        onClose();
+        toast.success('Ticket créé avec succès');
+        onSuccess?.();
       }
     });
   };
 
   const handleClose = () => {
     reset();
-    resetAll();
+    setError(null);
     onClose();
   };
 
@@ -89,11 +88,18 @@ export function CreateTicketModal({
       size="lg"
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <FormSelect
-          label="Catégorie"
-          options={TICKET_CATEGORY_OPTIONS}
-          error={errors.category?.message}
-          {...register('category')}
+        <Controller
+          name="category"
+          control={control}
+          render={({ field }) => (
+            <FormSelectDropdown
+              label="Catégorie"
+              options={TICKET_CATEGORY_OPTIONS}
+              value={field.value}
+              onChange={field.onChange}
+              error={errors.category?.message}
+            />
+          )}
         />
 
         <FormField
@@ -112,7 +118,6 @@ export function CreateTicketModal({
         />
 
         <FormErrorAlert error={error} />
-        <FormSuccessAlert show={success} message="Ticket créé avec succès" />
 
         <FormActions
           isPending={isPending}

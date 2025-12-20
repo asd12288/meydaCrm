@@ -8,6 +8,7 @@ import {
   IconUsers,
   IconCheck,
 } from '@tabler/icons-react';
+import { Button } from '@/components/ui/button';
 import { UserAvatar, useClickOutside } from '@/modules/shared';
 import type { SalesUser } from '../types';
 
@@ -90,18 +91,13 @@ export function AssignDropdown({
   return (
     <div ref={dropdownRef} className={`relative ${className}`}>
       {/* Trigger button */}
-      <button
+      <Button
         type="button"
+        variant="primary"
+        size="sm"
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
-        className={`
-          h-9 px-3 flex items-center gap-2
-          text-sm font-medium rounded-md
-          bg-primary text-white
-          hover:bg-primaryemphasis transition-colors
-          disabled:opacity-50 disabled:cursor-not-allowed
-          ${isOpen ? 'ring-2 ring-primary/30' : ''}
-        `}
+        className={isOpen ? 'ring-2 ring-primary/30' : ''}
       >
         <IconUserPlus size={16} />
         <span>Assigner à</span>
@@ -109,7 +105,7 @@ export function AssignDropdown({
           size={14}
           className={`transition-transform ${isOpen ? 'rotate-180' : ''}`}
         />
-      </button>
+      </Button>
 
       {/* Dropdown menu */}
       {isOpen && (
@@ -119,26 +115,28 @@ export function AssignDropdown({
           {/* Unassign option */}
           {!hideUnassign && !enableMultiSelect && (
             <div className="py-1 border-b border-ld">
-              <button
+              <Button
                 type="button"
+                variant="ghost"
                 onClick={() => handleSingleSelect(null)}
-                className="w-full px-3 py-2 flex items-center gap-3 text-sm text-left text-darklink hover:bg-lightgray dark:hover:bg-darkmuted transition-colors"
+                className="w-full px-3 py-2 justify-start gap-3 rounded-none text-darklink hover:bg-lightgray dark:hover:bg-darkmuted"
               >
                 <span className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center shrink-0">
                   <IconUserOff size={14} />
                 </span>
                 <span>Retirer l&apos;assignation</span>
-              </button>
+              </Button>
             </div>
           )}
 
           {/* Multi-select: Select all option */}
           {enableMultiSelect && (
             <div className="py-1 border-b border-ld">
-              <button
+              <Button
                 type="button"
+                variant="ghost"
                 onClick={handleSelectAll}
-                className="w-full px-3 py-2 flex items-center gap-3 text-sm text-left text-ld hover:bg-lightgray dark:hover:bg-darkmuted transition-colors"
+                className="w-full px-3 py-2 justify-start gap-3 rounded-none text-ld hover:bg-lightgray dark:hover:bg-darkmuted"
               >
                 <span
                   className={`w-5 h-5 rounded border flex items-center justify-center shrink-0 transition-colors ${
@@ -151,7 +149,7 @@ export function AssignDropdown({
                 </span>
                 <IconUsers size={18} className="text-primary" />
                 <span className="font-medium">Tous les commerciaux</span>
-              </button>
+              </Button>
             </div>
           )}
 
@@ -162,11 +160,12 @@ export function AssignDropdown({
 
               if (enableMultiSelect) {
                 return (
-                  <button
+                  <Button
                     key={user.id}
                     type="button"
+                    variant="ghost"
                     onClick={() => handleToggleUser(user.id)}
-                    className="w-full px-3 py-2 flex items-center gap-3 text-sm text-left text-ld hover:bg-lightgray dark:hover:bg-darkmuted transition-colors"
+                    className="w-full px-3 py-2 justify-start gap-3 rounded-none text-ld hover:bg-lightgray dark:hover:bg-darkmuted"
                   >
                     <span
                       className={`w-5 h-5 rounded border flex items-center justify-center shrink-0 transition-colors ${
@@ -179,20 +178,21 @@ export function AssignDropdown({
                     </span>
                     <UserAvatar name={user.display_name} avatar={user.avatar} size="sm" />
                     <span className="truncate">{user.display_name || 'Sans nom'}</span>
-                  </button>
+                  </Button>
                 );
               }
 
               return (
-                <button
+                <Button
                   key={user.id}
                   type="button"
+                  variant="ghost"
                   onClick={() => handleSingleSelect(user.id)}
-                  className="w-full px-3 py-2 flex items-center gap-3 text-sm text-left text-ld hover:bg-lightgray dark:hover:bg-darkmuted transition-colors"
+                  className="w-full px-3 py-2 justify-start gap-3 rounded-none text-ld hover:bg-lightgray dark:hover:bg-darkmuted"
                 >
                   <UserAvatar name={user.display_name} avatar={user.avatar} size="sm" />
                   <span className="truncate">{user.display_name || 'Sans nom'}</span>
-                </button>
+                </Button>
               );
             })}
 
@@ -206,16 +206,17 @@ export function AssignDropdown({
           {/* Multi-select: Confirm button */}
           {enableMultiSelect && (
             <div className="p-2 border-t border-ld">
-              <button
+              <Button
                 type="button"
+                variant="primary"
                 onClick={handleConfirmMultiSelect}
                 disabled={selectedUsers.size === 0}
-                className="w-full py-2 px-3 flex items-center justify-center gap-2 text-sm font-medium rounded-md bg-primary text-white hover:bg-primaryemphasis disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="w-full"
               >
                 <IconCheck size={16} />
                 Distribuer à {selectedUsers.size || '...'} commercial
                 {selectedUsers.size > 1 ? 'x' : ''}
-              </button>
+              </Button>
             </div>
           )}
         </div>

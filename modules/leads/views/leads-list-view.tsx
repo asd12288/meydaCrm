@@ -1,11 +1,14 @@
-import { CardBox, PageHeader } from '@/modules/shared';
+import { CardBox, PageHeader, ErrorBoundary, ErrorFallback } from '@/modules/shared';
 import { getCurrentUser } from '@/modules/auth';
-import { getLeads, getSalesUsers, getUnassignedNewLeadsCount } from '../lib/actions';
+import { getLeads, getSalesUsers, getUnassignedNewLeadsCount, getLeadsForKanban } from '../lib/actions';
 import { leadFiltersSchema } from '../types';
 import { LeadFilters } from '../ui/lead-filters';
 import { LeadsTable } from '../components/leads-table';
 import { LeadsPagination } from '../ui/leads-pagination';
 import { UnassignedLeadsBanner } from '../components/unassigned-leads-banner';
+import { ViewToggle, type ViewMode } from '../components/view-toggle';
+import { LeadsKanbanBoard } from '../components/kanban';
+import { KANBAN_PAGE_SIZE } from '../config/constants';
 
 interface LeadsListViewProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -18,22 +21,29 @@ export async function LeadsListView({ searchParams }: LeadsListViewProps) {
   // Await and parse search params
   const params = await searchParams;
 
+  // Determine view mode (default to table)
+  const viewMode: ViewMode = params.view === 'kanban' ? 'kanban' : 'table';
+  const isKanbanView = viewMode === 'kanban';
+
   // Parse filters from URL params with defaults
   const filters = leadFiltersSchema.parse({
     page: params.page,
-    pageSize: params.pageSize,
+    pageSize: isKanbanView ? KANBAN_PAGE_SIZE : params.pageSize,
     search: params.search,
-    status: params.status,
+    status: isKanbanView ? undefined : params.status,
     assignedTo: params.assignedTo,
     sortBy: params.sortBy,
     sortOrder: params.sortOrder,
   });
 
-  // Fetch data in parallel - include unassigned count for admins
-  const [leadsData, salesUsers, unassignedData] = await Promise.all([
-    getLeads(filters),
+  // Fetch data based on view mode
+  // Kanban: only assigned leads with last comments
+  // Table: all leads based on filters and RLS
+  const [leadsData, kanbanData, salesUsers, unassignedData] = await Promise.all([
+    isKanbanView ? Promise.resolve({ leads: [], total: 0, page: 1, pageSize: 20, totalPages: 0, isEstimated: false }) : getLeads(filters),
+    isKanbanView ? getLeadsForKanban(filters) : Promise.resolve({ leads: [], total: 0 }),
     isAdmin ? getSalesUsers() : Promise.resolve([]),
-    isAdmin ? getUnassignedNewLeadsCount() : Promise.resolve({ count: 0, leadIds: [] }),
+    isAdmin && !isKanbanView ? getUnassignedNewLeadsCount() : Promise.resolve({ count: 0, leadIds: [] }),
   ]);
 
   return (
@@ -41,12 +51,13 @@ export async function LeadsListView({ searchParams }: LeadsListViewProps) {
       <PageHeader
         title="Leads"
         description={
-          isAdmin ? 'Gerez tous vos leads' : 'Vos leads assignes'
+          isAdmin ? 'Gérez tous vos leads' : 'Vos leads assignés'
         }
+        actions={<ViewToggle currentView={viewMode} />}
       />
 
-      {/* Unassigned new leads banner - admin only */}
-      {isAdmin && unassignedData.count > 0 && (
+      {/* Unassigned new leads banner - admin only (only in table view) */}
+      {!isKanbanView && isAdmin && unassignedData.count > 0 && (
         <UnassignedLeadsBanner
           count={unassignedData.count}
           leadIds={unassignedData.leadIds}
@@ -54,25 +65,46 @@ export async function LeadsListView({ searchParams }: LeadsListViewProps) {
         />
       )}
 
-      <CardBox>
-        {/* Filters */}
-        <LeadFilters salesUsers={salesUsers} isAdmin={isAdmin} />
+      {isKanbanView ? (
+        /* Kanban View - Shows only user's assigned leads */
+        <div className="mt-4">
+          {/* Kanban Board */}
+          <ErrorBoundary FallbackComponent={ErrorFallback}>
+            <LeadsKanbanBoard leads={kanbanData.leads} />
+          </ErrorBoundary>
 
-        {/* Table */}
-        <LeadsTable
-          leads={leadsData.leads}
-          isAdmin={isAdmin}
-          salesUsers={salesUsers}
-        />
+          {/* Show total count info (only if there are leads) */}
+          {kanbanData.leads.length > 0 && (
+            <div className="mt-2 text-sm text-darklink text-center">
+              {kanbanData.total} lead{kanbanData.total !== 1 ? 's' : ''} assigné{kanbanData.total !== 1 ? 's' : ''}
+            </div>
+          )}
+        </div>
+      ) : (
+        /* Table View */
+        <CardBox>
+          {/* Filters */}
+          <LeadFilters salesUsers={salesUsers} isAdmin={isAdmin} />
 
-        {/* Pagination */}
-        <LeadsPagination
-          total={leadsData.total}
-          page={leadsData.page}
-          pageSize={leadsData.pageSize}
-          totalPages={leadsData.totalPages}
-        />
-      </CardBox>
+          {/* Table */}
+          <ErrorBoundary FallbackComponent={ErrorFallback}>
+            <LeadsTable
+              leads={leadsData.leads}
+              isAdmin={isAdmin}
+              salesUsers={salesUsers}
+            />
+          </ErrorBoundary>
+
+          {/* Pagination */}
+          <LeadsPagination
+            total={leadsData.total}
+            page={leadsData.page}
+            pageSize={leadsData.pageSize}
+            totalPages={leadsData.totalPages}
+            isEstimated={leadsData.isEstimated}
+          />
+        </CardBox>
+      )}
     </div>
   );
 }

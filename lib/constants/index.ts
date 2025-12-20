@@ -8,6 +8,7 @@ export {
   ROLES,
   ROLE_LABELS,
   ROLE_OPTIONS,
+  USER_ROLE_OPTIONS,
   getRoleLabel,
   type UserRole,
 } from './roles';

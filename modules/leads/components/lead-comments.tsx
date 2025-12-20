@@ -2,6 +2,7 @@
 
 import { useState, useTransition, useOptimistic } from "react";
 import { IconSend, IconTrash, IconMessageOff, IconLoader2 } from "@tabler/icons-react";
+import { Button } from "@/components/ui/button";
 import { UserAvatar, ConfirmDialog } from "@/modules/shared";
 import { addComment, deleteComment } from "../lib/actions";
 import { formatRelativeTime } from "../lib/format";
@@ -143,10 +144,11 @@ export function LeadComments({
             className="form-control-input flex-1 resize-none"
             disabled={isPending}
           />
-          <button
+          <Button
             type="submit"
+            variant="circleSolid"
+            size="circle"
             disabled={isPending || !newComment.trim()}
-            className="ui-button bg-primary text-white h-10 w-10 p-0 shrink-0 disabled:opacity-50 flex items-center justify-center"
             title="Envoyer"
           >
             {isPending ? (
@@ -154,7 +156,7 @@ export function LeadComments({
             ) : (
               <IconSend size={18} />
             )}
-          </button>
+          </Button>
         </form>
       </div>
 
@@ -211,15 +213,17 @@ function CommentItem({
 
         {/* Delete button */}
         {canDelete && !isTemp && (
-          <button
+          <Button
             type="button"
+            variant="ghostDanger"
+            size="iconSm"
             onClick={onDelete}
             disabled={isPending}
-            className="shrink-0 p-1 text-darklink hover:text-error transition-colors disabled:opacity-50"
+            className="shrink-0"
             title="Supprimer"
           >
             <IconTrash size={16} />
-          </button>
+          </Button>
         )}
       </div>
     </div>

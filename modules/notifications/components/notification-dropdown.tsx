@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { IconCheck, IconBellOff } from '@tabler/icons-react';
+import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/modules/shared';
 import { useNotifications } from '../hooks/use-notifications';
 import { NotificationItem } from './notification-item';
 import { NotificationSkeletons } from './notification-skeleton';
@@ -68,10 +70,12 @@ export function NotificationDropdown({ onClose }: NotificationDropdownProps) {
       <div className="px-4 py-3 border-b border-border bg-lightgray dark:bg-darkgray flex items-center justify-between">
         <h3 className="text-sm font-semibold text-ld">Toutes les notifications</h3>
         {unreadCount > 0 && (
-          <button
+          <Button
+            variant="ghostText"
+            size="sm"
             onClick={handleMarkAllAsRead}
             disabled={isMarkingAll}
-            className="text-xs text-primary hover:text-primary/80 font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 cursor-pointer"
+            className="text-xs text-primary hover:text-primary/80 font-medium"
           >
             {isMarkingAll ? (
               <>
@@ -84,7 +88,7 @@ export function NotificationDropdown({ onClose }: NotificationDropdownProps) {
                 <span>Marquer tout comme lu</span>
               </>
             )}
-          </button>
+          </Button>
         )}
       </div>
 
@@ -95,11 +99,11 @@ export function NotificationDropdown({ onClose }: NotificationDropdownProps) {
           <NotificationSkeletons count={3} />
         ) : notifications.length === 0 ? (
           // Empty state
-          <div className="px-4 py-12 text-center">
-            <IconBellOff size={48} className="mx-auto text-darklink opacity-50 mb-3" />
-            <p className="text-sm text-darklink font-medium">Aucune notification</p>
-            <p className="text-xs text-darklink mt-1">Vous recevrez des notifications ici</p>
-          </div>
+          <EmptyState
+            icon={<IconBellOff size={48} />}
+            title="Aucune notification"
+            description="Vous recevrez des notifications ici"
+          />
         ) : (
           <>
             {notifications.map((notification) => (

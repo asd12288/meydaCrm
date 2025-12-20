@@ -1,17 +1,16 @@
 'use client';
 
-import { useState, useMemo, useTransition, useRef } from 'react';
+import { useState, useMemo, useTransition, useOptimistic, useRef, memo, useCallback } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
   flexRender,
 } from '@tanstack/react-table';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { TableEmptyState, ConfirmDialog } from '@/modules/shared';
+import { TableEmptyState, ConfirmDialog, useToast } from '@/modules/shared';
 import { getLeadColumns } from '../config/columns';
 import { BulkActionsBar } from './bulk-actions-bar';
 import { deleteLead } from '../lib/actions';
-import { useRouter } from 'next/navigation';
 import type { LeadWithAssignee, SalesUser } from '../types';
 
 // Row height for virtualization (must match CSS)
@@ -23,34 +22,51 @@ interface LeadsTableProps {
   salesUsers: SalesUser[];
 }
 
-export function LeadsTable({ leads, isAdmin, salesUsers }: LeadsTableProps) {
-  const router = useRouter();
+/**
+ * LeadsTable component with virtualization and memoization
+ * Optimized: Wrapped with React.memo to prevent unnecessary re-renders
+ * when parent state changes but leads/isAdmin/salesUsers props remain the same
+ */
+export const LeadsTable = memo(function LeadsTable({ leads, isAdmin, salesUsers }: LeadsTableProps) {
+  const { toast } = useToast();
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
   const [deleteLeadId, setDeleteLeadId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const handleDeleteClick = (leadId: string) => {
-    setDeleteLeadId(leadId);
-  };
+  // Optimistic leads state for instant delete feedback
+  const [optimisticLeads, removeOptimisticLead] = useOptimistic(
+    leads,
+    (state, deletedId: string) => state.filter((lead) => lead.id !== deletedId)
+  );
 
-  const handleDeleteConfirm = () => {
+  // Memoized callbacks to prevent unnecessary re-renders
+  const handleDeleteClick = useCallback((leadId: string) => {
+    setDeleteLeadId(leadId);
+  }, []);
+
+  const handleDeleteConfirm = useCallback(() => {
     if (!deleteLeadId) return;
 
+    const idToDelete = deleteLeadId;
+    setDeleteLeadId(null); // Close dialog immediately
+
     startTransition(async () => {
-      const result = await deleteLead(deleteLeadId);
-      if (result.success) {
-        setDeleteLeadId(null);
-        router.refresh();
+      // Optimistic: remove from UI immediately
+      removeOptimisticLead(idToDelete);
+
+      const result = await deleteLead(idToDelete);
+      if (result.error) {
+        toast.error(result.error);
+        // The page will revalidate and restore the lead if delete failed
       } else {
-        // TODO: Show error toast
-        console.error(result.error);
+        toast.success('Lead supprimé');
       }
     });
-  };
+  }, [deleteLeadId, removeOptimisticLead, toast]);
 
-  const handleDeleteCancel = () => {
+  const handleDeleteCancel = useCallback(() => {
     setDeleteLeadId(null);
-  };
+  }, []);
 
   const columns = useMemo(
     () =>
@@ -59,11 +75,11 @@ export function LeadsTable({ leads, isAdmin, salesUsers }: LeadsTableProps) {
         includeSelection: isAdmin,
         onDelete: isAdmin ? handleDeleteClick : undefined,
       }),
-    [isAdmin]
+    [isAdmin, handleDeleteClick]
   );
 
   const table = useReactTable({
-    data: leads,
+    data: optimisticLeads,
     columns,
     getCoreRowModel: getCoreRowModel(),
     enableRowSelection: isAdmin,
@@ -78,9 +94,9 @@ export function LeadsTable({ leads, isAdmin, salesUsers }: LeadsTableProps) {
     return Object.keys(rowSelection).filter((id) => rowSelection[id]);
   }, [rowSelection]);
 
-  const clearSelection = () => {
+  const clearSelection = useCallback(() => {
     setRowSelection({});
-  };
+  }, []);
 
   // Virtualization setup
   const tableContainerRef = useRef<HTMLDivElement>(null);
@@ -144,8 +160,8 @@ export function LeadsTable({ leads, isAdmin, salesUsers }: LeadsTableProps) {
                       key={row.id}
                       data-index={virtualRow.index}
                       ref={(node) => rowVirtualizer.measureElement(node)}
-                      className={`border-b border-ld last:border-b-0 hover:bg-lighthover dark:hover:bg-darkgray transition-colors ${
-                        row.getIsSelected() ? 'bg-lightprimary dark:bg-darkborder' : ''
+                      className={`border-b border-ld last:border-b-0 table-row-animated ${
+                        row.getIsSelected() ? 'table-row-selected' : ''
                       }`}
                     >
                       {row.getVisibleCells().map((cell) => (
@@ -206,4 +222,4 @@ export function LeadsTable({ leads, isAdmin, salesUsers }: LeadsTableProps) {
       )}
     </>
   );
-}
+});

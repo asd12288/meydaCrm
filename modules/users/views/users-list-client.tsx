@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { IconUserPlus } from '@tabler/icons-react';
 import { CardBox, PageHeader } from '@/modules/shared';
+import { Button } from '@/components/ui/button';
 import { UsersTable } from '../components/users-table';
 import { CreateUserModal } from '../components/create-user-modal';
 import { UserFilters } from '../ui/user-filters';
@@ -34,13 +35,13 @@ export function UsersListClient({
         title="Gestion des utilisateurs"
         description="Créez et gérez les utilisateurs du CRM"
         actions={
-          <button
+          <Button
+            variant="primary"
             onClick={() => setIsCreateModalOpen(true)}
-            className="ui-button bg-primary text-white flex items-center gap-2"
           >
             <IconUserPlus size={18} />
             Créer un utilisateur
-          </button>
+          </Button>
         }
       />
 

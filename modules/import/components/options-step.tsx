@@ -11,7 +11,15 @@ import {
   IconCheck,
   IconChevronDown,
 } from '@tabler/icons-react';
-import { UserAvatar } from '@/modules/shared';
+import { Button } from '@/components/ui/button';
+import {
+  UserAvatar,
+  OptionCard,
+  OptionCardGroup,
+  ToggleChip,
+  ToggleChipGroup,
+  CheckboxCard,
+} from '@/modules/shared';
 import type { AssignmentConfig, DuplicateConfig, LeadFieldKey } from '../types';
 import { DUPLICATE_CHECK_FIELDS } from '../types/mapping';
 import type { SalesUser } from '@/modules/leads/types';
@@ -92,14 +100,16 @@ export function OptionsStep({
       {/* Assignment Section */}
       <div>
         <h4 className="text-sm font-medium text-ld mb-3">Attribution des leads</h4>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <OptionCardGroup columns={4}>
           {ASSIGNMENT_OPTIONS.map((option) => {
             const Icon = option.icon;
-            const isSelected = assignment.mode === option.value;
             return (
-              <button
+              <OptionCard
                 key={option.value}
-                type="button"
+                label={option.label}
+                description={option.description}
+                icon={<Icon className="w-5 h-5" />}
+                isSelected={assignment.mode === option.value}
                 onClick={() =>
                   onUpdateAssignment({
                     mode: option.value as AssignmentConfig['mode'],
@@ -110,23 +120,10 @@ export function OptionsStep({
                       : undefined,
                   })
                 }
-                className={`
-                  p-4 rounded-xl border text-left transition-all
-                  ${isSelected
-                    ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
-                    : 'border-border hover:border-primary/30 bg-white dark:bg-dark'
-                  }
-                `}
-              >
-                <Icon className={`w-5 h-5 mb-2 ${isSelected ? 'text-primary' : 'text-darklink'}`} />
-                <div className={`font-medium text-sm ${isSelected ? 'text-primary' : 'text-ld'}`}>
-                  {option.label}
-                </div>
-                <div className="text-xs text-darklink mt-0.5">{option.description}</div>
-              </button>
+              />
             );
           })}
-        </div>
+        </OptionCardGroup>
 
         {/* Round-robin user selection with avatars */}
         {assignment.mode === 'round_robin' && (
@@ -186,61 +183,52 @@ export function OptionsStep({
       {/* Duplicates Section */}
       <div>
         <h4 className="text-sm font-medium text-ld mb-3">Gestion des doublons</h4>
-        <div className="grid grid-cols-3 gap-3">
+        <OptionCardGroup columns={3}>
           {DUPLICATE_OPTIONS.map((option) => {
             const Icon = option.icon;
-            const isSelected = duplicateConfig.strategy === option.value;
             return (
-              <button
+              <OptionCard
                 key={option.value}
-                type="button"
+                label={option.label}
+                description={option.description}
+                icon={<Icon className="w-5 h-5" />}
+                isSelected={duplicateConfig.strategy === option.value}
                 onClick={() =>
                   onUpdateDuplicates({ strategy: option.value as DuplicateConfig['strategy'] })
                 }
-                className={`
-                  p-4 rounded-xl border text-left transition-all
-                  ${isSelected
-                    ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
-                    : 'border-border hover:border-primary/30 bg-white dark:bg-dark'
-                  }
-                `}
-              >
-                <Icon className={`w-5 h-5 mb-2 ${isSelected ? 'text-primary' : 'text-darklink'}`} />
-                <div className={`font-medium text-sm ${isSelected ? 'text-primary' : 'text-ld'}`}>
-                  {option.label}
-                </div>
-                <div className="text-xs text-darklink mt-0.5">{option.description}</div>
-              </button>
+              />
             );
           })}
-        </div>
+        </OptionCardGroup>
 
         {/* Advanced options */}
-        <button
+        <Button
           type="button"
+          variant="ghostText"
+          size="sm"
           onClick={() => setShowAdvanced(!showAdvanced)}
-          className="flex items-center gap-2 mt-4 text-sm text-darklink hover:text-ld transition-colors"
+          className="mt-4"
         >
           <IconChevronDown
             size={16}
             className={`transition-transform ${showAdvanced ? 'rotate-180' : ''}`}
           />
-          Options avancees
-        </button>
+          Options avancées
+        </Button>
 
         {showAdvanced && (
           <div className="mt-4 p-4 bg-muted/50 dark:bg-darkmuted rounded-xl space-y-4">
             {/* Check fields */}
             <div>
-              <label className="text-sm text-ld mb-2 block">Champs de detection</label>
-              <div className="flex flex-wrap gap-2">
+              <label className="text-sm text-ld mb-2 block">Champs de détection</label>
+              <ToggleChipGroup>
                 {DUPLICATE_CHECK_FIELDS.map((field) => {
                   const isChecked = duplicateConfig.checkFields.includes(field);
                   const fieldLabels: Record<LeadFieldKey, string> = {
                     email: 'Email',
-                    phone: 'Telephone',
+                    phone: 'Téléphone',
                     external_id: 'ID externe',
-                    first_name: 'Prenom',
+                    first_name: 'Prénom',
                     last_name: 'Nom',
                     company: 'Entreprise',
                     job_title: 'Poste',
@@ -251,54 +239,37 @@ export function OptionsStep({
                     status: 'Statut',
                     source: 'Source',
                     notes: 'Notes',
-                    assigned_to: 'Assigne a',
+                    assigned_to: 'Assigné à',
                   };
                   return (
-                    <button
+                    <ToggleChip
                       key={field}
-                      type="button"
+                      label={fieldLabels[field]}
+                      isSelected={isChecked}
                       onClick={() => {
                         const newFields = isChecked
                           ? duplicateConfig.checkFields.filter((f) => f !== field)
                           : [...duplicateConfig.checkFields, field];
                         onUpdateDuplicates({ checkFields: newFields as LeadFieldKey[] });
                       }}
-                      className={`
-                        flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm transition-colors
-                        ${isChecked
-                          ? 'bg-primary/10 text-primary'
-                          : 'bg-white dark:bg-dark text-darklink hover:text-ld'
-                        }
-                      `}
-                    >
-                      {isChecked && <IconCheck size={14} />}
-                      {fieldLabels[field]}
-                    </button>
+                    />
                   );
                 })}
-              </div>
+              </ToggleChipGroup>
             </div>
 
             {/* Toggles */}
             <div className="space-y-2">
-              <label className="flex items-center justify-between p-3 rounded-lg bg-white dark:bg-dark cursor-pointer">
-                <span className="text-sm text-ld">Verifier dans la base de donnees</span>
-                <input
-                  type="checkbox"
-                  checked={duplicateConfig.checkDatabase}
-                  onChange={(e) => onUpdateDuplicates({ checkDatabase: e.target.checked })}
-                  className="rounded text-primary focus:ring-primary"
-                />
-              </label>
-              <label className="flex items-center justify-between p-3 rounded-lg bg-white dark:bg-dark cursor-pointer">
-                <span className="text-sm text-ld">Detecter les doublons dans le fichier</span>
-                <input
-                  type="checkbox"
-                  checked={duplicateConfig.checkWithinFile}
-                  onChange={(e) => onUpdateDuplicates({ checkWithinFile: e.target.checked })}
-                  className="rounded text-primary focus:ring-primary"
-                />
-              </label>
+              <CheckboxCard
+                label="Vérifier dans la base de données"
+                checked={duplicateConfig.checkDatabase}
+                onChange={(e) => onUpdateDuplicates({ checkDatabase: e.target.checked })}
+              />
+              <CheckboxCard
+                label="Détecter les doublons dans le fichier"
+                checked={duplicateConfig.checkWithinFile}
+                onChange={(e) => onUpdateDuplicates({ checkWithinFile: e.target.checked })}
+              />
             </div>
           </div>
         )}

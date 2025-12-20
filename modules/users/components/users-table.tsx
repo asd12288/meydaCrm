@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useMemo, useCallback, useTransition } from 'react';
+import { useState, useMemo, useCallback, useTransition, useOptimistic, memo } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
   flexRender,
 } from '@tanstack/react-table';
-import { TableEmptyState, ConfirmDialog, FormErrorAlert } from '@/modules/shared';
+import { TableEmptyState, ConfirmDialog, useToast } from '@/modules/shared';
 import { getUserColumns } from '../config/columns';
 import { ResetPasswordModal } from './reset-password-modal';
 import { EditUserModal } from './edit-user-modal';
@@ -19,8 +19,14 @@ interface UsersTableProps {
   currentUserId: string;
 }
 
-export function UsersTable({ users, currentUserId }: UsersTableProps) {
+/**
+ * UsersTable component with memoization
+ * Optimized: Wrapped with React.memo to prevent unnecessary re-renders
+ * when parent state changes but users/currentUserId props remain the same
+ */
+export const UsersTable = memo(function UsersTable({ users, currentUserId }: UsersTableProps) {
   const router = useRouter();
+  const { toast } = useToast();
   const [resetPasswordUser, setResetPasswordUser] = useState<{
     id: string;
     name: string;
@@ -31,7 +37,12 @@ export function UsersTable({ users, currentUserId }: UsersTableProps) {
     name: string;
   } | null>(null);
   const [isPending, startTransition] = useTransition();
-  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  // Optimistic users state for instant delete feedback
+  const [optimisticUsers, removeOptimisticUser] = useOptimistic(
+    users,
+    (state, deletedId: string) => state.filter((user) => user.id !== deletedId)
+  );
 
   const handleResetPassword = useCallback(
     (userId: string, userName: string) => {
@@ -59,17 +70,23 @@ export function UsersTable({ users, currentUserId }: UsersTableProps) {
   const handleDeleteConfirm = useCallback(() => {
     if (!deleteUserData) return;
 
-    setDeleteError(null);
+    const idToDelete = deleteUserData.id;
+    setDeleteUserData(null); // Close dialog immediately
+
     startTransition(async () => {
-      const result = await deleteUser(deleteUserData.id);
+      // Optimistic: remove from UI immediately
+      removeOptimisticUser(idToDelete);
+
+      const result = await deleteUser(idToDelete);
       if (result.success) {
-        setDeleteUserData(null);
-        router.refresh();
+        toast.success('Utilisateur supprimé');
       } else {
-        setDeleteError(result.error || 'Erreur lors de la suppression');
+        toast.error(result.error || 'Erreur lors de la suppression');
+        // Revalidation will restore the user if delete failed
+        router.refresh();
       }
     });
-  }, [deleteUserData, router]);
+  }, [deleteUserData, removeOptimisticUser, toast, router]);
 
   const handleDeleteCancel = useCallback(() => {
     setDeleteUserData(null);
@@ -87,7 +104,7 @@ export function UsersTable({ users, currentUserId }: UsersTableProps) {
 
   // Filtering is done server-side via URL params in getUsers()
   const table = useReactTable({
-    data: users,
+    data: optimisticUsers,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getRowId: (row) => row.id,
@@ -95,13 +112,6 @@ export function UsersTable({ users, currentUserId }: UsersTableProps) {
 
   return (
     <>
-      {/* Delete error alert */}
-      {deleteError && (
-        <div className="mb-4">
-          <FormErrorAlert error={deleteError} />
-        </div>
-      )}
-
       {/* Table */}
       <div className="border rounded-md border-ld overflow-x-auto">
         <table className="w-full table-auto">
@@ -190,4 +200,4 @@ export function UsersTable({ users, currentUserId }: UsersTableProps) {
       />
     </>
   );
-}
+});

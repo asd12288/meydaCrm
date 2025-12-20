@@ -37,9 +37,12 @@ export function TeamPerformanceChart({ teamData }: TeamPerformanceChartProps) {
             (performer.totalLeads / (topPerformers[0]?.totalLeads || 1)) * 100,
             100
           );
-          
+
           return (
-            <div key={performer.userId}>
+            <div
+              key={performer.userId}
+              className="cursor-default"
+            >
               <div className="flex items-center gap-3 mb-2">
                 <div className="relative">
                   <UserAvatar name={performer.userName} size="md" />
@@ -51,14 +54,14 @@ export function TeamPerformanceChart({ teamData }: TeamPerformanceChartProps) {
                     </span>
                   )}
                 </div>
-                
+
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-ld truncate">{performer.userName}</p>
                   <p className="text-xs text-darklink">
                     {performer.totalLeads} leads • {performer.wonLeads} gagnés
                   </p>
                 </div>
-                
+
                 <Badge
                   variant={
                     performer.conversionRate >= 20 ? 'success' :
@@ -69,10 +72,10 @@ export function TeamPerformanceChart({ teamData }: TeamPerformanceChartProps) {
                   {performer.conversionRate}%
                 </Badge>
               </div>
-              
+
               <div className="h-1.5 bg-lightgray dark:bg-darkgray rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-primary rounded-full transition-all duration-500"
+                  className="h-full bg-primary rounded-full"
                   style={{ width: `${progressPercent}%` }}
                 />
               </div>

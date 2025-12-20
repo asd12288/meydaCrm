@@ -1,9 +1,15 @@
 'use client';
 
 import { createColumnHelper } from '@tanstack/react-table';
-import { Dropdown, DropdownItem } from 'flowbite-react';
 import { IconDots, IconKey, IconEdit, IconTrash } from '@tabler/icons-react';
-import { UserAvatar } from '@/modules/shared';
+import { Button } from '@/components/ui/button';
+import {
+  UserAvatar,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuDivider,
+} from '@/modules/shared';
 import { RoleBadge } from '../ui/role-badge';
 import { COLUMN_LABELS } from './constants';
 import type { UserProfile } from '../types';
@@ -29,39 +35,42 @@ function RowActionsDropdown({
   onDeleteUser?: (userId: string, userName: string) => void;
 }) {
   return (
-    <Dropdown
-      label=""
-      dismissOnClick
-      renderTrigger={() => (
-        <span className="h-9 w-9 flex justify-center items-center rounded-full hover:bg-lightprimary hover:text-primary cursor-pointer transition-colors">
+    <DropdownMenu
+      position="bottom-right"
+      widthClass="w-64"
+      trigger={
+        <Button variant="circleHover" size="circle">
           <IconDots size={20} />
-        </span>
-      )}
+        </Button>
+      }
     >
-      <DropdownItem
-        onClick={() => onEditUser(user)}
-        className="flex items-center gap-3"
-      >
-        <IconEdit size={16} />
-        Modifier
-      </DropdownItem>
-      <DropdownItem
-        onClick={() => onResetPassword(user.id, user.display_name)}
-        className="flex items-center gap-3"
-      >
-        <IconKey size={16} />
-        Reinitialiser le mot de passe
-      </DropdownItem>
-      {onDeleteUser && (
-        <DropdownItem
-          onClick={() => onDeleteUser(user.id, user.display_name)}
-          className="flex items-center gap-3 text-error"
+      <DropdownMenuContent>
+        <DropdownMenuItem
+          onClick={() => onEditUser(user)}
+          icon={<IconEdit size={16} />}
         >
-          <IconTrash size={16} />
-          Supprimer
-        </DropdownItem>
-      )}
-    </Dropdown>
+          Modifier
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => onResetPassword(user.id, user.display_name)}
+          icon={<IconKey size={16} />}
+        >
+          Réinitialiser le mot de passe
+        </DropdownMenuItem>
+        {onDeleteUser && (
+          <>
+            <DropdownMenuDivider />
+            <DropdownMenuItem
+              onClick={() => onDeleteUser(user.id, user.display_name)}
+              icon={<IconTrash size={16} />}
+              variant="danger"
+            >
+              Supprimer
+            </DropdownMenuItem>
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 

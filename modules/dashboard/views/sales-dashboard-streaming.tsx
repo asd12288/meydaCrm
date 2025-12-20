@@ -1,4 +1,5 @@
 import { Suspense } from 'react';
+import { ErrorBoundary, SectionErrorFallback } from '@/modules/shared';
 import {
   SalesWelcomeSection,
   SalesQuickStatsSection,
@@ -28,36 +29,46 @@ export function SalesDashboardStreaming({ userName, userAvatar }: SalesDashboard
   return (
     <div className="space-y-6">
       {/* Welcome Card */}
-      <Suspense fallback={<WelcomeCardSkeleton />}>
-        <SalesWelcomeSection userName={userName} userAvatar={userAvatar} />
-      </Suspense>
+      <ErrorBoundary FallbackComponent={SectionErrorFallback}>
+        <Suspense fallback={<WelcomeCardSkeleton />}>
+          <SalesWelcomeSection userName={userName} userAvatar={userAvatar} />
+        </Suspense>
+      </ErrorBoundary>
 
       {/* Quick Stats Row */}
-      <Suspense fallback={<QuickStatsSkeleton />}>
-        <SalesQuickStatsSection />
-      </Suspense>
+      <ErrorBoundary FallbackComponent={SectionErrorFallback}>
+        <Suspense fallback={<QuickStatsSkeleton />}>
+          <SalesQuickStatsSection />
+        </Suspense>
+      </ErrorBoundary>
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-12 gap-6">
         {/* Leads by Status */}
         <div className="lg:col-span-7 col-span-12">
-          <Suspense fallback={<StatusChartSkeleton />}>
-            <SalesStatusChartSection />
-          </Suspense>
+          <ErrorBoundary FallbackComponent={SectionErrorFallback}>
+            <Suspense fallback={<StatusChartSkeleton />}>
+              <SalesStatusChartSection />
+            </Suspense>
+          </ErrorBoundary>
         </div>
 
         {/* Recent Activity */}
         <div className="lg:col-span-5 col-span-12">
-          <Suspense fallback={<ActivityTimelineSkeleton />}>
-            <SalesActivitySection />
-          </Suspense>
+          <ErrorBoundary FallbackComponent={SectionErrorFallback}>
+            <Suspense fallback={<ActivityTimelineSkeleton />}>
+              <SalesActivitySection />
+            </Suspense>
+          </ErrorBoundary>
         </div>
       </div>
 
       {/* Leads Trend Chart */}
-      <Suspense fallback={<TrendChartSkeleton />}>
-        <SalesTrendSection />
-      </Suspense>
+      <ErrorBoundary FallbackComponent={SectionErrorFallback}>
+        <Suspense fallback={<TrendChartSkeleton />}>
+          <SalesTrendSection />
+        </Suspense>
+      </ErrorBoundary>
     </div>
   );
 }

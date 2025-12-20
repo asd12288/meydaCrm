@@ -30,7 +30,7 @@ export function TicketConversation({
       <div className="ticket-empty-state h-full">
         <IconMessageCircle size={40} className="ticket-empty-icon" />
         <p className="ticket-empty-title">Aucun message</p>
-        <p className="ticket-empty-text">Soyez le premier à répondre</p>
+        <p className="ticket-empty-text">La conversation est vide</p>
       </div>
     );
   }

@@ -1,11 +1,11 @@
 'use client';
 
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { IconDeviceFloppy } from '@tabler/icons-react';
 import {
   FormField,
-  FormSelect,
+  FormSelectDropdown,
   FormErrorAlert,
   FormSuccessAlert,
   FormActions,
@@ -13,7 +13,7 @@ import {
 } from '@/modules/shared';
 import { editUserSchema, USER_FIELD_LABELS } from '../types';
 import type { EditUserInput, UserProfile } from '../types';
-import { ROLE_OPTIONS } from '@/lib/constants';
+import { USER_ROLE_OPTIONS } from '@/lib/constants';
 import { updateUser } from '../lib/actions';
 
 interface EditUserFormProps {
@@ -30,6 +30,7 @@ export function EditUserForm({ user, isSelf = false, onSuccess, onCancel }: Edit
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors, isDirty },
   } = useForm<EditUserInput>({
     resolver: zodResolver(editUserSchema),
@@ -61,14 +62,21 @@ export function EditUserForm({ user, isSelf = false, onSuccess, onCancel }: Edit
         {...register('displayName')}
       />
 
-      <FormSelect
-        label={USER_FIELD_LABELS.role}
-        options={[...ROLE_OPTIONS]}
-        error={errors.role?.message}
-        hint={isSelf ? 'Vous ne pouvez pas modifier votre propre rôle' : undefined}
-        disabled={isSelf}
-        className={isSelf ? 'opacity-50 cursor-not-allowed' : ''}
-        {...register('role')}
+      <Controller
+        name="role"
+        control={control}
+        render={({ field }) => (
+          <FormSelectDropdown
+            label={USER_FIELD_LABELS.role}
+            options={[...USER_ROLE_OPTIONS]}
+            value={field.value}
+            onChange={field.onChange}
+            error={errors.role?.message}
+            hint={isSelf ? 'Vous ne pouvez pas modifier votre propre rôle' : undefined}
+            disabled={isSelf}
+            className={isSelf ? 'opacity-50' : ''}
+          />
+        )}
       />
 
       <FormErrorAlert error={error} />

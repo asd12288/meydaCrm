@@ -2,6 +2,7 @@
 
 import { IconLock, IconCreditCard } from '@tabler/icons-react';
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 
 interface SubscriptionBlockedModalProps {
   isOpen: boolean;
@@ -13,12 +14,12 @@ export function SubscriptionBlockedModal({ isOpen }: SubscriptionBlockedModalPro
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto py-4">
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
 
       {/* Modal */}
-      <div className="relative bg-white dark:bg-dark rounded-xl shadow-xl max-w-md w-full mx-4 p-8 text-center">
+      <div className="relative bg-white dark:bg-dark rounded-xl shadow-xl max-w-md w-full mx-4 p-8 text-center max-h-[90vh] overflow-y-auto">
         {/* Icon */}
         <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-error/10 flex items-center justify-center">
           <IconLock size={32} className="text-error" />
@@ -35,13 +36,12 @@ export function SubscriptionBlockedModal({ isOpen }: SubscriptionBlockedModalPro
         </p>
 
         {/* Action button */}
-        <Link
-          href="/subscription"
-          className="btn-primary-action inline-flex items-center justify-center gap-2 w-full py-3"
-        >
-          <IconCreditCard size={20} />
-          <span>Renouveler maintenant</span>
-        </Link>
+        <Button variant="primary" size="lg" className="w-full py-3" asChild>
+          <Link href="/subscription">
+            <IconCreditCard size={20} />
+            <span>Renouveler maintenant</span>
+          </Link>
+        </Button>
 
         {/* Help text */}
         <p className="text-xs text-darklink mt-4">

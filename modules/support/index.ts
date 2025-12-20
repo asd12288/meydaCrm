@@ -23,6 +23,8 @@ export { TicketFilters } from './components/ticket-filters';
 export { TicketCategoryBadge } from './ui/ticket-category-badge';
 export { TicketStatusBadge } from './ui/ticket-status-badge';
 export { TicketsPagination } from './ui/tickets-pagination';
+export { TicketListSkeleton } from './ui/ticket-list-skeleton';
+export { TicketDetailSkeleton, TicketEmptyStateSkeleton } from './ui/ticket-detail-skeleton';
 
 // Actions
 export {

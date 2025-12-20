@@ -55,22 +55,22 @@ export function QuickActions() {
           <Link
             key={index}
             href={action.href}
-            className="flex items-center gap-3 p-3 rounded-lg hover:bg-lightgray dark:hover:bg-darkborder/50 transition-colors group"
+            className="flex items-center gap-3 p-3 rounded-lg hover:bg-lightgray dark:hover:bg-darkborder/50 transition-colors duration-150 group"
           >
             <span className="dashboard-action-icon">
               {action.icon}
             </span>
-            
+
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-ld group-hover:text-primary transition-colors">
                 {action.label}
               </p>
               <p className="text-xs text-darklink">{action.description}</p>
             </div>
-            
-            <IconArrowRight 
-              size={16} 
-              className="text-darklink opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" 
+
+            <IconArrowRight
+              size={16}
+              className="text-darklink opacity-0 group-hover:opacity-100 transition-opacity duration-150 shrink-0"
             />
           </Link>
         ))}

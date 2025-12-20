@@ -663,20 +663,57 @@ The codebase follows strict DRY (Don't Repeat Yourself) principles. Always use t
 
 Import from `@/modules/shared`:
 
+#### Core UI Components
+
+| Component | Purpose | Usage |
+|-----------|---------|-------|
+| `Button` | Universal button (from `@/components/ui/button`) | `<Button variant="primary" size="sm">Label</Button>` |
+| `Modal` | Reusable modal with escape/scroll lock | `<Modal isOpen={isOpen} onClose={close} title="Title">{children}</Modal>` |
+| `CardBox` | Card container wrapper | `<CardBox>content</CardBox>` |
+| `Spinner` | Loading spinner | `<Spinner size="sm" />` |
+| `PageHeader` | Page title with breadcrumb | `<PageHeader title="Leads" />` |
+
+#### Form Components
+
 | Component | Purpose | Usage |
 |-----------|---------|-------|
 | `FormField` | Input with label + error message | `<FormField label="Nom" error={errors.name?.message} {...register('name')} />` |
 | `FormPasswordField` | Password field with label + error | `<FormPasswordField label="Mot de passe" error={errors.password?.message} {...register('password')} />` |
 | `FormTextarea` | Textarea field with label + error | `<FormTextarea label="Notes" error={errors.notes?.message} {...register('notes')} />` |
-| `FormSelect` | Select dropdown with label + error | `<FormSelect label="Rôle" options={ROLE_OPTIONS} {...register('role')} />` |
+| `FormSelect` | Native select (simple cases only) | `<FormSelect label="Rôle" options={ROLE_OPTIONS} {...register('role')} />` |
+| `FormSelectDropdown` | **Custom styled dropdown (PREFERRED)** | Use with `Controller` from RHF - see example below |
 | `FormAlert` | Alert box (error/success/warning/info) | `<FormAlert type="error" message={error} />` |
 | `FormErrorAlert` | Conditional error alert | `<FormErrorAlert error={error} />` |
 | `FormSuccessAlert` | Conditional success alert | `<FormSuccessAlert show={success} message="Saved!" />` |
 | `FormActions` | Submit/cancel button row | `<FormActions isPending={isPending} submitLabel="Save" onCancel={close} />` |
-| `Modal` | Reusable modal with escape/scroll lock | `<Modal isOpen={isOpen} onClose={close} title="Title">{children}</Modal>` |
 | `PasswordInput` | Password input with show/hide toggle | `<PasswordInput {...register('password')} error={!!errors.password} />` |
+
+#### Dropdown & Selection Components
+
+| Component | Purpose | Usage |
+|-----------|---------|-------|
+| `DropdownMenu` | Custom dropdown menu (click to open) | `<DropdownMenu trigger={...}><DropdownMenuContent>...</DropdownMenuContent></DropdownMenu>` |
+| `DropdownMenuItem` | Dropdown menu item | `<DropdownMenuItem onClick={...}>Label</DropdownMenuItem>` |
+| `DropdownMenuDivider` | Dropdown separator line | `<DropdownMenuDivider />` |
+| `Select` | Styled native select (non-form) | `<Select options={opts} value={v} onChange={fn} />` |
+| `InlineSelect` | Compact inline select | `<InlineSelect options={opts} value={v} onChange={fn} />` |
+
+#### Table & List Components
+
+| Component | Purpose | Usage |
+|-----------|---------|-------|
 | `TableSkeleton` | Generic table skeleton loader | `<TableSkeleton headerColumns={['w-32', 'w-28']} rowCount={5} rowColumns={['w-40', 'w-24']} />` |
 | `TableEmptyState` | Empty state row for tables | `<TableEmptyState colSpan={columns.length} message="Aucun résultat" />` |
+| `Pagination` | Universal pagination controls | `<Pagination total={100} page={1} pageSize={25} totalPages={4} onPageChange={fn} />` |
+| `SearchInput` | Debounced search input | `<SearchInput value={q} onChange={setQ} placeholder="Rechercher..." />` |
+| `EmptyState` | Empty state display | `<EmptyState icon={IconInbox} title="Aucun résultat" />` |
+
+#### Toast System
+
+| Component | Purpose | Usage |
+|-----------|---------|-------|
+| `useToast` | Toast notifications hook | `const { toast } = useToast(); toast.success('Message');` |
+| `ToastProvider` | Toast context provider | Wrap app in `<ToastProvider>` |
 
 ### Shared Hooks (`modules/shared/hooks/`)
 
@@ -847,19 +884,81 @@ export function MyForm({ onSuccess, onCancel }) {
 
 ### DRY Rules (MUST follow)
 
-1. **Never duplicate form state** - Use `useFormState()` hook
-2. **Never duplicate alerts** - Use `FormErrorAlert` / `FormSuccessAlert`
-3. **Never duplicate modal boilerplate** - Use `Modal` component
-4. **Never duplicate form buttons** - Use `FormActions` component
-5. **Never hardcode French messages** - Use `FR_MESSAGES` from `lib/errors.ts`
-6. **Never duplicate constants** - Import from `lib/constants/`
-7. **Never duplicate history creation** - Use history helpers
-8. **Never duplicate password field patterns** - Use `FormPasswordField` component
-9. **Never duplicate textarea field patterns** - Use `FormTextarea` component
-10. **Never duplicate table skeleton patterns** - Use `TableSkeleton` component
-11. **Never duplicate table empty states** - Use `TableEmptyState` component
-12. **Never duplicate form success handling** - Use `handleFormSuccess` from `useFormState` hook
+#### Component Usage Rules (STRICT)
+
+1. **NEVER use raw `<button>`** - Always use `Button` from `@/components/ui/button`
+2. **NEVER use native `<select>` in forms** - Use `FormSelectDropdown` with RHF `Controller`
+3. **NEVER use native `<select>` in UI** - Use `DropdownMenu` for custom dropdowns
+4. **NEVER create custom dropdown logic** - Use `DropdownMenu` component
+5. **NEVER create custom modal logic** - Use `Modal` component
+6. **NEVER create custom pagination** - Use `Pagination` component
+7. **NEVER create custom search input** - Use `SearchInput` component
+8. **NEVER create custom toast system** - Use `useToast` hook
+9. **NEVER create custom empty states** - Use `EmptyState` component
+
+#### Form Pattern Rules
+
+10. **Never duplicate form state** - Use `useFormState()` hook
+11. **Never duplicate alerts** - Use `FormErrorAlert` / `FormSuccessAlert`
+12. **Never duplicate form buttons** - Use `FormActions` component
+13. **Never duplicate password field patterns** - Use `FormPasswordField` component
+14. **Never duplicate textarea field patterns** - Use `FormTextarea` component
+15. **Never duplicate form success handling** - Use `handleFormSuccess` from `useFormState` hook
+
+#### Data & Constants Rules
+
+16. **Never hardcode French messages** - Use `FR_MESSAGES` from `lib/errors.ts`
+17. **Never duplicate constants** - Import from `lib/constants/`
+18. **Never duplicate history creation** - Use history helpers
+19. **Never duplicate table skeleton patterns** - Use `TableSkeleton` component
+20. **Never duplicate table empty states** - Use `TableEmptyState` component
+
+### FormSelectDropdown Usage (with React Hook Form)
+
+**IMPORTANT**: For form selects, use `FormSelectDropdown` with RHF `Controller`:
+
+```tsx
+import { Controller } from 'react-hook-form';
+import { FormSelectDropdown } from '@/modules/shared';
+
+// In your form:
+<Controller
+  name="role"
+  control={control}
+  render={({ field }) => (
+    <FormSelectDropdown
+      label="Rôle"
+      options={ROLE_OPTIONS}
+      value={field.value}
+      onChange={field.onChange}
+      error={errors.role?.message}
+    />
+  )}
+/>
+```
+
+### Creating New Reusable Components
+
+**When to create a new shared component:**
+
+1. You see the same UI pattern repeated 2+ times
+2. You're about to copy-paste UI code from another file
+3. The component has clear, reusable props interface
+4. It follows existing patterns in `modules/shared/`
+
+**Process for creating new shared components:**
+
+1. Create in `modules/shared/ui/` with clear name
+2. Export from `modules/shared/index.ts`
+3. Document in CLAUDE.md in the Shared UI Components table
+4. Update all existing usages to use the new component
+
+**Before writing ANY UI code, check:**
+
+1. Does a shared component exist? → Use it
+2. Is this pattern repeated elsewhere? → Create shared component first
+3. Am I using native HTML elements? → Check for shared alternatives
 
 ---
 
-End of CLAUDE.md
+End of .cursorrules

@@ -10,6 +10,8 @@ import {
   IconChevronDown,
   IconChevronUp,
 } from '@tabler/icons-react';
+import { Button } from '@/components/ui/button';
+import { Select } from '@/modules/shared';
 import type { ColumnMappingConfig, LeadFieldKey, UploadedFile, RawRow } from '../types';
 import { getAvailableTargetFields, checkRequiredMappings, getMappingSummary } from '../lib/auto-mapper';
 
@@ -94,14 +96,15 @@ export function MappingStep({
             </div>
           )}
 
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
             onClick={onResetMapping}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-darklink hover:text-ld hover:bg-muted rounded-lg transition-colors"
           >
             <IconRefresh size={16} />
             Auto-detection
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -162,7 +165,7 @@ export function MappingStep({
 
                 {/* Target field selector */}
                 <div className="w-48">
-                  <select
+                  <Select
                     value={col.targetField || ''}
                     onChange={(e) =>
                       onUpdateMapping(
@@ -170,39 +173,30 @@ export function MappingStep({
                         e.target.value ? (e.target.value as LeadFieldKey) : null
                       )
                     }
-                    className={`
-                      w-full px-3 py-2 rounded-lg border text-sm
-                      bg-white dark:bg-dark
-                      focus:outline-none focus:ring-2 focus:ring-primary/50
-                      ${isMapped ? 'border-success/50 text-success font-medium' : 'border-border text-darklink'}
-                    `}
-                  >
-                    <option value="">-- Ignorer --</option>
-                    {targetFields.map((field) => {
+                    placeholder="-- Ignorer --"
+                    variant={isMapped ? 'success' : 'default'}
+                    options={targetFields.map((field) => {
                       const isUsed = usedTargetFields.has(field.value) && col.targetField !== field.value;
-                      return (
-                        <option
-                          key={field.value}
-                          value={field.value}
-                          disabled={isUsed}
-                          className={isUsed ? 'text-darklink/50' : ''}
-                        >
-                          {field.label} {isUsed ? '(deja utilise)' : ''}
-                        </option>
-                      );
+                      return {
+                        value: field.value,
+                        label: `${field.label}${isUsed ? ' (déjà utilisé)' : ''}`,
+                        disabled: isUsed,
+                      };
                     })}
-                  </select>
+                    className="w-full"
+                  />
                 </div>
 
                 {/* Expand button */}
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="iconSm"
                   onClick={() => setExpandedColumn(isExpanded ? null : col.sourceIndex)}
-                  className="p-2 text-darklink hover:text-ld hover:bg-muted rounded-lg transition-colors"
                   title="Voir plus d'exemples"
                 >
                   {isExpanded ? <IconChevronUp size={18} /> : <IconChevronDown size={18} />}
-                </button>
+                </Button>
               </div>
 
               {/* Expanded sample values */}

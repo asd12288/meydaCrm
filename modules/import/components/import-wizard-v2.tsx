@@ -9,6 +9,7 @@ import {
   IconLoader2,
   IconX,
 } from '@tabler/icons-react';
+import { ErrorBoundary, SectionErrorFallback } from '@/modules/shared';
 
 // Step components
 import { WizardStepper } from './wizard-stepper';
@@ -655,7 +656,11 @@ export function ImportWizardV2({ salesUsers, onImportComplete, resumeJobId }: Im
       )}
 
       {/* Step content */}
-      <div className="min-h-[400px]">{renderStep()}</div>
+      <div className="min-h-[400px]">
+        <ErrorBoundary FallbackComponent={SectionErrorFallback}>
+          {renderStep()}
+        </ErrorBoundary>
+      </div>
 
       {/* Navigation footer */}
       {currentStep !== 'progress' && currentStep !== 'results' && (

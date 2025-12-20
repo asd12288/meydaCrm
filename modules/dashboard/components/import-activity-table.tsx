@@ -64,7 +64,10 @@ export function ImportActivityTable({ imports }: ImportActivityTableProps) {
               {imports.slice(0, 5).map((item) => {
                 const statusConfig = getStatusConfig(item.status);
                 return (
-                  <tr key={item.id} className="border-b border-border dark:border-darkborder last:border-0">
+                  <tr
+                    key={item.id}
+                    className="border-b border-border dark:border-darkborder last:border-0 hover:bg-lightgray dark:hover:bg-darkgray transition-colors"
+                  >
                     <td className="py-3">
                       <div className="flex items-center gap-2">
                         <IconFileUpload size={18} className="text-darklink" />

@@ -1,4 +1,5 @@
 import { Suspense } from 'react';
+import { ErrorBoundary, SectionErrorFallback } from '@/modules/shared';
 import {
   AdminWelcomeSection,
   AdminQuickStatsSection,
@@ -31,22 +32,28 @@ export function AdminDashboardStreaming({ userName, userAvatar }: AdminDashboard
   return (
     <div className="space-y-6">
       {/* Welcome Card */}
-      <Suspense fallback={<WelcomeCardSkeleton />}>
-        <AdminWelcomeSection userName={userName} userAvatar={userAvatar} />
-      </Suspense>
+      <ErrorBoundary FallbackComponent={SectionErrorFallback}>
+        <Suspense fallback={<WelcomeCardSkeleton />}>
+          <AdminWelcomeSection userName={userName} userAvatar={userAvatar} />
+        </Suspense>
+      </ErrorBoundary>
 
       {/* Quick Stats Row */}
-      <Suspense fallback={<QuickStatsSkeleton />}>
-        <AdminQuickStatsSection />
-      </Suspense>
+      <ErrorBoundary FallbackComponent={SectionErrorFallback}>
+        <Suspense fallback={<QuickStatsSkeleton />}>
+          <AdminQuickStatsSection />
+        </Suspense>
+      </ErrorBoundary>
 
       {/* Status Chart + Quick Actions */}
       <div className="grid grid-cols-12 gap-6 items-stretch">
         <div className="lg:col-span-8 col-span-12 flex">
           <div className="w-full">
-            <Suspense fallback={<StatusChartSkeleton />}>
-              <AdminStatusChartSection />
-            </Suspense>
+            <ErrorBoundary FallbackComponent={SectionErrorFallback}>
+              <Suspense fallback={<StatusChartSkeleton />}>
+                <AdminStatusChartSection />
+              </Suspense>
+            </ErrorBoundary>
           </div>
         </div>
         <div className="lg:col-span-4 col-span-12 flex">
@@ -61,24 +68,30 @@ export function AdminDashboardStreaming({ userName, userAvatar }: AdminDashboard
       <div className="grid grid-cols-12 gap-6 items-stretch">
         <div className="lg:col-span-4 col-span-12 flex">
           <div className="w-full">
-            <Suspense fallback={<SalesDistributionSkeleton />}>
-              <TeamDistributionSection />
-            </Suspense>
+            <ErrorBoundary FallbackComponent={SectionErrorFallback}>
+              <Suspense fallback={<SalesDistributionSkeleton />}>
+                <TeamDistributionSection />
+              </Suspense>
+            </ErrorBoundary>
           </div>
         </div>
         <div className="lg:col-span-8 col-span-12 flex">
           <div className="w-full">
-            <Suspense fallback={<ImportActivitySkeleton />}>
-              <ImportActivitySection />
-            </Suspense>
+            <ErrorBoundary FallbackComponent={SectionErrorFallback}>
+              <Suspense fallback={<ImportActivitySkeleton />}>
+                <ImportActivitySection />
+              </Suspense>
+            </ErrorBoundary>
           </div>
         </div>
       </div>
 
       {/* Leads Trend Chart */}
-      <Suspense fallback={<TrendChartSkeleton />}>
-        <AdminTrendSection />
-      </Suspense>
+      <ErrorBoundary FallbackComponent={SectionErrorFallback}>
+        <Suspense fallback={<TrendChartSkeleton />}>
+          <AdminTrendSection />
+        </Suspense>
+      </ErrorBoundary>
     </div>
   );
 }

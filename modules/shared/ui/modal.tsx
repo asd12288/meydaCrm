@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, type ReactNode } from 'react';
 import { IconX } from '@tabler/icons-react';
+import { Button } from '@/components/ui/button';
 
 export type ModalSize = 'sm' | 'md' | 'lg' | 'xl' | 'full';
 
@@ -49,22 +50,43 @@ export function Modal({
   closeOnBackdrop = true,
   closeOnEscape = true,
 }: ModalProps) {
+  const [isClosing, setIsClosing] = useState(false);
+  const [shouldRender, setShouldRender] = useState(false);
+
+  // Handle open/close with animation
+  useEffect(() => {
+    if (isOpen) {
+      setShouldRender(true);
+      setIsClosing(false);
+    }
+  }, [isOpen]);
+
+  // Animated close handler
+  const handleClose = useCallback(() => {
+    setIsClosing(true);
+    setTimeout(() => {
+      setShouldRender(false);
+      setIsClosing(false);
+      onClose();
+    }, 150); // Match animation duration
+  }, [onClose]);
+
   // Handle escape key
   useEffect(() => {
-    if (!closeOnEscape) return;
+    if (!closeOnEscape || !shouldRender) return;
 
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
-        onClose();
+      if (e.key === 'Escape' && !isClosing) {
+        handleClose();
       }
     };
     document.addEventListener('keydown', handleEscape);
     return () => document.removeEventListener('keydown', handleEscape);
-  }, [isOpen, onClose, closeOnEscape]);
+  }, [shouldRender, isClosing, handleClose, closeOnEscape]);
 
   // Prevent body scroll when modal is open
   useEffect(() => {
-    if (isOpen) {
+    if (shouldRender) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
@@ -72,22 +94,26 @@ export function Modal({
     return () => {
       document.body.style.overflow = '';
     };
-  }, [isOpen]);
+  }, [shouldRender]);
 
-  if (!isOpen) return null;
+  if (!shouldRender) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/50"
-        onClick={closeOnBackdrop ? onClose : undefined}
+        className={`absolute inset-0 bg-black/50 backdrop-blur-[2px] ${
+          isClosing ? 'animate-modal-backdrop-exit' : 'animate-modal-backdrop-enter'
+        }`}
+        onClick={closeOnBackdrop && !isClosing ? handleClose : undefined}
         aria-hidden="true"
       />
 
       {/* Modal */}
       <div
-        className={`relative w-full ${sizeClasses[size]} mx-4 bg-white dark:bg-dark rounded-lg shadow-xl overflow-hidden flex flex-col max-h-[90vh]`}
+        className={`relative w-full ${sizeClasses[size]} mx-4 bg-white dark:bg-dark rounded-lg shadow-xl overflow-hidden flex flex-col max-h-[90vh] ${
+          isClosing ? 'animate-modal-content-exit' : 'animate-modal-content-enter'
+        }`}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-ld shrink-0">
@@ -96,19 +122,21 @@ export function Modal({
             <h3 className="text-lg font-semibold text-ld">{title}</h3>
           </div>
           {showCloseButton && (
-            <button
+            <Button
               type="button"
-              onClick={onClose}
-              className="btn-circle-hover"
+              variant="circleHover"
+              size="circle"
+              onClick={handleClose}
+              disabled={isClosing}
               aria-label="Fermer"
             >
               <IconX size={20} />
-            </button>
+            </Button>
           )}
         </div>
 
-        {/* Body */}
-        <div className="p-6 flex flex-col flex-1 min-h-0 overflow-hidden">{children}</div>
+        {/* Body - scrollable when content overflows */}
+        <div className="p-6 flex flex-col flex-1 min-h-0 overflow-y-auto">{children}</div>
       </div>
     </div>
   );

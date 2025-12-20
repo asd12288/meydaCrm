@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, memo } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -15,7 +15,12 @@ interface TicketsTableProps {
   onTicketClick: (ticket: SupportTicketWithDetails) => void;
 }
 
-export function TicketsTable({ tickets, onTicketClick }: TicketsTableProps) {
+/**
+ * TicketsTable component with memoization
+ * Optimized: Wrapped with React.memo to prevent unnecessary re-renders
+ * when parent state changes but tickets/onTicketClick props remain the same
+ */
+export const TicketsTable = memo(function TicketsTable({ tickets, onTicketClick }: TicketsTableProps) {
   const columns = useMemo(() => getTicketColumns(), []);
 
   const table = useReactTable({
@@ -75,4 +80,4 @@ export function TicketsTable({ tickets, onTicketClick }: TicketsTableProps) {
       </table>
     </div>
   );
-}
+});

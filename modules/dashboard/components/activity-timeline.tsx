@@ -93,7 +93,10 @@ export function ActivityTimeline({
         <div className="space-y-4">
           {displayActivities.map((activity) => {
             return (
-              <div key={activity.id} className="flex gap-3">
+              <div
+                key={activity.id}
+                className="flex gap-3 group"
+              >
                 <div className="dashboard-activity-icon">
                   {getActionIcon(activity.action)}
                 </div>
@@ -103,7 +106,7 @@ export function ActivityTimeline({
                     <div className="min-w-0">
                       <Link
                         href={`/leads/${activity.leadId}`}
-                        className="text-sm font-medium text-ld hover:text-primary block truncate"
+                        className="text-sm font-medium text-ld hover:text-primary block truncate transition-colors"
                       >
                         {activity.leadName}
                       </Link>

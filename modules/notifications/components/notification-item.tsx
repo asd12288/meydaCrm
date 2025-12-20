@@ -38,12 +38,13 @@ export function NotificationItem({ notification, onMarkAsRead }: NotificationIte
     <div
       onClick={handleClick}
       className={`
-        flex gap-3 px-4 py-3 cursor-pointer transition-colors
+        flex gap-3 px-4 py-3 cursor-pointer transition-all duration-200 dropdown-item-stagger group
         ${isRead ? 'hover:bg-lightgray dark:hover:bg-darkgray' : 'bg-primary/5 hover:bg-primary/10 dark:bg-primary/10 dark:hover:bg-primary/20'}
+        hover:pl-5
       `}
     >
       {/* Icon */}
-      <div className={`shrink-0 mt-0.5 ${isRead ? 'text-darklink' : 'text-primary'}`}>
+      <div className={`shrink-0 mt-0.5 transition-transform duration-200 group-hover:scale-110 ${isRead ? 'text-darklink' : 'text-primary'}`}>
         <Icon size={20} stroke={1.5} />
       </div>
 

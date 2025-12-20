@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import { ThemeProvider, ThemeScript } from '@/lib/theme';
+import { ToastProvider } from '@/modules/shared';
+import 'simplebar-react/dist/simplebar.min.css';
 import './globals.css';
 
 const inter = Inter({
@@ -24,7 +26,9 @@ export default function RootLayout({
         <ThemeScript />
       </head>
       <body className={`${inter.variable} font-sans antialiased bg-white dark:bg-dark text-link dark:text-darklink`}>
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          <ToastProvider>{children}</ToastProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

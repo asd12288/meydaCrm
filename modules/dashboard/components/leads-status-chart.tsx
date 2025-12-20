@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import dynamic from 'next/dynamic';
 import { CardBox } from '@/modules/shared';
 import { LEAD_STATUS_LABELS } from '@/db/types';
@@ -25,14 +24,16 @@ const getStatusCategory = (status: string): StatusCategory => {
 };
 
 // Chart colors - professional palette (primary blue + grays)
+// Using darker shades to ensure visibility on both light and dark backgrounds
 const chartColorPalette = [
-  'var(--color-primary)',   // Primary blue
+  'var(--color-primary)',   // Primary blue (#00A1FF)
+  '#475569',                // Slate-600 (darker)
   '#64748b',                // Slate-500
   '#94a3b8',                // Slate-400
-  '#cbd5e1',                // Slate-300
-  '#e2e8f0',                // Slate-200
-  '#f1f5f9',                // Slate-100
+  '#78716c',                // Stone-500
+  '#a8a29e',                // Stone-400
 ];
+
 
 const getStatusChartColor = (index: number): string => {
   return chartColorPalette[index % chartColorPalette.length];
@@ -104,7 +105,27 @@ export function LeadsStatusChart({ leadsByStatus, totalLeads }: LeadsStatusChart
     stroke: { width: 0 },
     legend: { show: false },
     colors: chartColors,
-    tooltip: { theme: 'dark' },
+    tooltip: {
+      enabled: true,
+      theme: 'dark',
+      fillSeriesColor: false,
+      style: {
+        fontSize: '12px',
+      },
+      y: {
+        formatter: (val: number) => `${val} leads`,
+      },
+      marker: {
+        show: true,
+      },
+      custom: function({ series, seriesIndex, w }) {
+        const label = w.globals.labels[seriesIndex];
+        const value = series[seriesIndex];
+        return `<div style="background: #1e293b; color: #fff; padding: 8px 12px; border-radius: 4px; font-size: 12px;">
+          <strong>${label}</strong>: ${value} leads
+        </div>`;
+      },
+    },
   };
 
   return (
@@ -127,7 +148,10 @@ export function LeadsStatusChart({ leadsByStatus, totalLeads }: LeadsStatusChart
             {sortedStatuses.map(([status, count]) => {
               const percentage = totalLeads > 0 ? Math.round((count / totalLeads) * 100) : 0;
               return (
-                <div key={status} className="dashboard-legend-item">
+                <div
+                  key={status}
+                  className="dashboard-legend-item cursor-default"
+                >
                   <span className={getLegendBadgeClass(status)}>
                     {percentage}%
                   </span>

@@ -1,7 +1,6 @@
 'use client';
 
 import { useOptimistic, startTransition } from 'react';
-import { Dropdown, DropdownItem } from 'flowbite-react';
 import {
   IconChevronDown,
   IconCalendarEvent,
@@ -14,6 +13,7 @@ import {
   IconRefresh,
   IconMail,
 } from '@tabler/icons-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem } from '@/modules/shared';
 import { STATUS_COLORS, LEAD_STATUS_OPTIONS } from '../config/constants';
 import { updateLeadStatus } from '../lib/actions';
 import type { LeadStatus } from '@/db/types';
@@ -93,15 +93,10 @@ export function LeadStatusBadge({
   }
 
   return (
-    <Dropdown
-      label=""
-      dismissOnClick
-      theme={{
-        floating: {
-          base: 'z-[9999] w-fit rounded-lg divide-y divide-gray-100 shadow-lg focus:outline-none',
-        },
-      }}
-      renderTrigger={() => (
+    <DropdownMenu
+      position="bottom-left"
+      widthClass="w-48"
+      trigger={
         <button
           type="button"
           className={`inline-flex items-center gap-1.5 rounded-full font-semibold cursor-pointer hover:opacity-80 transition-opacity ${sizeConfig.badge} ${colorClass}`}
@@ -110,31 +105,34 @@ export function LeadStatusBadge({
           {currentLabel}
           <IconChevronDown size={sizeConfig.chevron} />
         </button>
-      )}
+      }
     >
-      {LEAD_STATUS_OPTIONS.map((option) => {
-        const OptionIcon = STATUS_ICON_MAP[option.value];
-        const badgeClass = STATUS_COLORS[option.value] || 'badge-primary';
-        const iconColor = BADGE_TO_COLOR[badgeClass] || 'var(--color-primary)';
-        const hoverClass = `hover-${badgeClass.replace('badge-', 'text-')}`;
+      <DropdownMenuContent maxHeight="300px">
+        {LEAD_STATUS_OPTIONS.map((option) => {
+          const OptionIcon = STATUS_ICON_MAP[option.value];
+          const badgeClass = STATUS_COLORS[option.value] || 'badge-primary';
+          const iconColor = BADGE_TO_COLOR[badgeClass] || 'var(--color-primary)';
 
-        return (
-          <DropdownItem
-            key={option.value}
-            onClick={() => handleStatusChange(option.value)}
-            className={`flex items-center gap-2 ${hoverClass} ${
-              option.value === optimisticStatus ? 'font-medium bg-lightgray dark:bg-darkborder' : ''
-            }`}
-          >
-            {OptionIcon ? (
-              <OptionIcon size={14} style={{ color: iconColor }} />
-            ) : (
-              <span className={`w-2 h-2 rounded-full ${STATUS_COLORS[option.value]}`} />
-            )}
-            {option.label}
-          </DropdownItem>
-        );
-      })}
-    </Dropdown>
+          return (
+            <DropdownMenuItem
+              key={option.value}
+              onClick={() => handleStatusChange(option.value)}
+              className={
+                option.value === optimisticStatus ? 'font-medium bg-lightgray dark:bg-darkborder' : ''
+              }
+            >
+              <span className="flex items-center gap-2">
+                {OptionIcon ? (
+                  <OptionIcon size={14} style={{ color: iconColor }} />
+                ) : (
+                  <span className={`w-2 h-2 rounded-full ${STATUS_COLORS[option.value]}`} />
+                )}
+                {option.label}
+              </span>
+            </DropdownMenuItem>
+          );
+        })}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

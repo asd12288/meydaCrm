@@ -28,7 +28,7 @@ export function QuickStatsRow({ stats }: QuickStatsRowProps) {
         {stats.map((stat, index) => (
           <div
             key={index}
-            className="flex items-center gap-4 p-4 rounded-xl bg-lightgray dark:bg-darkgray"
+            className="flex items-center gap-4 p-4 rounded-xl bg-lightgray dark:bg-darkgray cursor-default"
           >
             <span className="dashboard-stat-icon">
               {stat.icon}

@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { IconChevronDown, IconCheck } from '@tabler/icons-react';
+import { Button } from '@/components/ui/button';
 import { useClickOutside } from '../hooks/use-click-outside';
 
 export interface FilterOption {
@@ -69,14 +70,14 @@ export function FilterDropdown({
   return (
     <div ref={dropdownRef} className={`relative ${className}`}>
       {/* Trigger button */}
-      <button
+      <Button
         type="button"
+        variant="outline"
         onClick={() => setIsOpen(!isOpen)}
         className={`
-          h-10 min-w-44 px-3 flex items-center justify-between gap-2
-          text-sm border border-ld rounded-md
-          bg-white dark:bg-darkgray
-          hover:border-primary/50 transition-colors
+          h-10 min-w-44 px-3 justify-between gap-2
+          border-ld bg-white dark:bg-darkgray
+          hover:border-primary/50 rounded-md
           ${isOpen ? 'border-primary ring-1 ring-primary/20' : ''}
           ${value ? 'text-ld' : 'text-darklink'}
         `}
@@ -96,25 +97,26 @@ export function FilterDropdown({
           size={16}
           className={`text-darklink shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`}
         />
-      </button>
+      </Button>
 
       {/* Dropdown menu */}
       {isOpen && (
         <div className={`absolute top-full left-0 mt-1 min-w-full w-max ${menuMaxWidth} z-9999 bg-white dark:bg-darkgray border border-ld rounded-md shadow-lg dark:shadow-dark-md animate-in fade-in slide-in-from-top-1 duration-150`}>
           {/* Clear option - sticky at top */}
           <div className="py-1 border-b border-ld">
-            <button
+            <Button
               type="button"
+              variant="ghost"
               onClick={() => handleSelect('')}
               className={`
-                w-full px-3 py-2 flex items-center gap-2 text-sm text-left
-                hover:bg-lightgray dark:hover:bg-darkmuted transition-colors
+                w-full px-3 py-2 justify-start gap-2 rounded-none
+                hover:bg-lightgray dark:hover:bg-darkmuted
                 ${!value ? 'text-primary font-medium' : 'text-darklink'}
               `}
             >
               {!value && <IconCheck size={14} className="text-primary" />}
               <span className={!value ? '' : 'ml-5'}>{placeholder}</span>
-            </button>
+            </Button>
           </div>
 
           {/* Options - scrollable when many items */}
@@ -132,13 +134,14 @@ export function FilterDropdown({
                 : '';
 
               return (
-                <button
+                <Button
                   key={option.value}
                   type="button"
+                  variant="ghost"
                   onClick={() => handleSelect(option.value)}
                   className={`
-                    w-full px-3 py-2 flex items-center gap-2 text-sm text-left
-                    hover:bg-lightgray dark:hover:bg-darkmuted transition-colors
+                    w-full px-3 py-2 justify-start gap-2 rounded-none
+                    hover:bg-lightgray dark:hover:bg-darkmuted
                     ${isSelected ? 'text-primary font-medium bg-lightprimary/50 dark:bg-primary/10' : 'text-ld'}
                     ${!isSelected && hoverColorClass ? hoverColorClass : ''}
                   `}
@@ -160,7 +163,7 @@ export function FilterDropdown({
                       <span className="truncate">{option.label}</span>
                     </>
                   )}
-                </button>
+                </Button>
               );
             })}
           </div>

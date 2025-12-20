@@ -1,9 +1,9 @@
 'use client';
 
 import { useMemo } from 'react';
-import { useDebouncedCallback } from 'use-debounce';
-import { IconSearch, IconX, IconFilter } from '@tabler/icons-react';
-import { FilterDropdown, type FilterOption } from '@/modules/shared';
+import { IconX, IconFilter } from '@tabler/icons-react';
+import { Button } from '@/components/ui/button';
+import { FilterDropdown, SearchInput, type FilterOption } from '@/modules/shared';
 import { useFilterNavigation } from '../hooks/use-filter-navigation';
 import {
   TICKET_CATEGORY_OPTIONS,
@@ -22,18 +22,12 @@ const BADGE_TO_TEXT_COLOR: Record<string, string> = {
   'badge-secondary': 'text-secondary',
 };
 
-const SEARCH_DEBOUNCE_MS = 300;
-
 export function TicketFilters() {
   const { searchParams, updateFilter, clearFilters } = useFilterNavigation();
 
   const currentSearch = searchParams.get('search') || '';
   const currentCategory = searchParams.get('category') || '';
   const currentStatus = searchParams.get('status') || '';
-
-  const handleSearch = useDebouncedCallback((term: string) => {
-    updateFilter('search', term);
-  }, SEARCH_DEBOUNCE_MS);
 
   const hasActiveFilters = currentSearch || currentCategory || currentStatus;
 
@@ -70,19 +64,11 @@ export function TicketFilters() {
   return (
     <div className="flex flex-wrap items-center gap-3 mb-4">
       {/* Search input */}
-      <div className="relative w-64">
-        <IconSearch
-          size={16}
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-darklink pointer-events-none"
-        />
-        <input
-          type="text"
-          placeholder="Rechercher..."
-          defaultValue={currentSearch}
-          onChange={(e) => handleSearch(e.target.value)}
-          className="w-full h-10 pl-9 pr-3 text-sm border border-ld rounded-md bg-white dark:bg-darkgray focus:border-primary focus:outline-none"
-        />
-      </div>
+      <SearchInput
+        value={currentSearch}
+        placeholder="Rechercher..."
+        onSearch={(value) => updateFilter('search', value)}
+      />
 
       {/* Category filter dropdown */}
       <FilterDropdown
@@ -104,14 +90,16 @@ export function TicketFilters() {
 
       {/* Clear filters button */}
       {hasActiveFilters && (
-        <button
+        <Button
           type="button"
+          variant="ghostDanger"
+          size="sm"
           onClick={clearFilters}
-          className="h-10 flex items-center gap-1 px-3 text-sm text-darklink hover:text-error transition-colors"
+          className="h-10"
         >
           <IconX size={16} />
           Effacer
-        </button>
+        </Button>
       )}
     </div>
   );

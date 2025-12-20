@@ -18,6 +18,7 @@ import type {
   LeadUpdateInput,
   CommentWithAuthor,
   HistoryEventWithActor,
+  LeadForKanban,
 } from '../types';
 import { leadUpdateSchema, commentSchema, UNASSIGNED_FILTER_VALUE } from '../types';
 import { MIN_SEARCH_LENGTH } from '../config/constants';
@@ -25,6 +26,7 @@ import { MIN_SEARCH_LENGTH } from '../config/constants';
 /**
  * Fetch paginated leads with filters
  * RLS automatically filters: admin sees all, sales sees only assigned
+ * Optimized: Uses 'estimated' count for faster pagination on 290k+ rows
  */
 export async function getLeads(
   filters: LeadFilters
@@ -32,11 +34,12 @@ export async function getLeads(
   const supabase = await createClient();
 
   // Build base query with assignee join
-  // Use 'exact' count for accurate totals
+  // Use 'estimated' count for faster pagination (avoids full table scan)
+  // Per PostgREST docs: uses planner statistics, typically within 1-5% accuracy
   let query = supabase
     .from('leads')
     .select('*, assignee:profiles!leads_assigned_to_profiles_id_fk(id, display_name)', {
-      count: 'exact',
+      count: 'estimated',
     })
     .is('deleted_at', null);
 
@@ -98,7 +101,88 @@ export async function getLeads(
     page,
     pageSize,
     totalPages,
+    isEstimated: true, // Using 'estimated' count for faster pagination
   };
+}
+
+/**
+ * Fetch leads for kanban view (assigned to current user only)
+ * Always filters by assigned_to = current user (for both admin and sales)
+ * Includes last comment for each lead
+ */
+export async function getLeadsForKanban(
+  filters: LeadFilters
+): Promise<{ leads: LeadForKanban[]; total: number }> {
+  const supabase = await createClient();
+  const user = await getCurrentUser();
+
+  if (!user) {
+    return { leads: [], total: 0 };
+  }
+
+  // Build query - always filter by current user's assigned leads
+  let query = supabase
+    .from('leads')
+    .select('*, assignee:profiles!leads_assigned_to_profiles_id_fk(id, display_name)', {
+      count: 'exact',
+    })
+    .is('deleted_at', null)
+    .eq('assigned_to', user.id); // Always filter by current user
+
+  // Apply search filter
+  if (filters.search && filters.search.trim().length >= MIN_SEARCH_LENGTH) {
+    const searchTerm = `%${filters.search.trim()}%`;
+    query = query.or(
+      `first_name.ilike.${searchTerm},last_name.ilike.${searchTerm},email.ilike.${searchTerm},phone.ilike.${searchTerm},company.ilike.${searchTerm}`
+    );
+  }
+
+  // Apply sorting and limit
+  query = query
+    .order('updated_at', { ascending: false })
+    .limit(filters.pageSize || 200);
+
+  const { data: leads, error, count } = await query;
+
+  if (error) {
+    console.error('Error fetching kanban leads:', error);
+    return { leads: [], total: 0 };
+  }
+
+  if (!leads || leads.length === 0) {
+    return { leads: [], total: count || 0 };
+  }
+
+  // Fetch last comment for each lead
+  const leadIds = leads.map((l) => l.id);
+  const { data: comments } = await supabase
+    .from('lead_comments')
+    .select('id, lead_id, body, created_at, author:profiles!author_id(id, display_name, avatar)')
+    .in('lead_id', leadIds)
+    .order('created_at', { ascending: false });
+
+  // Group comments by lead_id and get only the latest one
+  const lastCommentByLead = new Map<string, LeadForKanban['last_comment']>();
+  if (comments) {
+    for (const comment of comments) {
+      if (!lastCommentByLead.has(comment.lead_id)) {
+        lastCommentByLead.set(comment.lead_id, {
+          id: comment.id,
+          body: comment.body,
+          created_at: comment.created_at,
+          author: comment.author as LeadForKanban['last_comment'] extends { author: infer A } ? A : never,
+        });
+      }
+    }
+  }
+
+  // Merge leads with last comment
+  const leadsWithComments: LeadForKanban[] = leads.map((lead) => ({
+    ...lead,
+    last_comment: lastCommentByLead.get(lead.id) || null,
+  })) as LeadForKanban[];
+
+  return { leads: leadsWithComments, total: count || 0 };
 }
 
 /**

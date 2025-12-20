@@ -87,7 +87,9 @@ export function StatCard({
     : null;
 
   return (
-    <div className={`rounded-xl p-5 ${config.bg}`}>
+    <div
+      className={`rounded-xl p-5 ${config.bg} transition-colors duration-150 cursor-default`}
+    >
       <div className="flex items-center gap-3 mb-4">
         <span className={`w-12 h-12 rounded-xl flex items-center justify-center ${config.icon}`}>
           {icon}

@@ -7,6 +7,7 @@ import {
   IconCheck,
   IconLoader2,
 } from '@tabler/icons-react';
+import { Button } from '@/components/ui/button';
 import { FileDropzone } from '../ui/file-dropzone';
 import type { UploadedFile, ColumnMappingConfig, LeadFieldKey } from '../types';
 import { checkRequiredMappings, getMappingSummary } from '../lib/auto-mapper';
@@ -100,14 +101,15 @@ export function UploadStep({
                 )}
               </div>
             </div>
-            <button
+            <Button
               type="button"
+              variant="ghostDanger"
+              size="iconSm"
               onClick={onClear}
-              className="p-1.5 text-darklink hover:text-error hover:bg-lighterror/30 rounded-md transition-colors"
               title="Supprimer le fichier"
             >
               <IconX className="w-4 h-4" />
-            </button>
+            </Button>
           </div>
 
           {/* Excel file message */}

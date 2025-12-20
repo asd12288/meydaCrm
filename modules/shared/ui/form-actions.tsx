@@ -2,6 +2,7 @@
 
 import { IconX } from '@tabler/icons-react';
 import type { ReactNode } from 'react';
+import { Button } from '@/components/ui/button';
 
 export interface FormActionsProps {
   /** Loading state - disables buttons */
@@ -28,7 +29,7 @@ export interface FormActionsProps {
 
 /**
  * Reusable form action buttons component (submit + optional cancel)
- * Uses the DRY CSS classes: .form-actions, .btn-primary-action, .btn-secondary-action
+ * Uses the Button component with primary/secondaryAction variants
  */
 export function FormActions({
   isPending = false,
@@ -46,24 +47,24 @@ export function FormActions({
 
   return (
     <div className={`${containerClass} ${className}`}>
-      <button
+      <Button
         type="submit"
+        variant="primary"
         disabled={isPending || !isDirty}
-        className="btn-primary-action"
       >
         {submitIcon}
         {isPending ? (submitLabelPending || submitLabel) : submitLabel}
-      </button>
+      </Button>
       {showCancel && onCancel && (
-        <button
+        <Button
           type="button"
+          variant="secondaryAction"
           onClick={onCancel}
           disabled={isPending}
-          className="btn-secondary-action"
         >
           <IconX size={18} />
           {cancelLabel}
-        </button>
+        </Button>
       )}
     </div>
   );

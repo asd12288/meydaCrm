@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { IconCurrencyBitcoin, IconExternalLink } from '@tabler/icons-react';
+import { Button } from '@/components/ui/button';
 import { Spinner, FormErrorAlert } from '@/modules/shared';
 import type { SubscriptionPlan, SubscriptionPeriod } from '@/db/types';
 import { createPayment } from '../lib/actions';
@@ -45,11 +46,13 @@ export function PaymentButton({ plan, period, disabled = false }: PaymentButtonP
     <div className="space-y-4">
       <FormErrorAlert error={error} />
 
-      <button
+      <Button
         type="button"
+        variant="primary"
+        size="lg"
         onClick={handlePayment}
         disabled={disabled || isLoading}
-        className="w-full btn-primary-action flex items-center justify-center gap-2 py-3"
+        className="w-full py-3"
       >
         {isLoading ? (
           <>
@@ -63,7 +66,7 @@ export function PaymentButton({ plan, period, disabled = false }: PaymentButtonP
             <IconExternalLink size={16} className="ml-1" />
           </>
         )}
-      </button>
+      </Button>
 
       <p className="text-xs text-center text-darklink">
         Vous serez redirige vers NOWPayments pour effectuer le paiement en USDT (TRC20)

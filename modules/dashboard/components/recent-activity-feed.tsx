@@ -63,12 +63,12 @@ export function RecentActivityFeed({ activities }: RecentActivityFeedProps) {
               <Link
                 key={activity.id}
                 href={`/leads/${activity.leadId}`}
-                className="flex items-center gap-3 p-2 -mx-2 rounded-lg hover:bg-lightgray dark:hover:bg-darkgray transition-colors group"
+                className="flex items-center gap-3 p-2 -mx-2 rounded-lg hover:bg-lightgray dark:hover:bg-darkgray transition-colors duration-150 group"
               >
                 <span className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${config.bg} ${config.color}`}>
                   {config.icon}
                 </span>
-                
+
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-ld truncate group-hover:text-primary transition-colors">
                     {activity.leadName}
@@ -78,10 +78,10 @@ export function RecentActivityFeed({ activities }: RecentActivityFeedProps) {
                     {activity.actorName && <span> • {activity.actorName}</span>}
                   </p>
                 </div>
-                
+
                 <div className="flex items-center gap-2 flex-shrink-0">
                   <span className="text-xs text-darklink">{formatRelativeTime(activity.date)}</span>
-                  <IconArrowRight size={14} className="text-darklink opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <IconArrowRight size={14} className="text-darklink opacity-0 group-hover:opacity-100 transition-opacity duration-150" />
                 </div>
               </Link>
             );

@@ -1,43 +1,27 @@
-import { PageHeader, CardBox, Spinner } from '@/modules/shared';
+import { PageHeader, CardBox } from '@/modules/shared';
+import { TicketListSkeleton } from '@/modules/support/ui/ticket-list-skeleton';
+import { TicketEmptyStateSkeleton } from '@/modules/support/ui/ticket-detail-skeleton';
 
 export default function SupportLoading() {
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 flex flex-col h-full">
       <PageHeader
-        title="Support & Abonnement"
-        description="Gerez votre abonnement et vos paiements"
+        title="Support"
+        description="Gérez vos tickets de support"
       />
 
-      {/* Subscription status skeleton */}
-      <CardBox>
-        <div className="h-6 w-48 bg-surface rounded animate-pulse mb-4" />
-        <div className="flex justify-center py-8">
-          <Spinner size="lg" />
-        </div>
-      </CardBox>
+      {/* Main split layout skeleton */}
+      <CardBox className="!p-0 overflow-hidden flex-1">
+        <div className="flex flex-row h-[calc(100vh-180px)] min-h-[500px]">
+          {/* Left panel - Ticket List skeleton */}
+          <div className="hidden lg:flex lg:flex-col w-[380px] h-full shrink-0 border-r border-ld">
+            <TicketListSkeleton count={8} />
+          </div>
 
-      {/* Plan selector skeleton */}
-      <CardBox>
-        <div className="h-6 w-36 bg-surface rounded animate-pulse mb-4" />
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="h-48 bg-surface rounded-xl animate-pulse" />
-          <div className="h-48 bg-surface rounded-xl animate-pulse" />
-        </div>
-      </CardBox>
-
-      {/* Payment button skeleton */}
-      <CardBox>
-        <div className="h-6 w-40 bg-surface rounded animate-pulse mb-4" />
-        <div className="h-12 bg-surface rounded-lg animate-pulse" />
-      </CardBox>
-
-      {/* Payment history skeleton */}
-      <CardBox>
-        <div className="h-6 w-44 bg-surface rounded animate-pulse mb-4" />
-        <div className="space-y-3">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-12 bg-surface rounded animate-pulse" />
-          ))}
+          {/* Right panel - Empty state skeleton */}
+          <div className="flex-1 min-w-0 flex flex-col">
+            <TicketEmptyStateSkeleton />
+          </div>
         </div>
       </CardBox>
     </div>

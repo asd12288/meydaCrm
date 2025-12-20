@@ -2,6 +2,7 @@
 
 import { IconAlertTriangle } from '@tabler/icons-react';
 import { Modal } from './modal';
+import { Button } from '@/components/ui/button';
 
 export interface ConfirmDialogProps {
   /** Dialog open state */
@@ -67,26 +68,22 @@ export function ConfirmDialog({
 
         {/* Actions */}
         <div className="flex items-center justify-end gap-3 pt-4 border-t border-ld">
-          <button
+          <Button
             type="button"
+            variant="secondaryAction"
             onClick={onClose}
             disabled={isPending}
-            className="btn-secondary-action"
           >
             {cancelLabel}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant={variant === 'danger' ? 'danger' : 'warning'}
             onClick={handleConfirm}
             disabled={isPending}
-            className={`ui-button ${
-              variant === 'danger'
-                ? 'bg-error hover:bg-error/90 text-white'
-                : 'bg-warning hover:bg-warning/90 text-white'
-            } disabled:opacity-50`}
           >
             {isPending ? 'Traitement...' : confirmLabel}
-          </button>
+          </Button>
         </div>
       </div>
     </Modal>

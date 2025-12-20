@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { CardBox, UserAvatar } from '@/modules/shared';
+import { CardBox, UserAvatar, useToast } from '@/modules/shared';
 import { IconEdit, IconCheck, IconX, IconCamera } from '@tabler/icons-react';
 import type { Profile } from '@/db/types';
 import { getRoleLabel } from '@/lib/constants';
@@ -29,8 +29,8 @@ export function ProfileInfoCard({ profile, email }: ProfileInfoCardProps) {
   const [currentAvatar, setCurrentAvatar] = useState<string | null>(
     initialAvatar
   );
-  const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const { toast } = useToast();
 
   // Extract username from email (before @crm.local)
   const username = email.split('@')[0];
@@ -46,16 +46,21 @@ export function ProfileInfoCard({ profile, email }: ProfileInfoCardProps) {
     : 'Inconnu';
 
   const handleSave = () => {
-    setError(null);
+    const previousName = profileDisplayName;
+    const newName = displayName;
+
+    // Exit edit mode immediately (optimistic)
+    setIsEditing(false);
+
     const formData = new FormData();
-    formData.set('displayName', displayName);
+    formData.set('displayName', newName);
 
     startTransition(async () => {
       const result = await updateProfile(formData);
       if (result.error) {
-        setError(result.error);
-      } else {
-        setIsEditing(false);
+        toast.error(result.error);
+        // Rollback on error
+        setDisplayName(previousName);
       }
     });
   };
@@ -63,7 +68,6 @@ export function ProfileInfoCard({ profile, email }: ProfileInfoCardProps) {
   const handleCancel = () => {
     setDisplayName(profileDisplayName);
     setIsEditing(false);
-    setError(null);
   };
 
   const handleAvatarChange = (newAvatar: string | null) => {
@@ -138,9 +142,8 @@ export function ProfileInfoCard({ profile, email }: ProfileInfoCardProps) {
                   </button>
                 </div>
               ) : (
-                <p className="text-ld font-medium">{profileDisplayName}</p>
+                <p className="text-ld font-medium">{displayName}</p>
               )}
-              {error && <p className="text-error text-sm mt-1">{error}</p>}
             </div>
 
             {/* Username */}

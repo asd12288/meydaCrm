@@ -3,7 +3,8 @@
 import { useTransition, useState } from 'react';
 import Image from 'next/image';
 import { IconCheck, IconX } from '@tabler/icons-react';
-import { Modal } from '@/modules/shared';
+import { Button } from '@/components/ui/button';
+import { Modal, useToast } from '@/modules/shared';
 import { AVATARS, getAvatarPath } from '@/lib/constants';
 import { updateAvatar } from '../lib/actions';
 
@@ -24,7 +25,7 @@ export function AvatarPickerModal({
     currentAvatar
   );
   const [isPending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const handleSelect = (avatarId: string) => {
     // Toggle selection - click again to deselect
@@ -33,34 +34,31 @@ export function AvatarPickerModal({
   };
 
   const handleSave = () => {
-    setError(null);
+    const previousAvatar = currentAvatar;
+    const newAvatar = selectedAvatar;
+
+    // Optimistic: update immediately and close
+    onAvatarChange?.(newAvatar);
+    onClose();
 
     startTransition(async () => {
-      const result = await updateAvatar(selectedAvatar);
+      const result = await updateAvatar(newAvatar);
       if (result.error) {
-        setError(result.error);
-      } else {
-        onAvatarChange?.(selectedAvatar);
-        onClose();
+        toast.error(result.error);
+        // Rollback on error
+        onAvatarChange?.(previousAvatar);
       }
     });
   };
 
   const handleClose = () => {
     setSelectedAvatar(currentAvatar); // Reset to original
-    setError(null);
     onClose();
   };
 
   return (
     <Modal isOpen={isOpen} onClose={handleClose} title="Choisir un avatar">
       <div className="space-y-4">
-        {error && (
-          <div className="p-3 bg-lighterror text-error rounded-md text-sm">
-            {error}
-          </div>
-        )}
-
         <div className="grid grid-cols-5 sm:grid-cols-6 gap-2 max-h-[400px] overflow-y-auto p-1">
           {AVATARS.map((avatar) => {
             const isSelected = selectedAvatar === avatar.id;
@@ -112,24 +110,24 @@ export function AvatarPickerModal({
         )}
 
         <div className="flex justify-end gap-3 pt-2 border-t border-ld">
-          <button
+          <Button
             type="button"
+            variant="secondaryAction"
             onClick={handleClose}
             disabled={isPending}
-            className="btn-secondary-action"
           >
             <IconX size={18} />
             Annuler
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant="primary"
             onClick={handleSave}
             disabled={isPending}
-            className="btn-primary-action"
           >
             <IconCheck size={18} />
             {isPending ? 'Enregistrement...' : 'Enregistrer'}
-          </button>
+          </Button>
         </div>
       </div>
     </Modal>

@@ -30,20 +30,20 @@ export default function Error({ error, reset }: ErrorProps) {
             priority
           />
         </div>
-        <h1 className="text-3xl font-semibold mb-4 text-ld">Une erreur s&apos;est produite</h1>
-        <p className="text-darklink mb-8">
+        <h1 className="text-3xl font-semibold mb-4 text-gray-900 dark:text-white">Une erreur s&apos;est produite</h1>
+        <p className="text-gray-600 dark:text-gray-400 mb-8">
           Désolé, une erreur inattendue s&apos;est produite. Veuillez réessayer.
         </p>
         <div className="flex gap-4 justify-center">
           <button
             onClick={reset}
-            className="ui-button btn-primary"
+            className="btn-primary-action"
           >
             Réessayer
           </button>
           <Link
             href="/dashboard"
-            className="ui-button btn-secondary"
+            className="btn-secondary-action"
           >
             Retour au tableau de bord
           </Link>

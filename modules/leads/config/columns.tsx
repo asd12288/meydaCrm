@@ -2,9 +2,15 @@
 
 import { createColumnHelper } from '@tanstack/react-table';
 import Link from 'next/link';
-import { Dropdown, DropdownItem } from 'flowbite-react';
 import { IconDots, IconEye, IconEdit, IconTrash } from '@tabler/icons-react';
-import { CopyableText } from '@/modules/shared';
+import { Button } from '@/components/ui/button';
+import {
+  CopyableText,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuDivider,
+} from '@/modules/shared';
 import { LeadStatusBadge } from '../ui/lead-status-badge';
 import { SortableHeader } from '../ui/sortable-header';
 import { COLUMN_LABELS } from './constants';
@@ -18,7 +24,7 @@ interface ColumnOptions {
   onDelete?: (leadId: string) => void;
 }
 
-// Row actions dropdown component using Flowbite
+// Row actions dropdown component
 function RowActionsDropdown({
   leadId,
   isAdmin,
@@ -29,41 +35,42 @@ function RowActionsDropdown({
   onDelete?: (leadId: string) => void;
 }) {
   return (
-    <Dropdown
-      label=""
-      dismissOnClick
-      renderTrigger={() => (
-        <span className="h-9 w-9 flex justify-center items-center rounded-full hover:bg-lightprimary hover:text-primary cursor-pointer transition-colors">
+    <DropdownMenu
+      position="bottom-right"
+      widthClass="w-48"
+      trigger={
+        <Button variant="circleHover" size="circle">
           <IconDots size={20} />
-        </span>
-      )}
+        </Button>
+      }
     >
-      <DropdownItem
-        as={Link}
-        href={`/leads/${leadId}`}
-        className="flex items-center gap-3"
-      >
-        <IconEye size={16} />
-        Voir details
-      </DropdownItem>
-      <DropdownItem
-        as={Link}
-        href={`/leads/${leadId}`}
-        className="flex items-center gap-3"
-      >
-        <IconEdit size={16} />
-        Modifier
-      </DropdownItem>
-      {isAdmin && onDelete && (
-        <DropdownItem
-          onClick={() => onDelete(leadId)}
-          className="flex items-center gap-3 text-error"
+      <DropdownMenuContent>
+        <DropdownMenuItem
+          href={`/leads/${leadId}`}
+          icon={<IconEye size={16} />}
         >
-          <IconTrash size={16} />
-          Supprimer
-        </DropdownItem>
-      )}
-    </Dropdown>
+          Voir détails
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          href={`/leads/${leadId}`}
+          icon={<IconEdit size={16} />}
+        >
+          Modifier
+        </DropdownMenuItem>
+        {isAdmin && onDelete && (
+          <>
+            <DropdownMenuDivider />
+            <DropdownMenuItem
+              onClick={() => onDelete(leadId)}
+              icon={<IconTrash size={16} />}
+              variant="danger"
+            >
+              Supprimer
+            </DropdownMenuItem>
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 

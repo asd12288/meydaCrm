@@ -74,6 +74,21 @@ export async function createTicket(
     };
   }
 
+  // Add the description as the first comment in the conversation
+  const { error: commentError } = await supabase
+    .from('support_ticket_comments')
+    .insert({
+      ticket_id: ticket.id,
+      author_id: user.profile.id,
+      body: validation.data.description,
+      is_internal: false,
+    });
+
+  if (commentError) {
+    console.error('Error creating initial comment:', commentError);
+    // Don't fail the ticket creation, just log the error
+  }
+
   // Send email notification (non-blocking, fails silently)
   sendTicketCreatedEmail({
     id: ticket.id,
@@ -113,6 +128,7 @@ export async function createTicket(
 /**
  * Get paginated tickets with filters
  * Admin only
+ * Optimized: Uses aggregate count in single query (fixes N+1 query)
  */
 export async function getTickets(
   filters: TicketFilters
@@ -120,11 +136,14 @@ export async function getTickets(
   await requireAdminOrDeveloper();
   const supabase = await createClient();
 
-  // Build base query with creator profile join
+  // Build base query with creator profile join and comment count aggregate
+  // Using Supabase's aggregate syntax to get comment counts in single query
   let query = supabase
     .from('support_tickets')
     .select(
-      '*, createdByProfile:profiles!support_tickets_created_by_fkey(id, display_name)',
+      `*,
+      createdByProfile:profiles!support_tickets_created_by_fkey(id, display_name),
+      support_ticket_comments(count)`,
       {
         count: 'exact',
       }
@@ -171,38 +190,30 @@ export async function getTickets(
     };
   }
 
-  // Get comment counts for each ticket
-  const ticketIds = (data || []).map((t: { id: string }) => t.id);
-  let commentCounts: Record<string, number> = {};
-
-  if (ticketIds.length > 0) {
-    const { data: commentsData } = await supabase
-      .from('support_ticket_comments')
-      .select('ticket_id')
-      .in('ticket_id', ticketIds);
-
-    if (commentsData) {
-      commentCounts = commentsData.reduce((acc, comment) => {
-        acc[comment.ticket_id] = (acc[comment.ticket_id] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>);
-    }
-  }
-
   const total = count || 0;
   const totalPages = Math.ceil(total / pageSize);
 
   // Transform data to include comment counts and normalize field names
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const tickets = (data || []).map((ticket: any) => ({
-    ...ticket,
-    createdAt: ticket.created_at || ticket.createdAt,
-    updatedAt: ticket.updated_at || ticket.updatedAt,
-    createdBy: ticket.created_by || ticket.createdBy,
-    createdByProfile: ticket.createdByProfile || null,
-    comments: [],
-    commentCount: commentCounts[ticket.id] || 0,
-  })) as SupportTicketWithDetails[];
+  const tickets = (data || []).map((ticket: any) => {
+    // Extract comment count from aggregate result
+    const commentCountData = ticket.support_ticket_comments;
+    const commentCount = Array.isArray(commentCountData)
+      ? commentCountData[0]?.count || 0
+      : 0;
+
+    return {
+      ...ticket,
+      createdAt: ticket.created_at || ticket.createdAt,
+      updatedAt: ticket.updated_at || ticket.updatedAt,
+      createdBy: ticket.created_by || ticket.createdBy,
+      createdByProfile: ticket.createdByProfile || null,
+      comments: [],
+      commentCount,
+      // Remove the nested aggregate data from output
+      support_ticket_comments: undefined,
+    };
+  }) as SupportTicketWithDetails[];
 
   return {
     tickets,
@@ -330,6 +341,7 @@ export async function updateTicketStatus(
 /**
  * Get ticket counts by status
  * Admin or Developer only
+ * Optimized: Uses RPC for server-side aggregation (instead of fetching all tickets)
  */
 export async function getTicketCounts(): Promise<{
   total: number;
@@ -341,18 +353,11 @@ export async function getTicketCounts(): Promise<{
   await requireAdminOrDeveloper();
   const supabase = await createClient();
 
-  // Get total count
-  const { count: total } = await supabase
-    .from('support_tickets')
-    .select('*', { count: 'exact', head: true });
-
-  // Get counts by status
-  const { data: statusCounts } = await supabase
-    .from('support_tickets')
-    .select('status');
+  // Use RPC for efficient server-side aggregation
+  const { data: statusCounts } = await supabase.rpc('get_ticket_counts_by_status');
 
   const counts = {
-    total: total || 0,
+    total: 0,
     open: 0,
     in_progress: 0,
     resolved: 0,
@@ -360,11 +365,12 @@ export async function getTicketCounts(): Promise<{
   };
 
   if (statusCounts) {
-    statusCounts.forEach((ticket) => {
-      const status = ticket.status as keyof typeof counts;
+    statusCounts.forEach((row: { status: string; count: number }) => {
+      const status = row.status as keyof typeof counts;
       if (status in counts && status !== 'total') {
-        counts[status]++;
+        counts[status] = Number(row.count);
       }
+      counts.total += Number(row.count);
     });
   }
 

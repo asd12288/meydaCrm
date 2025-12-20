@@ -33,10 +33,10 @@ export function WelcomeCard({
         <div className="flex-1 z-10 pb-2">
           <h4 className="!text-white/70 text-sm font-medium">Bonjour,</h4>
           <h2 className="text-2xl font-bold !text-white mt-1">{userName}</h2>
-          
+
           {/* Stats pills */}
           <div className="flex items-center gap-3 mt-5">
-            <div className="bg-white/15 backdrop-blur-sm rounded-full px-5 py-3">
+            <div className="bg-white/15 backdrop-blur-sm rounded-full px-5 py-3 transition-colors duration-150 hover:bg-white/20 cursor-default">
               <p className="text-3xl font-bold !text-white leading-none">
                 {totalLeads.toLocaleString('fr-FR')}
               </p>
@@ -44,8 +44,8 @@ export function WelcomeCard({
                 {isAdmin ? 'Total leads' : 'Vos leads'}
               </p>
             </div>
-            
-            <div className="bg-white/15 backdrop-blur-sm rounded-full px-5 py-3">
+
+            <div className="bg-white/15 backdrop-blur-sm rounded-full px-5 py-3 transition-colors duration-150 hover:bg-white/20 cursor-default">
               <p className={`text-2xl font-bold leading-none flex items-center gap-1 ${isPositive ? '!text-white' : '!text-white/70'}`}>
                 {isPositive ? <IconTrendingUp size={20} /> : <IconTrendingDown size={20} />}
                 {isPositive ? '+' : ''}{trendPercentage}%
@@ -54,7 +54,7 @@ export function WelcomeCard({
             </div>
           </div>
         </div>
-        
+
         {/* Right: Avatar - positioned at bottom */}
         <div className="relative z-10 hidden sm:block self-end -mb-6 -mr-2">
           <div className="relative w-44 h-44 lg:w-52 lg:h-52">
@@ -68,8 +68,8 @@ export function WelcomeCard({
           </div>
         </div>
       </div>
-      
-      {/* Decorative circles - subtle */}
+
+      {/* Decorative circles - static */}
       <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/5 rounded-full" />
       <div className="absolute -bottom-20 -right-20 w-72 h-72 bg-white/5 rounded-full" />
     </div>

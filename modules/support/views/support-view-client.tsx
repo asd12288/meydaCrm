@@ -1,7 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { IconPlus } from '@tabler/icons-react';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/modules/shared';
 import { CreateTicketModal } from '../components/create-ticket-modal';
 import { getCurrentUser } from '@/modules/auth';
 
@@ -10,6 +13,8 @@ interface SupportViewClientProps {
 }
 
 export function SupportViewClient({ children }: SupportViewClientProps) {
+  const router = useRouter();
+  const { toast } = useToast();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isAdminUser, setIsAdminUser] = useState(false);
 
@@ -21,22 +26,25 @@ export function SupportViewClient({ children }: SupportViewClientProps) {
   }, []);
 
   const handleCreateSuccess = () => {
-    // Refresh the page to show new ticket
-    window.location.reload();
+    // Close modal and show toast immediately
+    setIsCreateModalOpen(false);
+    toast.success('Ticket créé avec succès');
+    // Soft refresh to show new ticket
+    router.refresh();
   };
 
   return (
     <>
       {isAdminUser && (
         <div className="mb-4 flex justify-end">
-          <button
+          <Button
             type="button"
+            variant="primary"
             onClick={() => setIsCreateModalOpen(true)}
-            className="btn-primary-action flex items-center gap-2 px-4 py-2"
           >
             <IconPlus size={18} />
             Créer un ticket
-          </button>
+          </Button>
         </div>
       )}
 

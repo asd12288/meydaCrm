@@ -5,9 +5,10 @@ import type { LeadStatus } from '@/db/types';
 export const UNASSIGNED_FILTER_VALUE = 'unassigned';
 
 // Lead filter schema for URL params validation
+// Note: max pageSize is 500 to support kanban view (200 leads per view)
 export const leadFiltersSchema = z.object({
   page: z.coerce.number().min(1).default(1),
-  pageSize: z.coerce.number().min(10).max(100).default(20),
+  pageSize: z.coerce.number().min(10).max(500).default(20),
   search: z.string().optional(),
   status: z.string().optional(),
   // Accept UUID or 'unassigned' special value
@@ -69,6 +70,8 @@ export interface PaginatedLeadsResponse {
   page: number;
   pageSize: number;
   totalPages: number;
+  /** Whether the total count is estimated (faster) or exact */
+  isEstimated?: boolean;
 }
 
 // Status update payload
@@ -184,4 +187,20 @@ export interface LeadWithFullDetails extends SupabaseLead {
   assignee: LeadAssignee | null;
   comments: CommentWithAuthor[];
   history: HistoryEventWithActor[];
+}
+
+// Lead with last comment for kanban view
+export interface LeadLastComment {
+  id: string;
+  body: string;
+  created_at: string;
+  author: {
+    id: string;
+    display_name: string | null;
+    avatar: string | null;
+  } | null;
+}
+
+export interface LeadForKanban extends LeadWithAssignee {
+  last_comment?: LeadLastComment | null;
 }

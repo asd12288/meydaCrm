@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useOptimistic, useTransition } from 'react';
+import { useOptimistic, useTransition } from 'react';
 import { IconArrowLeft, IconMessageCircle } from '@tabler/icons-react';
-import { FilterDropdown, type FilterOption } from '@/modules/shared';
+import { FilterDropdown, type FilterOption, useToast } from '@/modules/shared';
 import { TicketConversation } from './ticket-conversation';
 import { TicketReplyInput } from './ticket-reply-input';
+import { TicketDetailSkeleton } from '../ui/ticket-detail-skeleton';
 import { formatRelativeTime } from '../lib/format';
 import { addComment, updateTicketStatus } from '../lib/actions';
 import { 
@@ -41,7 +42,7 @@ export function TicketDetailPanel({
   showMobileBack = false,
 }: TicketDetailPanelProps) {
   const [isPending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
   // Optimistic updates for comments
   const [optimisticComments, addOptimisticComment] = useOptimistic(
@@ -52,32 +53,33 @@ export function TicketDetailPanel({
     ) => [...state, newComment]
   );
 
+  // Optimistic updates for status
+  const [optimisticStatus, setOptimisticStatus] = useOptimistic<SupportTicketStatus>(
+    ticket?.status || 'open'
+  );
+
   // Status options for dropdown
   const statusOptions: FilterOption[] = TICKET_STATUS_OPTIONS.map((opt) => ({
     value: opt.value,
     label: opt.label,
   }));
 
-  // Empty state
+  // Empty state - no ticket selected
   if (!ticket && !isLoading) {
     return (
-      <div className="ticket-empty-state h-full">
-        <IconMessageCircle size={48} className="ticket-empty-icon" />
-        <p className="ticket-empty-title">Sélectionnez un ticket</p>
-        <p className="ticket-empty-text">
+      <div className="flex flex-col items-center justify-center h-full bg-lightgray dark:bg-darkgray">
+        <IconMessageCircle size={48} className="text-darklink opacity-40 mb-3" />
+        <p className="text-base font-medium text-ld mb-1">Sélectionnez un ticket</p>
+        <p className="text-sm text-darklink">
           Choisissez un ticket dans la liste pour voir la conversation
         </p>
       </div>
     );
   }
 
-  // Loading state
+  // Loading state - show skeleton
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent" />
-      </div>
-    );
+    return <TicketDetailSkeleton />;
   }
 
   if (!ticket) return null;
@@ -89,24 +91,28 @@ export function TicketDetailPanel({
   const statusLabel = TICKET_STATUS_LABELS[ticket.status] || ticket.status;
 
   const handleStatusChange = (newStatus: string) => {
-    setError(null);
     startTransition(async () => {
+      // Optimistic: update immediately
+      setOptimisticStatus(newStatus as SupportTicketStatus);
+
       const result = await updateTicketStatus({
         ticketId: ticket.id,
         status: newStatus as SupportTicketStatus,
       });
 
       if (result.error) {
-        setError(result.error);
+        toast.error(result.error);
+        // Revalidation will restore correct state
       } else {
         onUpdate?.();
       }
     });
   };
 
-  const handleAddComment = (body: string) => {
-    setError(null);
+  // Get optimistic status label
+  const optimisticStatusLabel = TICKET_STATUS_LABELS[optimisticStatus] || optimisticStatus;
 
+  const handleAddComment = (body: string) => {
     startTransition(async () => {
       // Optimistic update
       if (currentUserId) {
@@ -137,7 +143,8 @@ export function TicketDetailPanel({
       });
 
       if (result.error) {
-        setError(result.error);
+        toast.error(result.error);
+        // Revalidation will restore correct state
       } else {
         onUpdate?.();
       }
@@ -145,9 +152,9 @@ export function TicketDetailPanel({
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full overflow-hidden">
       {/* Header - Clean and minimal */}
-      <div className="ticket-header">
+      <div className="ticket-header shrink-0">
         <div className="flex items-start gap-3">
           {/* Mobile back button */}
           {showMobileBack && (
@@ -167,8 +174,8 @@ export function TicketDetailPanel({
             <div className="ticket-header-meta">
               <span>{categoryLabel}</span>
               <span className="ticket-header-meta-dot" />
-              <span className={`status-dot status-dot-${ticket.status}`} />
-              <span>{statusLabel}</span>
+              <span className={`status-dot status-dot-${optimisticStatus}`} />
+              <span>{optimisticStatusLabel}</span>
               <span className="ticket-header-meta-dot" />
               <span>{formatRelativeTime(createdAt)}</span>
             </div>
@@ -179,7 +186,7 @@ export function TicketDetailPanel({
             <div className="shrink-0">
               <FilterDropdown
                 options={statusOptions}
-                value={ticket.status}
+                value={optimisticStatus}
                 onChange={handleStatusChange}
                 placeholder="Statut"
               />
@@ -189,19 +196,20 @@ export function TicketDetailPanel({
       </div>
 
       {/* Conversation area */}
-      <div className="flex-1 min-h-0 overflow-hidden">
+      <div className="flex-1 min-h-0 overflow-y-auto">
         <TicketConversation
           comments={optimisticComments}
           currentUserId={currentUserId}
         />
       </div>
 
-      {/* Reply input */}
-      <TicketReplyInput
-        onSubmit={handleAddComment}
-        isPending={isPending}
-        error={error}
-      />
+      {/* Reply input - always at bottom */}
+      <div className="shrink-0">
+        <TicketReplyInput
+          onSubmit={handleAddComment}
+          isPending={isPending}
+        />
+      </div>
     </div>
   );
 }

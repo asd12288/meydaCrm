@@ -130,6 +130,7 @@ export async function getStatusChartData(): Promise<StatusChartData> {
 
 /**
  * Team performance / sales distribution data
+ * Optimized: Uses RPC function for server-side aggregation (instead of fetching 100k+ rows)
  */
 export interface TeamPerformanceData {
   teamPerformance: TeamPerformanceItem[];
@@ -137,68 +138,39 @@ export interface TeamPerformanceData {
   totalLeads: number;
 }
 
+// Type for the get_team_performance RPC result
+interface TeamPerformanceRpcResult {
+  user_id: string;
+  user_name: string;
+  total_leads: number;
+  won_leads: number;
+}
+
 export async function getTeamPerformanceData(): Promise<TeamPerformanceData> {
   const supabase = await createClient();
 
-  // Parallel fetch: stats and team data
+  // Parallel fetch: stats (for totals) and team performance (via RPC)
   const [statsResult, teamResult] = await Promise.all([
     supabase.rpc('get_leads_stats'),
-    supabase
-      .from('leads')
-      .select('assigned_to, status')
-      .not('assigned_to', 'is', null)
-      .is('deleted_at', null),
+    // Use RPC for efficient aggregation - replaces fetching all leads
+    supabase.rpc('get_team_performance'),
   ]);
 
   const stats = statsResult.data as { totalLeads?: number; unassignedCount?: number } | null;
   const totalLeads = stats?.totalLeads || 0;
   const unassignedLeads = stats?.unassignedCount || 0;
 
-  // Get unique user IDs
-  const userIds = Array.from(
-    new Set((teamResult.data || []).map((lead) => lead.assigned_to).filter(Boolean))
-  );
-
-  // Fetch profiles for user names
-  let profileMap = new Map<string, string>();
-  if (userIds.length > 0) {
-    const { data: profiles } = await supabase
-      .from('profiles')
-      .select('id, display_name')
-      .in('id', userIds);
-    profileMap = new Map(profiles?.map((p) => [p.id, p.display_name]) || []);
-  }
-
-  // Count leads per user
-  const teamMap = new Map<string, { total: number; won: number; userName: string }>();
-  if (teamResult.data) {
-    for (const lead of teamResult.data) {
-      if (!lead.assigned_to) continue;
-      const existing = teamMap.get(lead.assigned_to) || {
-        total: 0,
-        won: 0,
-        userName: profileMap.get(lead.assigned_to) || 'Inconnu',
-      };
-      existing.total += 1;
-      if (lead.status === 'won') {
-        existing.won += 1;
-      }
-      teamMap.set(lead.assigned_to, existing);
-    }
-  }
-
-  const teamPerformance: TeamPerformanceItem[] = Array.from(teamMap.entries()).map(
-    ([userId, data]) => ({
-      userId,
-      userName: data.userName,
-      totalLeads: data.total,
-      wonLeads: data.won,
-      conversionRate: data.total > 0 ? Math.round((data.won / data.total) * 100) : 0,
-    })
-  );
-
-  // Sort by total leads descending
-  teamPerformance.sort((a, b) => b.totalLeads - a.totalLeads);
+  // Transform RPC result to TeamPerformanceItem format
+  const teamPerformance: TeamPerformanceItem[] = (
+    (teamResult.data as TeamPerformanceRpcResult[]) || []
+  ).map((row) => ({
+    userId: row.user_id,
+    userName: row.user_name || 'Inconnu',
+    totalLeads: Number(row.total_leads),
+    wonLeads: Number(row.won_leads),
+    conversionRate:
+      row.total_leads > 0 ? Math.round((row.won_leads / row.total_leads) * 100) : 0,
+  }));
 
   return { teamPerformance, unassignedLeads, totalLeads };
 }
@@ -743,6 +715,7 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData | null
       const thirtyDaysAgo = getThirtyDaysAgo();
 
       // Parallel fetch - all queries run at once
+      // Optimized: Uses RPC for team performance (replaces fetching 100k+ rows)
       const [
         statsResult,
         totalLeadsLastMonthResult,
@@ -797,12 +770,8 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData | null
           .select('created_at, assigned_to')
           .gte('created_at', thirtyDaysAgo)
           .is('deleted_at', null),
-        // Team performance: leads grouped by assignee with counts
-        supabase
-          .from('leads')
-          .select('assigned_to, status')
-          .not('assigned_to', 'is', null)
-          .is('deleted_at', null),
+        // Team performance via RPC (replaces fetching all assigned leads)
+        supabase.rpc('get_team_performance'),
       ]);
 
       // Extract stats from RPC result
@@ -812,53 +781,17 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData | null
       const activeSales = stats?.activeSalesCount || 0;
       const unassignedLeads = stats?.unassignedCount || 0;
 
-      // Build team performance
-      const teamMap = new Map<string, { total: number; won: number; userName: string }>();
-
-      // Get unique user IDs for profile lookup
-      const userIds = Array.from(
-        new Set((teamPerformanceResult.data || []).map((lead) => lead.assigned_to).filter(Boolean))
-      );
-
-      // Fetch profiles for user names (only if there are assigned leads)
-      let profileMap = new Map<string, string>();
-      if (userIds.length > 0) {
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('id, display_name')
-          .in('id', userIds);
-        profileMap = new Map(profiles?.map((p) => [p.id, p.display_name]) || []);
-      }
-
-      // Count leads per user
-      if (teamPerformanceResult.data) {
-        for (const lead of teamPerformanceResult.data) {
-          if (!lead.assigned_to) continue;
-          const existing = teamMap.get(lead.assigned_to) || {
-            total: 0,
-            won: 0,
-            userName: profileMap.get(lead.assigned_to) || 'Inconnu',
-          };
-          existing.total += 1;
-          if (lead.status === 'won') {
-            existing.won += 1;
-          }
-          teamMap.set(lead.assigned_to, existing);
-        }
-      }
-
-      const teamPerformance: TeamPerformanceItem[] = Array.from(teamMap.entries()).map(
-        ([userId, data]) => ({
-          userId,
-          userName: data.userName,
-          totalLeads: data.total,
-          wonLeads: data.won,
-          conversionRate: data.total > 0 ? Math.round((data.won / data.total) * 100) : 0,
-        })
-      );
-
-      // Sort by total leads descending
-      teamPerformance.sort((a, b) => b.totalLeads - a.totalLeads);
+      // Transform team performance RPC result
+      const teamPerformance: TeamPerformanceItem[] = (
+        (teamPerformanceResult.data as TeamPerformanceRpcResult[]) || []
+      ).map((row) => ({
+        userId: row.user_id,
+        userName: row.user_name || 'Inconnu',
+        totalLeads: Number(row.total_leads),
+        wonLeads: Number(row.won_leads),
+        conversionRate:
+          row.total_leads > 0 ? Math.round((row.won_leads / row.total_leads) * 100) : 0,
+      }));
 
       // Format import activity
       const importActivity: ImportActivityItem[] =
