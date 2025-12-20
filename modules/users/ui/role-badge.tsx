@@ -6,6 +6,7 @@ import { Badge, type BadgeVariant } from '@/modules/shared';
 const ROLE_VARIANTS: Record<UserRole, BadgeVariant> = {
   admin: 'primary',
   sales: 'secondary',
+  developer: 'info',
 };
 
 interface RoleBadgeProps {

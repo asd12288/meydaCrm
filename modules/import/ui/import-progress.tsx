@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { IconCheck, IconX, IconLoader2, IconFile, IconClipboardCheck, IconUpload, IconClock, IconBolt } from '@tabler/icons-react';
+import { IconCheck, IconFile, IconClipboardCheck, IconUpload, IconClock, IconBolt } from '@tabler/icons-react';
 import type { ImportProgress as ImportProgressType } from '../types';
 
 interface ImportProgressProps {
@@ -11,10 +11,12 @@ interface ImportProgressProps {
 
 export function ImportProgressBar({ progress, showDetails = false }: ImportProgressProps) {
   const { phase, totalRows, processedRows } = progress;
-  const [startTime] = useState(Date.now());
+  const [startTime] = useState(() => Date.now());
   const [speed, setSpeed] = useState(0);
   const [eta, setETA] = useState(0);
 
+  // Calculate speed and ETA based on progress
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (processedRows > 0 && totalRows > processedRows) {
       const elapsedSeconds = (Date.now() - startTime) / 1000;
@@ -26,6 +28,7 @@ export function ImportProgressBar({ progress, showDetails = false }: ImportProgr
       setETA(Math.round(estimatedSeconds));
     }
   }, [processedRows, totalRows, startTime]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const percentage =
     totalRows > 0 ? Math.round((processedRows / totalRows) * 100) : 0;

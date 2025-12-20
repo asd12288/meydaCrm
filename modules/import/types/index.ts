@@ -195,6 +195,7 @@ export interface ImportJobWithStats {
   invalid_rows: number | null;
   imported_rows: number | null;
   skipped_rows: number | null;
+  processed_rows: number | null;
   current_chunk: number | null;
   total_chunks: number | null;
   column_mapping: Record<string, unknown> | null;
@@ -303,4 +304,76 @@ export interface CommitImportResult {
   skippedCount: number;
   errorCount: number;
   importJobId: string;
+}
+
+// =============================================================================
+// SSE REAL-TIME PROGRESS TYPES
+// =============================================================================
+
+/**
+ * Import job progress data from database (sent via SSE)
+ * Note: This is different from ImportProgress in mapping.ts which is for wizard UI state
+ */
+export interface ImportJobProgress {
+  id: string;
+  status: ImportStatus;
+  totalRows: number | null;
+  processedRows: number | null;
+  validRows: number | null;
+  invalidRows: number | null;
+  importedRows: number | null;
+  skippedRows: number | null;
+  currentChunk: number | null;
+  totalChunks: number | null;
+  errorMessage: string | null;
+  startedAt: string | null;
+  completedAt: string | null;
+  updatedAt: string;
+}
+
+/**
+ * SSE event types
+ */
+export type SSEEventType = 'progress' | 'complete' | 'error' | 'heartbeat';
+
+/**
+ * SSE message structure
+ */
+export interface SSEMessage {
+  type: SSEEventType;
+  data: ImportJobProgress | null;
+  timestamp: string;
+}
+
+// =============================================================================
+// UI STATE TYPES (Leave-and-Return)
+// =============================================================================
+
+/**
+ * Wizard step identifiers
+ */
+export type WizardStep = 'upload' | 'mapping' | 'options' | 'preview' | 'progress' | 'results';
+
+/**
+ * Wizard step configuration
+ */
+export interface WizardStepConfig {
+  id: WizardStep;
+  number: number;
+  label: string;
+  description: string;
+  canSkipTo: boolean;
+}
+
+/**
+ * Complete wizard state for persistence
+ */
+export interface WizardState {
+  currentStep: WizardStep;
+  importJobId: string | null;
+  uploadComplete: boolean;
+  mappingComplete: boolean;
+  optionsComplete: boolean;
+  previewComplete: boolean;
+  isProcessing: boolean;
 }

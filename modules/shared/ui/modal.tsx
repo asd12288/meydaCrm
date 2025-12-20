@@ -87,10 +87,10 @@ export function Modal({
 
       {/* Modal */}
       <div
-        className={`relative w-full ${sizeClasses[size]} mx-4 bg-white dark:bg-dark rounded-lg shadow-xl overflow-hidden`}
+        className={`relative w-full ${sizeClasses[size]} mx-4 bg-white dark:bg-dark rounded-lg shadow-xl overflow-hidden flex flex-col max-h-[90vh]`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-ld">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-ld shrink-0">
           <div className="flex items-center gap-2">
             {icon && <span className="text-primary">{icon}</span>}
             <h3 className="text-lg font-semibold text-ld">{title}</h3>
@@ -108,7 +108,7 @@ export function Modal({
         </div>
 
         {/* Body */}
-        <div className="p-6">{children}</div>
+        <div className="p-6 flex flex-col flex-1 min-h-0 overflow-hidden">{children}</div>
       </div>
     </div>
   );

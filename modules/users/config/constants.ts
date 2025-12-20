@@ -6,7 +6,12 @@ import type { UserRole } from '@/db/types';
 export const ROLE_COLORS: Record<UserRole, string> = {
   admin: 'badge-primary',
   sales: 'badge-secondary',
+  developer: 'badge-info',
 };
+
+// Pagination defaults
+export const DEFAULT_PAGE_SIZE = 10;
+export const PAGE_SIZE_OPTIONS = [10];
 
 // Table column labels (French)
 export const COLUMN_LABELS = {

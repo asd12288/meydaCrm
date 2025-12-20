@@ -71,10 +71,10 @@ export function ThemeProvider({
     // Batch state updates - this is intentional for hydration sync
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setThemeState(stored);
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+     
     setResolvedTheme(resolved);
     applyTheme(resolved);
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+     
     setMounted(true);
   }, []);
 

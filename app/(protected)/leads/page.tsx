@@ -2,7 +2,7 @@ import { LeadsListView } from '@/modules/leads';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Leads - Meyda',
+  title: 'Leads - Pulse CRM',
 };
 
 interface PageProps {

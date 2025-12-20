@@ -2,27 +2,60 @@ import { Sidebar } from '../components/sidebar';
 import { Header } from '../components/header';
 import { MainContent } from '../components/main-content';
 import { SidebarProvider } from '../context/sidebar-context';
+import { ExpiryWarningBanner } from '@/modules/subscription/components/expiry-warning-banner';
 import type { NormalizedProfile } from '@/lib/auth';
+
+interface SubscriptionInfo {
+  showWarning: boolean;
+  daysRemaining: number | null;
+  isGrace?: boolean;
+  graceDaysRemaining?: number | null;
+}
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
   profile: NormalizedProfile;
+  subscription?: SubscriptionInfo;
 }
 
-export function DashboardLayout({ children, profile }: DashboardLayoutProps) {
+export function DashboardLayout({ children, profile, subscription }: DashboardLayoutProps) {
+  // Show banner if approaching expiry OR in grace period
+  const showBanner =
+    (subscription?.showWarning && subscription.daysRemaining !== null) ||
+    subscription?.isGrace;
+
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen bg-lightgray dark:bg-dark">
+      <div className="min-h-screen bg-lightgray dark:bg-darkgray">
+        {/* Fixed Sidebar */}
         <Sidebar userRole={profile.role} />
 
+        {/* Main content area with margin for sidebar */}
         <MainContent>
+          {/* Fixed Header */}
           <Header
             displayName={profile.displayName}
             role={profile.role}
             avatar={profile.avatar}
           />
 
-          <main className="p-6 min-h-[calc(100vh-70px)]">{children}</main>
+          {/* Subscription expiry warning banner */}
+          {showBanner && (
+            <div className="sticky top-16 z-20">
+              <ExpiryWarningBanner
+                daysRemaining={subscription?.daysRemaining ?? 0}
+                isGrace={subscription?.isGrace}
+                graceDaysRemaining={subscription?.graceDaysRemaining}
+              />
+            </div>
+          )}
+
+          {/* Scrollable main content */}
+          <main className="p-4 lg:p-5 xl:p-6">
+            <div className="max-w-[1600px] mx-auto">
+              {children}
+            </div>
+          </main>
         </MainContent>
       </div>
     </SidebarProvider>

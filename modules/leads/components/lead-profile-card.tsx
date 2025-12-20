@@ -15,7 +15,7 @@ import {
   IconEdit,
   IconId,
 } from '@tabler/icons-react';
-import { CardBox, UserAvatar, CopyableText } from '@/modules/shared';
+import { CardBox, UserAvatar } from '@/modules/shared';
 import { LeadStatusBadge } from '../ui/lead-status-badge';
 import { ContactInfoItem } from '../ui/contact-info-item';
 import { assignLead } from '../lib/actions';
@@ -81,7 +81,7 @@ export function LeadProfileCard({
       <div className="flex items-start gap-4 pb-4">
         <UserAvatar
           name={displayName}
-          size="xl"
+          size="xxl"
           className="shrink-0"
         />
         <div className="min-w-0 flex-1">

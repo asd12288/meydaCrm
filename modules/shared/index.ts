@@ -25,9 +25,12 @@ export { FormActions, type FormActionsProps } from './ui/form-actions';
 export { FormSelect, type FormSelectProps, type FormSelectOption } from './ui/form-select';
 export { FormSection, type FormSectionProps } from './ui/form-section';
 export { Modal, useModal, type ModalProps, type ModalSize } from './ui/modal';
+export { ConfirmDialog, type ConfirmDialogProps } from './ui/confirm-dialog';
 export { SectionHeader } from './ui/section-header';
-export { TableSkeleton, type TableSkeletonProps } from './ui/table-skeleton';
+export { TableSkeleton, LegacyTableSkeleton, type TableSkeletonProps, type TableSkeletonColumn } from './ui/table-skeleton';
 export { TableEmptyState, type TableEmptyStateProps } from './ui/table-empty-state';
+export { SimpleTable, type SimpleTableProps, type SimpleTableColumn } from './ui/simple-table';
 
 // Hooks
 export { useFormState, type UseFormStateReturn } from './hooks/use-form-state';
+export { useClickOutside } from './hooks/use-click-outside';

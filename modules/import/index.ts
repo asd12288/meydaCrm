@@ -91,6 +91,7 @@ export {
   uploadImportFile,
   getImportJob,
   getImportJobs,
+  getRecentImportJobs,
   updateImportJobMapping,
   startImportParsing,
   startImportCommit,
@@ -100,14 +101,29 @@ export {
 
 // Hooks
 export { useImportWizard, type UseImportWizardReturn } from './hooks/use-import-wizard';
+export { useImportSSE, useImportProgress } from './hooks/use-import-sse';
+export { useActiveImports } from './hooks/use-active-imports';
+export { useImportResume } from './hooks/use-import-resume';
+export { useImportStatus } from './hooks/use-import-status';
 
 // Views
 export { ImportWizardView } from './views/import-wizard-view';
+export { ImportHistoryView } from './views/import-history-view';
+export { ImportDashboardView } from './views/import-dashboard-view';
 
-// Components (3-step simplified flow)
-export { ImportWizard } from './components/import-wizard';
+// Components (6-step wizard V2)
+export { ImportWizardV2 } from './components/import-wizard-v2';
 export { UploadStep } from './components/upload-step';
-export { ReviewStep } from './components/review-step';
+export { MappingStep } from './components/mapping-step';
+export { OptionsStep } from './components/options-step';
+export { PreviewStep } from './components/preview-step';
+export { ProgressStep } from './components/progress-step';
+export { ResultsStep } from './components/results-step';
+export { WizardStepper } from './components/wizard-stepper';
+export { ActiveImportsPanel } from './components/active-imports-panel';
+export { ErrorReportModal } from './components/error-report-modal';
+export { RecentHistoryCard } from './components/recent-history-card';
+export { ImportWizardCard } from './components/import-wizard-card';
 
 // UI
 export { FileDropzone } from './ui/file-dropzone';

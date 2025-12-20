@@ -8,6 +8,11 @@ export * from './lead-comments';
 export * from './lead-history';
 export * from './import-jobs';
 export * from './import-rows';
+export * from './subscriptions';
+export * from './payments';
+export * from './support-tickets';
+export * from './support-ticket-comments';
+export * from './notifications';
 
 // Re-export Supabase helpers for convenience
 export {

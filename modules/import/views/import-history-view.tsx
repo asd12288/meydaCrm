@@ -9,10 +9,10 @@ import {
   IconClock,
   IconLoader2,
   IconAlertCircle,
-  IconDownload,
   IconRefresh,
   IconTrash,
 } from '@tabler/icons-react';
+import { ConfirmDialog, FormErrorAlert } from '@/modules/shared';
 import { getImportJobs, getErrorReportUrl, retryImportJob, deleteImportJob } from '../lib/actions';
 import type { ImportJobWithStats } from '../types';
 
@@ -32,6 +32,11 @@ export function ImportHistoryView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionInProgress, setActionInProgress] = useState<string | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<{
+    type: 'retry' | 'delete';
+    jobId: string;
+  } | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
     loadJobs();
@@ -56,6 +61,7 @@ export function ImportHistoryView() {
   };
 
   const handleDownloadErrors = async (jobId: string) => {
+    setActionError(null);
     try {
       const result = await getErrorReportUrl(jobId);
       if (result.success && result.data?.url) {
@@ -66,53 +72,66 @@ export function ImportHistoryView() {
         link.click();
         document.body.removeChild(link);
       } else {
-        alert(result.error || 'Erreur lors du téléchargement');
+        setActionError(result.error || 'Erreur lors du téléchargement');
       }
     } catch (err) {
-      alert('Erreur lors du téléchargement');
+      setActionError('Erreur lors du téléchargement');
       console.error(err);
     }
   };
 
-  const handleRetry = async (jobId: string, phase: 'parse' | 'commit') => {
-    if (!confirm('Voulez-vous vraiment relancer cet import ?')) return;
+  const handleRetryClick = (jobId: string) => {
+    setConfirmDialog({ type: 'retry', jobId });
+  };
 
-    setActionInProgress(jobId);
+  const handleRetryConfirm = async () => {
+    if (!confirmDialog || confirmDialog.type !== 'retry') return;
+
+    setActionError(null);
+    setActionInProgress(confirmDialog.jobId);
     try {
-      const result = await retryImportJob(jobId, phase);
+      const result = await retryImportJob(confirmDialog.jobId, 'parse');
       if (result.success) {
+        setConfirmDialog(null);
         await loadJobs();
-        alert('Import relancé avec succès');
       } else {
-        alert(result.error || 'Erreur lors de la relance');
+        setActionError(result.error || 'Erreur lors de la relance');
       }
     } catch (err) {
-      alert('Erreur lors de la relance');
+      setActionError('Erreur lors de la relance');
       console.error(err);
     } finally {
       setActionInProgress(null);
     }
   };
 
-  const handleDelete = async (jobId: string) => {
-    if (!confirm('Voulez-vous vraiment supprimer cet import ? Cette action est irréversible.')) {
-      return;
-    }
+  const handleDeleteClick = (jobId: string) => {
+    setConfirmDialog({ type: 'delete', jobId });
+  };
 
-    setActionInProgress(jobId);
+  const handleDeleteConfirm = async () => {
+    if (!confirmDialog || confirmDialog.type !== 'delete') return;
+
+    setActionError(null);
+    setActionInProgress(confirmDialog.jobId);
     try {
-      const result = await deleteImportJob(jobId);
+      const result = await deleteImportJob(confirmDialog.jobId);
       if (result.success) {
+        setConfirmDialog(null);
         await loadJobs();
       } else {
-        alert(result.error || 'Erreur lors de la suppression');
+        setActionError(result.error || 'Erreur lors de la suppression');
       }
     } catch (err) {
-      alert('Erreur lors de la suppression');
+      setActionError('Erreur lors de la suppression');
       console.error(err);
     } finally {
       setActionInProgress(null);
     }
+  };
+
+  const handleConfirmCancel = () => {
+    setConfirmDialog(null);
   };
 
   const formatDate = (dateString: string) => {
@@ -162,24 +181,40 @@ export function ImportHistoryView() {
     );
   }
 
+  const getConfirmDialogProps = () => {
+    if (!confirmDialog) return null;
+
+    if (confirmDialog.type === 'retry') {
+      return {
+        title: 'Relancer l\'import',
+        message: 'Voulez-vous vraiment relancer cet import ?',
+        confirmLabel: 'Relancer',
+        variant: 'warning' as const,
+      };
+    } else {
+      return {
+        title: 'Supprimer l\'import',
+        message: 'Voulez-vous vraiment supprimer cet import ? Cette action est irréversible.',
+        confirmLabel: 'Supprimer',
+        variant: 'danger' as const,
+      };
+    }
+  };
+
+  const dialogProps = getConfirmDialogProps();
+  const isPending = confirmDialog ? actionInProgress === confirmDialog.jobId : false;
+
   return (
     <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-semibold text-ld">Historique des imports</h2>
-          <p className="text-sm text-darklink mt-1">
-            {jobs.length} import{jobs.length > 1 ? 's' : ''} au total
-          </p>
-        </div>
-        <Link
-          href="/import"
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-md hover:bg-primaryemphasis transition-colors"
-        >
-          <IconUpload className="w-4 h-4" />
-          Nouvel import
-        </Link>
-      </div>
+      {/* Action error alert */}
+      {actionError && (
+        <FormErrorAlert error={actionError} className="mb-4" />
+      )}
+
+      {/* Stats */}
+      <p className="text-sm text-darklink">
+        {jobs.length} import{jobs.length > 1 ? 's' : ''} au total
+      </p>
 
       {/* Table */}
       {jobs.length === 0 ? (
@@ -262,7 +297,7 @@ export function ImportHistoryView() {
                         <div className="flex items-center justify-end gap-2">
                           {canRetry && (
                             <button
-                              onClick={() => handleRetry(job.id, 'parse')}
+                              onClick={() => handleRetryClick(job.id)}
                               disabled={actionInProgress === job.id}
                               className="p-1 text-primary hover:bg-primary/10 rounded disabled:opacity-50"
                               title="Relancer"
@@ -272,7 +307,7 @@ export function ImportHistoryView() {
                           )}
                           {canDelete && (
                             <button
-                              onClick={() => handleDelete(job.id)}
+                              onClick={() => handleDeleteClick(job.id)}
                               disabled={actionInProgress === job.id}
                               className="p-1 text-error hover:bg-error/10 rounded disabled:opacity-50"
                               title="Supprimer"
@@ -289,6 +324,21 @@ export function ImportHistoryView() {
             </table>
           </div>
         </div>
+      )}
+
+      {/* Confirmation dialogs */}
+      {dialogProps && (
+        <ConfirmDialog
+          isOpen={confirmDialog !== null}
+          onClose={handleConfirmCancel}
+          onConfirm={confirmDialog?.type === 'retry' ? handleRetryConfirm : handleDeleteConfirm}
+          title={dialogProps.title}
+          message={dialogProps.message}
+          confirmLabel={dialogProps.confirmLabel}
+          cancelLabel="Annuler"
+          variant={dialogProps.variant}
+          isPending={isPending}
+        />
       )}
     </div>
   );

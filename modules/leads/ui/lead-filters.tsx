@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
 import {
   IconSearch,
@@ -19,7 +19,7 @@ import {
 } from '@tabler/icons-react';
 import { FilterDropdown, type FilterOption, UserAvatar } from '@/modules/shared';
 import { useFilterNavigation } from '../hooks/use-filter-navigation';
-import { LEAD_STATUS_OPTIONS, STATUS_COLORS, SEARCH_DEBOUNCE_MS } from '../config/constants';
+import { LEAD_STATUS_OPTIONS, STATUS_COLORS, SEARCH_DEBOUNCE_MS, MIN_SEARCH_LENGTH } from '../config/constants';
 import type { SalesUser } from '../types';
 
 // Map status to icon component
@@ -52,14 +52,26 @@ interface LeadFiltersProps {
 
 export function LeadFilters({ salesUsers, isAdmin }: LeadFiltersProps) {
   const { searchParams, updateFilter, clearFilters } = useFilterNavigation();
+  const [searchValue, setSearchValue] = useState(searchParams.get('search') || '');
 
   const currentSearch = searchParams.get('search') || '';
   const currentStatus = searchParams.get('status') || '';
   const currentAssignee = searchParams.get('assignedTo') || '';
 
+  // Show hint when user types but hasn't reached minimum length
+  const showSearchHint = searchValue.length > 0 && searchValue.length < MIN_SEARCH_LENGTH;
+
   const handleSearch = useDebouncedCallback((term: string) => {
-    updateFilter('search', term);
+    // Only trigger search if empty or meets minimum length
+    if (term.length === 0 || term.length >= MIN_SEARCH_LENGTH) {
+      updateFilter('search', term);
+    }
   }, SEARCH_DEBOUNCE_MS);
+
+  const handleSearchChange = (value: string) => {
+    setSearchValue(value);
+    handleSearch(value);
+  };
 
   const hasActiveFilters = currentSearch || currentStatus || currentAssignee;
 
@@ -97,19 +109,30 @@ export function LeadFilters({ salesUsers, isAdmin }: LeadFiltersProps) {
 
   return (
     <div className="flex flex-wrap items-center gap-3 mb-4">
-      {/* Search input */}
-      <div className="relative w-64">
-        <IconSearch
-          size={16}
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-darklink pointer-events-none"
-        />
-        <input
-          type="text"
-          placeholder="Rechercher..."
-          defaultValue={currentSearch}
-          onChange={(e) => handleSearch(e.target.value)}
-          className="w-full h-10 pl-9 pr-3 text-sm border border-ld rounded-md bg-white dark:bg-darkgray focus:border-primary focus:outline-none"
-        />
+      {/* Search input with minimum length hint */}
+      <div className="relative">
+        <div className="relative w-64">
+          <IconSearch
+            size={16}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-darklink pointer-events-none"
+          />
+          <input
+            type="text"
+            placeholder="Rechercher..."
+            value={searchValue}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            className={`w-full h-10 pl-9 pr-3 text-sm border rounded-md bg-white dark:bg-darkgray focus:outline-none transition-colors ${
+              showSearchHint 
+                ? 'border-warning focus:border-warning' 
+                : 'border-ld focus:border-primary'
+            }`}
+          />
+        </div>
+        {showSearchHint && (
+          <p className="absolute -bottom-5 left-0 text-xs text-warning">
+            Min. {MIN_SEARCH_LENGTH} caractères
+          </p>
+        )}
       </div>
 
       {/* Status filter dropdown */}
@@ -129,17 +152,19 @@ export function LeadFilters({ salesUsers, isAdmin }: LeadFiltersProps) {
           onChange={(value) => updateFilter('assignedTo', value)}
           placeholder="Tous les commerciaux"
           icon={IconUser}
-          className="min-w-56"
+          className="min-w-48 max-w-56"
+          menuMaxWidth="max-w-64"
+          scrollable
           renderOption={(option) => (
-            <span className="flex items-center gap-2">
-              <UserAvatar name={option.label} avatar={userAvatarMap.get(option.value)} size="sm" />
+            <span className="flex items-center gap-2 min-w-0">
+              <UserAvatar name={option.label} avatar={userAvatarMap.get(option.value)} size="sm" className="shrink-0" />
               <span className="truncate">{option.label}</span>
             </span>
           )}
           renderSelected={(option) => (
-            <span className="flex items-center gap-2">
-              <UserAvatar name={option.label} avatar={userAvatarMap.get(option.value)} size="sm" />
-              <span className="truncate">{option.label}</span>
+            <span className="flex items-center gap-2 min-w-0">
+              <UserAvatar name={option.label} avatar={userAvatarMap.get(option.value)} size="sm" className="shrink-0" />
+              <span className="truncate max-w-28">{option.label}</span>
             </span>
           )}
         />

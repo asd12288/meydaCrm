@@ -1,26 +1,32 @@
 import { TableSkeleton } from '@/modules/shared';
 
 /**
+ * Column widths matching modules/leads/config/columns.tsx
+ * selection=40, name=150, email=180, phone=120, company=130, status=155, assignee=110, updated_at=100, actions=50
+ */
+const LEADS_SKELETON_COLUMNS = [
+  { width: 40, skeletonClass: 'skeleton-checkbox', skeletonWidth: 'w-4 h-4' }, // selection
+  { width: 150, skeletonClass: 'skeleton-text', skeletonWidth: 'w-28' }, // name
+  { width: 180, skeletonClass: 'skeleton-text', skeletonWidth: 'w-36' }, // email
+  { width: 120, skeletonClass: 'skeleton-text', skeletonWidth: 'w-24' }, // phone
+  { width: 130, skeletonClass: 'skeleton-text', skeletonWidth: 'w-20' }, // company
+  { width: 155, skeletonClass: 'skeleton-badge', skeletonWidth: 'w-24 h-6 rounded-full' }, // status
+  { width: 110, skeletonClass: 'skeleton-text', skeletonWidth: 'w-20' }, // assignee
+  { width: 100, skeletonClass: 'skeleton-text', skeletonWidth: 'w-16' }, // updated_at
+  { width: 50, skeletonClass: 'skeleton-circle', skeletonWidth: 'w-8 h-8 rounded-full' }, // actions
+];
+
+/**
  * Skeleton loader for the leads table
- * Shows while data is loading
+ * Uses exact column widths to prevent layout shift
  */
 export function LeadsTableSkeleton() {
   return (
     <TableSkeleton
-      headerColumns={['w-8', 'w-32', 'w-40', 'w-24', 'w-28', 'w-24', 'w-28', 'w-24']}
+      columns={LEADS_SKELETON_COLUMNS}
       rowCount={10}
-      rowColumns={[
-        'skeleton skeleton-text w-4 h-4',
-        'skeleton skeleton-text w-36',
-        'skeleton skeleton-text w-44',
-        'skeleton skeleton-text w-24',
-        'skeleton skeleton-text w-28',
-        'skeleton skeleton-badge',
-        'skeleton skeleton-text w-24',
-        'skeleton skeleton-text w-20',
-        'skeleton skeleton-text w-8 h-8 rounded-full',
-      ]}
-      headerGap="gap-4"
+      cellPadding="px-3 py-2.5"
+      maxHeight="max-h-[calc(100vh-320px)]"
     />
   );
 }

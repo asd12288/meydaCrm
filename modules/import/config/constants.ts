@@ -61,6 +61,7 @@ export const AUTO_MAP_CONFIDENCE_THRESHOLD = 0.7;
 // =============================================================================
 
 export const IMPORT_STATUS_LABELS: Record<ImportStatus, string> = {
+  queued: 'En file d\'attente',
   pending: 'En attente',
   parsing: 'Analyse en cours',
   validating: 'Validation en cours',
@@ -68,9 +69,11 @@ export const IMPORT_STATUS_LABELS: Record<ImportStatus, string> = {
   importing: 'Import en cours',
   completed: 'Termine',
   failed: 'Echec',
+  cancelled: 'Annule',
 };
 
 export const IMPORT_STATUS_COLORS: Record<ImportStatus, string> = {
+  queued: 'badge-secondary',
   pending: 'badge-secondary',
   parsing: 'badge-info',
   validating: 'badge-info',
@@ -78,6 +81,7 @@ export const IMPORT_STATUS_COLORS: Record<ImportStatus, string> = {
   importing: 'badge-warning',
   completed: 'badge-success',
   failed: 'badge-error',
+  cancelled: 'badge-secondary',
 };
 
 export const IMPORT_ROW_STATUS_LABELS: Record<ImportRowStatus, string> = {
@@ -97,13 +101,16 @@ export const IMPORT_ROW_STATUS_COLORS: Record<ImportRowStatus, string> = {
 };
 
 // =============================================================================
-// WIZARD STEPS (3-step simplified flow)
+// WIZARD STEPS (6-step flow for comprehensive import UX)
 // =============================================================================
 
 export const IMPORT_WIZARD_STEPS = [
-  { id: 'file', label: 'Fichier' },
-  { id: 'review', label: 'Verification' },
-  { id: 'import', label: 'Import' },
+  { id: 'upload', number: 1, label: 'Fichier', description: 'Telecharger votre fichier CSV ou Excel' },
+  { id: 'mapping', number: 2, label: 'Mapping', description: 'Associer les colonnes aux champs' },
+  { id: 'options', number: 3, label: 'Options', description: 'Configurer les doublons et l\'attribution' },
+  { id: 'preview', number: 4, label: 'Apercu', description: 'Verifier les donnees avant import' },
+  { id: 'progress', number: 5, label: 'Import', description: 'Import en cours' },
+  { id: 'results', number: 6, label: 'Resultats', description: 'Resume de l\'import' },
 ] as const;
 
 export type ImportWizardStep = (typeof IMPORT_WIZARD_STEPS)[number]['id'];

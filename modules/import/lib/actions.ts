@@ -24,13 +24,17 @@ export async function uploadImportFile(
   formData: FormData
 ): Promise<ImportActionResult<{ importJobId: string; storagePath: string; isDuplicate?: boolean }>> {
   try {
+    console.log('📤 [Upload] Starting file upload...');
     const user = await requireAdmin();
     const supabase = await createClient();
 
     const file = formData.get('file') as File;
     if (!file) {
+      console.error('❌ [Upload] No file provided');
       return { success: false, error: 'Aucun fichier fourni' };
     }
+
+    console.log(`📄 [Upload] File: ${file.name}, Size: ${(file.size / 1024 / 1024).toFixed(2)} MB`);
 
     // Validate file type
     const ext = file.name.toLowerCase().split('.').pop();
@@ -44,34 +48,17 @@ export async function uploadImportFile(
     }
 
     // Calculate file hash for idempotency check
+    console.log('🔐 [Upload] Calculating file hash...');
     const fileBuffer = await file.arrayBuffer();
     const hashBuffer = await crypto.subtle.digest('SHA-256', fileBuffer);
     const fileHash = Array.from(new Uint8Array(hashBuffer))
       .map(b => b.toString(16).padStart(2, '0'))
       .join('');
 
-    // Check for duplicate import
-    const { data: existingImport } = await supabase
-      .rpc('check_duplicate_import', { p_file_hash: fileHash });
+    console.log(`🔐 [Upload] File hash: ${fileHash.substring(0, 16)}...`);
 
-    if (existingImport && existingImport.length > 0) {
-      const existing = existingImport[0];
-      const importDate = new Date(existing.created_at).toLocaleDateString('fr-FR', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-      });
-      
-      return {
-        success: false,
-        error: `Ce fichier a déjà été importé le ${importDate}`,
-        details: {
-          existingJobId: existing.job_id,
-          existingStatus: existing.status,
-          createdAt: existing.created_at,
-        },
-      };
-    }
+    // Duplicate check disabled (allow re-import of same file)
+    console.log('🔍 [Upload] Duplicate check: skipped (allowing re-import of same file)');
 
     // Generate unique storage path
     const timestamp = Date.now();
@@ -95,6 +82,7 @@ export async function uploadImportFile(
     }
 
     // Create import job record with file hash
+    console.log('💾 [Upload] Creating import job record...');
     const { data: importJob, error: dbError } = await supabase
       .from('import_jobs')
       .insert({
@@ -110,13 +98,15 @@ export async function uploadImportFile(
 
     if (dbError) {
       // Clean up uploaded file if DB insert fails
+      console.error('❌ [Upload] DB insert error:', dbError);
       await supabase.storage.from('imports').remove([storagePath]);
-      console.error('DB insert error:', dbError);
       return {
         success: false,
         error: `Erreur lors de la creation du job: ${dbError.message}`,
       };
     }
+
+    console.log(`✅ [Upload] Import job created: ${importJob.id}`);
 
     return {
       success: true,
@@ -150,7 +140,7 @@ export async function getImportJob(
 
     const { data, error } = await supabase
       .from('import_jobs')
-      .select('*, creator:profiles!import_jobs_created_by_fk(id, display_name)')
+      .select('*, creator:profiles!import_jobs_created_by_profiles_id_fk(id, display_name)')
       .eq('id', importJobId)
       .single();
 
@@ -177,7 +167,7 @@ export async function getImportJobs(): Promise<ImportActionResult<ImportJobWithS
 
     const { data, error } = await supabase
       .from('import_jobs')
-      .select('*, creator:profiles!import_jobs_created_by_fk(id, display_name)')
+      .select('*, creator:profiles!import_jobs_created_by_profiles_id_fk(id, display_name)')
       .order('created_at', { ascending: false })
       .limit(50);
 
@@ -186,6 +176,44 @@ export async function getImportJobs(): Promise<ImportActionResult<ImportJobWithS
     }
 
     return { success: true, data: data as ImportJobWithStats[] };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Erreur inconnue',
+    };
+  }
+}
+
+/**
+ * Get recent import jobs for dashboard (with total count)
+ */
+export async function getRecentImportJobs(
+  limit = 10
+): Promise<ImportActionResult<{ jobs: ImportJobWithStats[]; total: number }>> {
+  try {
+    await requireAdmin();
+    const supabase = await createClient();
+
+    // Get jobs with count
+    const { data, error, count } = await supabase
+      .from('import_jobs')
+      .select('*, creator:profiles!import_jobs_created_by_profiles_id_fk(id, display_name)', {
+        count: 'exact',
+      })
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return {
+      success: true,
+      data: {
+        jobs: data as ImportJobWithStats[],
+        total: count || 0,
+      },
+    };
   } catch (error) {
     return {
       success: false,
@@ -275,30 +303,47 @@ export async function startImportParsing(
       (!process.env.VERCEL_URL && !process.env.APP_URL);
 
     if (isLocal) {
-      // Use direct API route for local development
-      console.log('[Import] Using direct parse endpoint for local development');
+      // Use direct processing for local development
+      console.log('🏠 [Parse] LOCAL MODE DETECTED - Using direct parse processing');
+      console.log(`📋 [Parse] Job ID: ${importJobId}`);
       
       try {
-        const response = await fetch('/api/import/parse-direct', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ importJobId }),
-        });
-
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.error || 'Parse failed');
-        }
+        // Import the parse handler and call it directly
+        console.log('📦 [Parse] Loading parse worker module...');
+        const { handleParseDirectly } = await import('../workers/parse-worker');
+        
+        console.log('🚀 [Parse] Starting direct parse worker...');
+        const result = await handleParseDirectly(importJobId);
+        
+        console.log('✅ [Parse] Parse completed successfully:', result);
 
         revalidatePath('/import');
         return { success: true, data: { messageId: 'direct-local' } };
       } catch (error) {
+        console.error('❌ [Parse] Direct parse error:', error);
+        console.error('📊 [Parse] Error details:', {
+          message: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
+        });
+        
+        // Update job to failed
+        await supabase
+          .from('import_jobs')
+          .update({
+            status: 'failed',
+            error_message: error instanceof Error ? error.message : 'Erreur de parsing',
+          })
+          .eq('id', importJobId);
+
         return {
           success: false,
           error: error instanceof Error ? error.message : 'Erreur de parsing direct',
         };
       }
     }
+
+    console.log('☁️ [Parse] PRODUCTION MODE - Using QStash queue');
+    console.log(`📋 [Parse] Job ID: ${importJobId}`);
 
     // Enqueue parse job via QStash (production)
     const messageId = await enqueueParseJob({ importJobId });
@@ -391,36 +436,58 @@ export async function startImportCommit(
       (!process.env.VERCEL_URL && !process.env.APP_URL);
 
     if (isLocal) {
-      // Use direct API route for local development
-      console.log('[Import] Using direct commit endpoint for local development');
+      // Use direct processing for local development
+      console.log('🏠 [Commit] LOCAL MODE DETECTED - Using direct commit processing');
+      console.log(`📋 [Commit] Job ID: ${importJobId}`);
+      console.log('⚙️ [Commit] Config:', {
+        assignment: config.assignment.mode,
+        duplicates: config.duplicates.strategy,
+        validRows: job.valid_rows,
+      });
       
       try {
-        const response = await fetch('/api/import/commit-direct', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            importJobId,
-            assignment: config.assignment,
-            duplicates: config.duplicates,
-            defaultStatus: config.defaultStatus,
-            defaultSource: config.defaultSource,
-          }),
-        });
+        // Import the commit handler and call it directly
+        console.log('📦 [Commit] Loading commit worker module...');
+        const { handleCommitDirectly } = await import('../workers/commit-worker');
+        
+        console.log('🚀 [Commit] Starting direct commit worker...');
+        const result = await handleCommitDirectly(
+          importJobId,
+          config.assignment,
+          config.duplicates,
+          config.defaultStatus,
+          config.defaultSource
+        );
 
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.error || 'Commit failed');
-        }
+        console.log('✅ [Commit] Commit completed successfully:', result);
 
         revalidatePath('/import');
         return { success: true, data: { messageId: 'direct-local' } };
       } catch (error) {
+        console.error('❌ [Commit] Direct commit error:', error);
+        console.error('📊 [Commit] Error details:', {
+          message: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
+        });
+        
+        // Update job to failed
+        await supabase
+          .from('import_jobs')
+          .update({
+            status: 'failed',
+            error_message: error instanceof Error ? error.message : 'Erreur de commit',
+          })
+          .eq('id', importJobId);
+
         return {
           success: false,
           error: error instanceof Error ? error.message : 'Erreur de commit direct',
         };
       }
     }
+
+    console.log('☁️ [Commit] PRODUCTION MODE - Using QStash queue');
+    console.log(`📋 [Commit] Job ID: ${importJobId}`);
 
     // Enqueue commit job via QStash (production)
     const messageId = await enqueueCommitJob({

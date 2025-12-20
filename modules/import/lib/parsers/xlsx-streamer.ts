@@ -122,7 +122,7 @@ export async function streamParseXLSX(
     }
 
     // Process rows
-    worksheet.eachRow({ includeEmpty: false }, (row, rowIdx) => {
+    worksheet.eachRow({ includeEmpty: false }, (row) => {
       const rowValues = row.values as (string | number | null | ExcelJS.CellValue)[];
 
       // Skip empty rows

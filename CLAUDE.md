@@ -1,4 +1,4 @@
-# CLAUDE.md — Meyda - CRM Solution (Next.js 16 + Supabase + Vercel)
+# CLAUDE.md — Pulse CRM (Next.js 16 + Supabase + Vercel)
 
 This file provides persistent context for Claude Code while developing this repository.
 It defines the product scope, architecture, folder conventions, coding standards, and safe workflows.
@@ -351,6 +351,11 @@ When working in this repo:
 - `QSTASH_CURRENT_SIGNING_KEY` - For webhook signature verification
 - `QSTASH_NEXT_SIGNING_KEY` - For key rotation
 
+### Upstash Redis (for caching)
+
+- `UPSTASH_REDIS_REST_URL` - Redis REST API URL (e.g., https://xxx.upstash.io)
+- `UPSTASH_REDIS_REST_TOKEN` - Redis REST API token
+
 ### Application URL
 
 - `APP_URL` - Full application URL (e.g., https://your-app.vercel.app)
@@ -361,6 +366,63 @@ When working in this repo:
 - `SUPABASE_SERVICE_ROLE_KEY` (in Supabase secrets)
 
 Never put service role key in client-side code.
+
+### Supabase Project Info (for Claude MCP)
+
+- **Project ID**: `owwyxrxojltmupqrvqcp`
+- **Project Name**: `crm-medya`
+- **Region**: `eu-central-1`
+- **Database Host**: `db.owwyxrxojltmupqrvqcp.supabase.co`
+
+---
+
+## 10.1) Supabase MCP Tools (Claude Integration)
+
+Claude has access to Supabase via MCP (Model Context Protocol). Use these tools for database operations:
+
+### Available Tools
+
+| Tool | Description | Example Use |
+|------|-------------|-------------|
+| `mcp__supabase__list_tables` | List all tables in the database | Check schema |
+| `mcp__supabase__execute_sql` | Run SELECT queries (read-only) | Query data |
+| `mcp__supabase__apply_migration` | Apply DDL changes (CREATE, ALTER) | Schema changes |
+| `mcp__supabase__list_migrations` | List applied migrations | Check migration history |
+| `mcp__supabase__get_advisors` | Security/performance recommendations | Audit RLS policies |
+| `mcp__supabase__generate_typescript_types` | Generate TypeScript types | Update `db/types.ts` |
+
+### Usage Examples
+
+```
+# List all tables
+mcp__supabase__list_tables(project_id="owwyxrxojltmupqrvqcp")
+
+# Run a query
+mcp__supabase__execute_sql(
+  project_id="owwyxrxojltmupqrvqcp",
+  query="SELECT * FROM subscriptions LIMIT 5"
+)
+
+# Apply a migration
+mcp__supabase__apply_migration(
+  project_id="owwyxrxojltmupqrvqcp",
+  name="add_new_column",
+  query="ALTER TABLE leads ADD COLUMN notes TEXT"
+)
+
+# Check security advisors
+mcp__supabase__get_advisors(
+  project_id="owwyxrxojltmupqrvqcp",
+  type="security"
+)
+```
+
+### Important Notes
+
+- Always use the project ID `owwyxrxojltmupqrvqcp` for this CRM
+- Use `apply_migration` for DDL (schema changes), `execute_sql` for DML (data queries)
+- Check security advisors after schema changes to verify RLS policies
+- Generated TypeScript types should be reviewed before committing
 
 ---
 
@@ -435,7 +497,7 @@ If commands differ, update this section.
 
 The detailed project plan, phases, and task tracking are maintained in Notion:
 
-- **Notion Page**: [Meyda - Project Plan & Task Management](https://www.notion.so/2ce0795a035381999f76f6e2e6468800)
+- **Notion Page**: [Pulse CRM - Project Plan & Task Management](https://www.notion.so/2ce0795a035381999f76f6e2e6468800)
 - **Tasks Database**: 63 tasks across 8 phases with Status, Priority, and Estimated Hours
 
 When working on this project:
@@ -667,6 +729,8 @@ Import from `@/modules/shared`:
 | Component | Purpose | Usage |
 |-----------|---------|-------|
 | `FormField` | Input with label + error message | `<FormField label="Nom" error={errors.name?.message} {...register('name')} />` |
+| `FormPasswordField` | Password field with label + error | `<FormPasswordField label="Mot de passe" error={errors.password?.message} {...register('password')} />` |
+| `FormTextarea` | Textarea field with label + error | `<FormTextarea label="Notes" error={errors.notes?.message} {...register('notes')} />` |
 | `FormSelect` | Select dropdown with label + error | `<FormSelect label="Rôle" options={ROLE_OPTIONS} {...register('role')} />` |
 | `FormAlert` | Alert box (error/success/warning/info) | `<FormAlert type="error" message={error} />` |
 | `FormErrorAlert` | Conditional error alert | `<FormErrorAlert error={error} />` |
@@ -674,12 +738,14 @@ Import from `@/modules/shared`:
 | `FormActions` | Submit/cancel button row | `<FormActions isPending={isPending} submitLabel="Save" onCancel={close} />` |
 | `Modal` | Reusable modal with escape/scroll lock | `<Modal isOpen={isOpen} onClose={close} title="Title">{children}</Modal>` |
 | `PasswordInput` | Password input with show/hide toggle | `<PasswordInput {...register('password')} error={!!errors.password} />` |
+| `TableSkeleton` | Generic table skeleton loader | `<TableSkeleton headerColumns={['w-32', 'w-28']} rowCount={5} rowColumns={['w-40', 'w-24']} />` |
+| `TableEmptyState` | Empty state row for tables | `<TableEmptyState colSpan={columns.length} message="Aucun résultat" />` |
 
 ### Shared Hooks (`modules/shared/hooks/`)
 
 | Hook | Purpose | Returns |
 |------|---------|---------|
-| `useFormState` | Form state management | `{ isPending, startTransition, error, setError, success, setSuccess, resetAll }` |
+| `useFormState` | Form state management | `{ isPending, startTransition, error, setError, success, setSuccess, resetAll, handleFormSuccess }` |
 | `useModal` | Modal open/close state | `{ isOpen, data, open, close }` |
 
 ### Form CSS Classes (`globals.css`)
@@ -741,6 +807,37 @@ FR_MESSAGES.SESSION_EXPIRED  // 'Session expirée'
 FR_MESSAGES.UNAUTHORIZED     // "Vous n'avez pas accès..."
 FR_MESSAGES.INVALID_DATA     // 'Données invalides'
 FR_MESSAGES.NOT_FOUND        // 'Ressource non trouvée'
+```
+
+#### Redis Caching (`lib/cache/`)
+
+```typescript
+import { getCached, invalidateCache, invalidateDashboardCache, invalidateSalesUsersCache, CACHE_KEYS, CACHE_TTL } from '@/lib/cache';
+
+// Cache data with automatic TTL
+const data = await getCached(
+  CACHE_KEYS.DASHBOARD_ADMIN,      // Cache key
+  async () => fetchDashboardData(), // Fetcher function
+  CACHE_TTL.DASHBOARD              // TTL in seconds (60)
+);
+
+// Invalidate specific cache keys
+await invalidateCache(CACHE_KEYS.SALES_USERS);
+
+// Invalidate all dashboard caches (use after lead mutations)
+await invalidateDashboardCache();
+
+// Invalidate sales users cache (use after user changes)
+await invalidateSalesUsersCache();
+
+// Cache keys
+CACHE_KEYS.DASHBOARD_ADMIN        // 'dashboard:admin'
+CACHE_KEYS.DASHBOARD_SALES(id)    // 'dashboard:sales:{userId}'
+CACHE_KEYS.SALES_USERS            // 'users:sales:list'
+
+// TTL values (seconds)
+CACHE_TTL.DASHBOARD  // 60 (1 minute)
+CACHE_TTL.SALES_USERS // 300 (5 minutes)
 FR_MESSAGES.SUCCESS_UPDATE   // 'Modifications enregistrées'
 ```
 
@@ -801,7 +898,7 @@ import {
 } from '@/modules/shared';
 
 export function MyForm({ onSuccess, onCancel }) {
-  const { isPending, startTransition, error, setError, success, setSuccess, resetAll } =
+  const { isPending, startTransition, error, setError, success, handleFormSuccess, resetAll } =
     useFormState();
 
   const { register, handleSubmit, formState: { errors } } = useForm({
@@ -812,8 +909,11 @@ export function MyForm({ onSuccess, onCancel }) {
     resetAll();
     startTransition(async () => {
       const result = await myAction(data);
-      if (result.error) setError(result.error);
-      else setSuccess(true);
+      if (result.error) {
+        setError(result.error);
+      } else {
+        handleFormSuccess({ onSuccess, onSuccessDelay: 1000 });
+      }
     });
   };
 
@@ -848,6 +948,11 @@ export function MyForm({ onSuccess, onCancel }) {
 5. **Never hardcode French messages** - Use `FR_MESSAGES` from `lib/errors.ts`
 6. **Never duplicate constants** - Import from `lib/constants/`
 7. **Never duplicate history creation** - Use history helpers
+8. **Never duplicate password field patterns** - Use `FormPasswordField` component
+9. **Never duplicate textarea field patterns** - Use `FormTextarea` component
+10. **Never duplicate table skeleton patterns** - Use `TableSkeleton` component
+11. **Never duplicate table empty states** - Use `TableEmptyState` component
+12. **Never duplicate form success handling** - Use `handleFormSuccess` from `useFormState` hook
 
 ---
 

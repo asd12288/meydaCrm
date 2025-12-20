@@ -15,6 +15,7 @@ export {
 export {
   getLeads,
   getSalesUsers,
+  getUnassignedNewLeadsCount,
   updateLeadStatus,
   bulkAssignLeads,
 } from './lib/actions';
@@ -37,6 +38,7 @@ export {
 // Components
 export { LeadsTable } from './components/leads-table';
 export { BulkActionsBar } from './components/bulk-actions-bar';
+export { UnassignedLeadsBanner } from './components/unassigned-leads-banner';
 
 // Views
 export { LeadsListView } from './views/leads-list-view';

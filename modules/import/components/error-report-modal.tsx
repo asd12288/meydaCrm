@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { IconDownload, IconX, IconAlertCircle } from '@tabler/icons-react';
-import { Modal } from '@/modules/shared';
+import { IconDownload, IconAlertCircle } from '@tabler/icons-react';
+import { Modal, FormErrorAlert } from '@/modules/shared';
 import { getImportRows, getErrorReportUrl } from '../lib/actions';
 import type { ImportRowWithDetails } from '../types';
 
@@ -24,11 +24,13 @@ export function ErrorReportModal({
   const [downloading, setDownloading] = useState(false);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
       loadErrors(1);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   const loadErrors = async (targetPage: number) => {
@@ -53,6 +55,7 @@ export function ErrorReportModal({
   };
 
   const handleDownload = async () => {
+    setError(null);
     setDownloading(true);
     try {
       const result = await getErrorReportUrl(importJobId);
@@ -66,11 +69,11 @@ export function ErrorReportModal({
         link.click();
         document.body.removeChild(link);
       } else {
-        alert(result.error || 'Erreur lors du téléchargement');
+        setError(result.error || 'Erreur lors du téléchargement');
       }
     } catch (error) {
       console.error('Download error:', error);
-      alert('Erreur lors du téléchargement');
+      setError('Erreur lors du téléchargement');
     } finally {
       setDownloading(false);
     }
@@ -79,6 +82,9 @@ export function ErrorReportModal({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Lignes invalides">
       <div className="space-y-4">
+        {/* Error message */}
+        {error && <FormErrorAlert error={error} />}
+
         {/* Warning message */}
         <div className="flex items-start gap-3 p-4 bg-lighterror/30 border border-error/30 rounded-lg">
           <IconAlertCircle className="w-5 h-5 text-error flex-shrink-0 mt-0.5" />

@@ -3,6 +3,16 @@
     "supabase": {
       "type": "http",
       "url": "https://mcp.supabase.com/mcp"
+    },
+    "upstash": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@upstash/mcp-server",
+        "run",
+        "ilanchelly@gmail.com",
+        "e8cdbe55-d91c-4789-b7b7-8c2c3a027af2"
+      ]
     }
   }
 }

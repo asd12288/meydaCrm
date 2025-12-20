@@ -6,3 +6,5 @@ export {
   signInAsUser,
   generateTestPrefix,
 } from './supabase-test-client'
+
+export { cleanupAllTestData } from './cleanup'

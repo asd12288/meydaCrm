@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { IconChevronDown, IconCheck } from '@tabler/icons-react';
+import { useClickOutside } from '../hooks/use-click-outside';
 
 export interface FilterOption {
   value: string;
@@ -32,6 +33,10 @@ interface FilterDropdownProps {
   renderOption?: (option: FilterOption, isSelected: boolean) => React.ReactNode;
   /** Custom render for the selected value in the trigger button */
   renderSelected?: (option: FilterOption) => React.ReactNode;
+  /** Max width for dropdown menu (default: max-w-72) */
+  menuMaxWidth?: string;
+  /** Enable scrollable menu when many options (default: false) */
+  scrollable?: boolean;
 }
 
 export function FilterDropdown({
@@ -43,6 +48,8 @@ export function FilterDropdown({
   className = '',
   renderOption,
   renderSelected,
+  menuMaxWidth = 'max-w-72',
+  scrollable = false,
 }: FilterDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -51,29 +58,8 @@ export function FilterDropdown({
   const displayLabel = selectedOption?.label || placeholder;
   const SelectedIcon = selectedOption?.icon;
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  // Close on escape key
-  useEffect(() => {
-    function handleEscape(event: KeyboardEvent) {
-      if (event.key === 'Escape') {
-        setIsOpen(false);
-      }
-    }
-
-    document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
-  }, []);
+  // Close dropdown when clicking outside or pressing escape
+  useClickOutside(dropdownRef, () => setIsOpen(false), isOpen);
 
   const handleSelect = (optionValue: string) => {
     onChange(optionValue);
@@ -114,68 +100,70 @@ export function FilterDropdown({
 
       {/* Dropdown menu */}
       {isOpen && (
-        <div className="absolute top-full left-0 mt-1 min-w-full w-max z-9999 py-1 bg-white dark:bg-darkgray border border-ld rounded-md shadow-lg dark:shadow-dark-md animate-in fade-in slide-in-from-top-1 duration-150">
-          {/* Clear option */}
-          <button
-            type="button"
-            onClick={() => handleSelect('')}
-            className={`
-              w-full px-3 py-2 flex items-center gap-2 text-sm text-left
-              hover:bg-lightgray dark:hover:bg-darkmuted transition-colors
-              ${!value ? 'text-primary font-medium' : 'text-darklink'}
-            `}
-          >
-            {!value && <IconCheck size={14} className="text-primary" />}
-            <span className={!value ? '' : 'ml-5'}>{placeholder}</span>
-          </button>
+        <div className={`absolute top-full left-0 mt-1 min-w-full w-max ${menuMaxWidth} z-9999 bg-white dark:bg-darkgray border border-ld rounded-md shadow-lg dark:shadow-dark-md animate-in fade-in slide-in-from-top-1 duration-150`}>
+          {/* Clear option - sticky at top */}
+          <div className="py-1 border-b border-ld">
+            <button
+              type="button"
+              onClick={() => handleSelect('')}
+              className={`
+                w-full px-3 py-2 flex items-center gap-2 text-sm text-left
+                hover:bg-lightgray dark:hover:bg-darkmuted transition-colors
+                ${!value ? 'text-primary font-medium' : 'text-darklink'}
+              `}
+            >
+              {!value && <IconCheck size={14} className="text-primary" />}
+              <span className={!value ? '' : 'ml-5'}>{placeholder}</span>
+            </button>
+          </div>
 
-          <div className="border-t border-ld my-1" />
+          {/* Options - scrollable when many items */}
+          <div className={`py-1 ${scrollable ? 'max-h-64 overflow-y-auto' : ''}`}>
+            {options.map((option) => {
+              const OptionIcon = option.icon;
+              const isSelected = option.value === value;
+              // Get inline color style for guaranteed color application
+              const iconColorStyle = option.iconColorClass
+                ? { color: COLOR_MAP[option.iconColorClass] || undefined }
+                : undefined;
+              // Build hover class for text color on hover
+              const hoverColorClass = option.iconColorClass
+                ? `hover-${option.iconColorClass}`
+                : '';
 
-          {/* Options */}
-          {options.map((option) => {
-            const OptionIcon = option.icon;
-            const isSelected = option.value === value;
-            // Get inline color style for guaranteed color application
-            const iconColorStyle = option.iconColorClass
-              ? { color: COLOR_MAP[option.iconColorClass] || undefined }
-              : undefined;
-            // Build hover class for text color on hover
-            const hoverColorClass = option.iconColorClass
-              ? `hover-${option.iconColorClass}`
-              : '';
-
-            return (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => handleSelect(option.value)}
-                className={`
-                  w-full px-3 py-2 flex items-center gap-2 text-sm text-left
-                  hover:bg-lightgray dark:hover:bg-darkmuted transition-colors
-                  ${isSelected ? 'text-primary font-medium bg-lightprimary/50 dark:bg-primary/10' : 'text-ld'}
-                  ${!isSelected && hoverColorClass ? hoverColorClass : ''}
-                `}
-              >
-                {renderOption ? (
-                  <>
-                    {isSelected && <IconCheck size={14} className="text-primary shrink-0" />}
-                    {renderOption(option, isSelected)}
-                  </>
-                ) : (
-                  <>
-                    {isSelected ? (
-                      <IconCheck size={14} className="text-primary shrink-0" />
-                    ) : OptionIcon ? (
-                      <OptionIcon size={14} className="shrink-0" style={iconColorStyle} />
-                    ) : (
-                      <span className="w-3.5" />
-                    )}
-                    <span className="truncate">{option.label}</span>
-                  </>
-                )}
-              </button>
-            );
-          })}
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => handleSelect(option.value)}
+                  className={`
+                    w-full px-3 py-2 flex items-center gap-2 text-sm text-left
+                    hover:bg-lightgray dark:hover:bg-darkmuted transition-colors
+                    ${isSelected ? 'text-primary font-medium bg-lightprimary/50 dark:bg-primary/10' : 'text-ld'}
+                    ${!isSelected && hoverColorClass ? hoverColorClass : ''}
+                  `}
+                >
+                  {renderOption ? (
+                    <>
+                      {isSelected && <IconCheck size={14} className="text-primary shrink-0" />}
+                      {renderOption(option, isSelected)}
+                    </>
+                  ) : (
+                    <>
+                      {isSelected ? (
+                        <IconCheck size={14} className="text-primary shrink-0" />
+                      ) : OptionIcon ? (
+                        <OptionIcon size={14} className="shrink-0" style={iconColorStyle} />
+                      ) : (
+                        <span className="w-3.5" />
+                      )}
+                      <span className="truncate">{option.label}</span>
+                    </>
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>

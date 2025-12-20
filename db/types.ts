@@ -6,6 +6,10 @@ import type {
   leadHistory,
   importJobs,
   importRows,
+  subscriptions,
+  payments,
+  supportTickets,
+  supportTicketComments,
 } from './schema';
 
 // Profiles
@@ -80,3 +84,25 @@ export const HISTORY_EVENT_LABELS: Record<HistoryEventType, string> = {
   imported: 'Importé',
   comment_added: 'Commentaire ajouté',
 };
+
+// Subscriptions
+export type Subscription = InferSelectModel<typeof subscriptions>;
+export type NewSubscription = InferInsertModel<typeof subscriptions>;
+export type SubscriptionPlan = Subscription['plan'];
+export type SubscriptionPeriod = Subscription['period'];
+export type SubscriptionStatus = Subscription['status'];
+
+// Payments
+export type Payment = InferSelectModel<typeof payments>;
+export type NewPayment = InferInsertModel<typeof payments>;
+export type PaymentStatus = Payment['status'];
+
+// Support Tickets
+export type SupportTicket = InferSelectModel<typeof supportTickets>;
+export type NewSupportTicket = InferInsertModel<typeof supportTickets>;
+export type SupportTicketCategory = SupportTicket['category'];
+export type SupportTicketStatus = SupportTicket['status'];
+
+// Support Ticket Comments
+export type SupportTicketComment = InferSelectModel<typeof supportTicketComments>;
+export type NewSupportTicketComment = InferInsertModel<typeof supportTicketComments>;

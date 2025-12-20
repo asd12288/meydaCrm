@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import type { UserRole } from '@/db/types';
 
 // Re-export centralized schemas from lib/validation
@@ -10,6 +11,20 @@ export {
   type EditUserInput,
 } from '@/lib/validation';
 
+// User filter schema for URL params validation
+export const userFiltersSchema = z.object({
+  page: z.coerce.number().min(1).default(1),
+  pageSize: z.coerce.number().min(10).max(10).default(10),
+  search: z.string().optional(),
+  role: z.string().optional(),
+  sortBy: z
+    .enum(['created_at', 'updated_at', 'display_name', 'last_sign_in_at'])
+    .default('created_at'),
+  sortOrder: z.enum(['asc', 'desc']).default('desc'),
+});
+
+export type UserFilters = z.infer<typeof userFiltersSchema>;
+
 // User profile from database (with auth data)
 export interface UserProfile {
   id: string;
@@ -20,6 +35,15 @@ export interface UserProfile {
   updated_at: string;
   last_sign_in_at: string | null;
   email: string | null;
+}
+
+// Paginated response from getUsers
+export interface PaginatedUsersResponse {
+  users: UserProfile[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
 }
 
 // Form field labels in French

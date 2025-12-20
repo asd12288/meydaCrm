@@ -1,10 +1,11 @@
 import { CardBox, PageHeader } from '@/modules/shared';
 import { getCurrentUser } from '@/modules/auth';
-import { getLeads, getSalesUsers } from '../lib/actions';
+import { getLeads, getSalesUsers, getUnassignedNewLeadsCount } from '../lib/actions';
 import { leadFiltersSchema } from '../types';
 import { LeadFilters } from '../ui/lead-filters';
 import { LeadsTable } from '../components/leads-table';
 import { LeadsPagination } from '../ui/leads-pagination';
+import { UnassignedLeadsBanner } from '../components/unassigned-leads-banner';
 
 interface LeadsListViewProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -28,10 +29,11 @@ export async function LeadsListView({ searchParams }: LeadsListViewProps) {
     sortOrder: params.sortOrder,
   });
 
-  // Fetch data in parallel
-  const [leadsData, salesUsers] = await Promise.all([
+  // Fetch data in parallel - include unassigned count for admins
+  const [leadsData, salesUsers, unassignedData] = await Promise.all([
     getLeads(filters),
     isAdmin ? getSalesUsers() : Promise.resolve([]),
+    isAdmin ? getUnassignedNewLeadsCount() : Promise.resolve({ count: 0, leadIds: [] }),
   ]);
 
   return (
@@ -42,6 +44,15 @@ export async function LeadsListView({ searchParams }: LeadsListViewProps) {
           isAdmin ? 'Gerez tous vos leads' : 'Vos leads assignes'
         }
       />
+
+      {/* Unassigned new leads banner - admin only */}
+      {isAdmin && unassignedData.count > 0 && (
+        <UnassignedLeadsBanner
+          count={unassignedData.count}
+          leadIds={unassignedData.leadIds}
+          salesUsers={salesUsers}
+        />
+      )}
 
       <CardBox>
         {/* Filters */}

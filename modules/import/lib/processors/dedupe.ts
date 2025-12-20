@@ -12,7 +12,7 @@
  * - Builds a Set for O(1) lookups
  */
 
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 // ============================================================================
 // TYPES
@@ -109,7 +109,7 @@ export async function buildDedupeSet(
 
       // Add values to set
       for (const lead of data) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         
         const value = ((lead as Record<string, unknown>)[field] as string)?.toLowerCase?.().trim();
         if (value) {
           dedupeSet.add(`${field}:${value}`);
@@ -260,7 +260,7 @@ export async function findExistingLeadIds(
 
       if (data) {
         for (const lead of data) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+           
           const fieldValue = (lead as Record<string, unknown>)[field] as string;
           const key = `${field}:${fieldValue.toLowerCase().trim()}`;
           leadIdMap.set(key, lead.id);

@@ -6,6 +6,7 @@
 export const ROLES = {
   ADMIN: 'admin',
   SALES: 'sales',
+  DEVELOPER: 'developer',
 } as const;
 
 export type UserRole = (typeof ROLES)[keyof typeof ROLES];
@@ -16,6 +17,7 @@ export type UserRole = (typeof ROLES)[keyof typeof ROLES];
 export const ROLE_LABELS: Record<UserRole, string> = {
   admin: 'Administrateur',
   sales: 'Commercial',
+  developer: 'Développeur',
 };
 
 /**
@@ -24,6 +26,7 @@ export const ROLE_LABELS: Record<UserRole, string> = {
 export const ROLE_OPTIONS = [
   { value: ROLES.ADMIN, label: ROLE_LABELS.admin },
   { value: ROLES.SALES, label: ROLE_LABELS.sales },
+  { value: ROLES.DEVELOPER, label: ROLE_LABELS.developer },
 ] as const;
 
 /**

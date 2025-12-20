@@ -11,8 +11,8 @@ export function MainContent({ children }: MainContentProps) {
 
   return (
     <div
-      className={`flex-1 min-w-0 overflow-x-auto transition-all duration-300 ${
-        isCollapsed ? "ml-18" : "ml-64"
+      className={`min-h-screen flex flex-col transition-all duration-300 ${
+        isCollapsed ? "ml-[72px]" : "ml-64"
       }`}
     >
       {children}

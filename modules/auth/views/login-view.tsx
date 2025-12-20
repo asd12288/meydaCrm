@@ -13,8 +13,8 @@ export function LoginView() {
       <div className="flex min-h-screen items-center justify-center px-4">
         <div className="w-full max-w-95">
           {/* Logo centered above the card */}
-          <div className="flex justify-center mb-4">
-            <Logo width={200} height={35} />
+          <div className="flex justify-center mb-6">
+            <Logo size="xl" />
           </div>
 
           {/* Login card */}
@@ -22,7 +22,7 @@ export function LoginView() {
             <div className="text-center mb-4">
               <h1 className="text-xl font-bold text-ld">Connexion</h1>
               <p className="text-darklink text-sm mt-1">
-                Accedez a votre tableau de bord
+                Accédez à votre tableau de bord
               </p>
             </div>
 
@@ -31,7 +31,7 @@ export function LoginView() {
 
           {/* Footer text */}
           <p className="text-center text-darklink text-xs mt-4">
-            Meyda - CRM Solution
+            Pulse CRM - Rapide, Fiable, Sécurisé
           </p>
         </div>
       </div>

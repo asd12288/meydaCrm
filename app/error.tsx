@@ -1,0 +1,54 @@
+'use client';
+
+import Image from 'next/image';
+import { useEffect } from 'react';
+import Link from 'next/link';
+
+interface ErrorProps {
+  error: Error & { digest?: string };
+  reset: () => void;
+}
+
+export default function Error({ error, reset }: ErrorProps) {
+  useEffect(() => {
+    // Log error to console in development
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error:', error);
+    }
+  }, [error]);
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-lightgray dark:bg-dark px-4">
+      <div className="text-center max-w-md w-full">
+        <div className="mb-8 flex justify-center">
+          <Image
+            src="/error-illustration.png"
+            alt="Erreur système"
+            width={400}
+            height={400}
+            className="w-full max-w-[400px] h-auto"
+            priority
+          />
+        </div>
+        <h1 className="text-3xl font-semibold mb-4 text-ld">Une erreur s&apos;est produite</h1>
+        <p className="text-darklink mb-8">
+          Désolé, une erreur inattendue s&apos;est produite. Veuillez réessayer.
+        </p>
+        <div className="flex gap-4 justify-center">
+          <button
+            onClick={reset}
+            className="ui-button btn-primary"
+          >
+            Réessayer
+          </button>
+          <Link
+            href="/dashboard"
+            className="ui-button btn-secondary"
+          >
+            Retour au tableau de bord
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}

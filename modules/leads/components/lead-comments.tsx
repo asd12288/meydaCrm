@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useTransition, useOptimistic } from "react";
-import { IconSend, IconTrash, IconMessageOff } from "@tabler/icons-react";
-import { UserAvatar } from "@/modules/shared";
+import { IconSend, IconTrash, IconMessageOff, IconLoader2 } from "@tabler/icons-react";
+import { UserAvatar, ConfirmDialog } from "@/modules/shared";
 import { addComment, deleteComment } from "../lib/actions";
 import { formatRelativeTime } from "../lib/format";
 import type { CommentWithAuthor } from "../types";
@@ -23,6 +23,7 @@ export function LeadComments({
   const [isPending, startTransition] = useTransition();
   const [newComment, setNewComment] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [deleteCommentId, setDeleteCommentId] = useState<string | null>(null);
 
   // Optimistic state for comments
   const [optimisticComments, addOptimisticComment] = useOptimistic(
@@ -73,18 +74,28 @@ export function LeadComments({
     });
   };
 
-  const handleDelete = (commentId: string) => {
-    if (!confirm("Supprimer ce commentaire ?")) return;
+  const handleDeleteClick = (commentId: string) => {
+    setDeleteCommentId(commentId);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (!deleteCommentId) return;
 
     startTransition(async () => {
-      addOptimisticComment({ type: "delete", id: commentId });
+      addOptimisticComment({ type: "delete", id: deleteCommentId });
 
-      const result = await deleteComment(commentId);
+      const result = await deleteComment(deleteCommentId);
 
       if (result.error) {
         setError(result.error);
+      } else {
+        setDeleteCommentId(null);
       }
     });
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteCommentId(null);
   };
 
   const canDelete = (comment: CommentWithAuthor) => {
@@ -114,7 +125,7 @@ export function LeadComments({
               key={comment.id}
               comment={comment}
               canDelete={canDelete(comment)}
-              onDelete={() => handleDelete(comment.id)}
+              onDelete={() => handleDeleteClick(comment.id)}
               isPending={isPending}
             />
           ))
@@ -135,13 +146,30 @@ export function LeadComments({
           <button
             type="submit"
             disabled={isPending || !newComment.trim()}
-            className="ui-button bg-primary text-white h-10 w-10 p-0 shrink-0 disabled:opacity-50"
+            className="ui-button bg-primary text-white h-10 w-10 p-0 shrink-0 disabled:opacity-50 flex items-center justify-center"
             title="Envoyer"
           >
-            <IconSend size={18} />
+            {isPending ? (
+              <IconLoader2 size={18} className="animate-spin" />
+            ) : (
+              <IconSend size={18} />
+            )}
           </button>
         </form>
       </div>
+
+      {/* Delete confirmation dialog */}
+      <ConfirmDialog
+        isOpen={deleteCommentId !== null}
+        onClose={handleDeleteCancel}
+        onConfirm={handleDeleteConfirm}
+        title="Supprimer le commentaire"
+        message="Êtes-vous sûr de vouloir supprimer ce commentaire ? Cette action est irréversible."
+        confirmLabel="Supprimer"
+        cancelLabel="Annuler"
+        variant="danger"
+        isPending={isPending}
+      />
     </div>
   );
 }
@@ -166,7 +194,7 @@ function CommentItem({
     <div className={`comment-bubble ${isTemp ? "opacity-70" : ""}`}>
       <div className="flex items-start gap-3">
         {/* Avatar */}
-        <UserAvatar name={authorName} avatar={comment.author?.avatar} size="md" />
+        <UserAvatar name={authorName} avatar={comment.author?.avatar} size="lg" />
 
         {/* Content */}
         <div className="flex-1 min-w-0">

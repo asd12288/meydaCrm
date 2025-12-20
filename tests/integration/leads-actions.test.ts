@@ -17,7 +17,7 @@ describe('Lead Actions - Get Leads', () => {
   let admin: Awaited<ReturnType<typeof createTestUser>>
   let sales1: Awaited<ReturnType<typeof createTestUser>>
   let sales2: Awaited<ReturnType<typeof createTestUser>>
-  let testLeadIds: string[] = []
+  const testLeadIds: string[] = []
 
   beforeAll(async () => {
     admin = await createTestUser(adminClient, { role: 'admin', prefix: `leads_get_${testPrefix}` })
@@ -384,7 +384,7 @@ describe('Lead Actions - Bulk Assign Leads', () => {
   let admin: Awaited<ReturnType<typeof createTestUser>>
   let sales: Awaited<ReturnType<typeof createTestUser>>
   let targetSales: Awaited<ReturnType<typeof createTestUser>>
-  let testLeadIds: string[] = []
+  const testLeadIds: string[] = []
 
   beforeAll(async () => {
     admin = await createTestUser(adminClient, { role: 'admin', prefix: `leads_bulk_${testPrefix}` })

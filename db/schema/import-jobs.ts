@@ -38,6 +38,19 @@ export interface ImportCheckpoint {
   timestamp: string;
 }
 
+// Type for UI state (leave-and-return support)
+export interface ImportUIState {
+  currentStep: number;
+  mappingConfirmed: boolean;
+  optionsConfirmed: boolean;
+  previewData?: {
+    sampleRows: Record<string, unknown>[];
+    validCount: number;
+    invalidCount: number;
+  };
+  lastAccessedAt: string;
+}
+
 export const importJobs = pgTable(
   'import_jobs',
   {
@@ -91,6 +104,9 @@ export const importJobs = pgTable(
 
     // QStash worker ID for tracking
     workerId: text('worker_id'),
+
+    // UI state for leave-and-return
+    uiState: jsonb('ui_state').$type<ImportUIState>(),
 
     // Error information
     errorMessage: text('error_message'),

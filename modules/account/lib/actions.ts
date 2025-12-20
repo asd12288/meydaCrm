@@ -133,7 +133,7 @@ export async function getAccountStats(): Promise<AccountStats | null> {
   }
 
   // Get comments count
-  let commentsQuery = supabase
+  const commentsQuery = supabase
     .from('lead_comments')
     .select('id', { count: 'exact', head: true })
     .eq('author_id', user.id);

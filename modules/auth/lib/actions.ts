@@ -71,6 +71,23 @@ export async function requireAdmin(): Promise<AuthUser> {
   return user;
 }
 
+export async function requireAdminOrDeveloper(): Promise<AuthUser> {
+  const user = await requireAuth();
+  if (user.profile?.role !== 'admin' && user.profile?.role !== 'developer') {
+    redirect('/dashboard');
+  }
+  return user;
+}
+
+export async function requireDeveloper(): Promise<AuthUser> {
+  const user = await requireAuth();
+  if (user.profile?.role !== 'developer') {
+    redirect('/dashboard');
+  }
+  return user;
+}
+
+
 export async function changePassword(formData: FormData) {
   const supabase = await createClient();
 

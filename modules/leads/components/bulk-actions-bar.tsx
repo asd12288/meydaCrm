@@ -16,15 +16,37 @@ export function BulkActionsBar({
   salesUsers,
   onClearSelection,
 }: BulkActionsBarProps) {
-  const handleAssign = (userId: string | null) => {
+  const handleAssign = (userIds: string | string[] | null) => {
     if (selectedIds.length === 0) return;
 
     // Optimistic: clear immediately
     const idsToAssign = [...selectedIds];
     onClearSelection();
 
-    // Fire and forget - server will revalidate
-    bulkAssignLeads(idsToAssign, userId);
+    // Handle single user assignment (including unassign with null)
+    if (userIds === null || typeof userIds === 'string') {
+      bulkAssignLeads(idsToAssign, userIds);
+      return;
+    }
+
+    // Multi-user: distribute leads evenly (round-robin)
+    const assigneeIds = userIds;
+    if (assigneeIds.length === 0) return;
+
+    // Group leads by assignee for efficient batch calls
+    const assignmentsByUser: Record<string, string[]> = {};
+    for (let i = 0; i < idsToAssign.length; i++) {
+      const assigneeId = assigneeIds[i % assigneeIds.length];
+      if (!assignmentsByUser[assigneeId]) {
+        assignmentsByUser[assigneeId] = [];
+      }
+      assignmentsByUser[assigneeId].push(idsToAssign[i]);
+    }
+
+    // Fire assignments in parallel
+    Object.entries(assignmentsByUser).forEach(([assigneeId, leadIds]) => {
+      bulkAssignLeads(leadIds, assigneeId);
+    });
   };
 
   return (
@@ -43,10 +65,11 @@ export function BulkActionsBar({
         {/* Divider */}
         <div className="w-px h-6 bg-bordergray dark:bg-darkborder" />
 
-        {/* Assign dropdown */}
+        {/* Assign dropdown with multi-select for distribution */}
         <AssignDropdown
           salesUsers={salesUsers}
           onAssign={handleAssign}
+          enableMultiSelect
         />
 
         {/* Divider */}

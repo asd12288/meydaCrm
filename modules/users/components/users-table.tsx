@@ -1,15 +1,17 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useTransition } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
   flexRender,
 } from '@tanstack/react-table';
-import { TableEmptyState } from '@/modules/shared';
+import { TableEmptyState, ConfirmDialog, FormErrorAlert } from '@/modules/shared';
 import { getUserColumns } from '../config/columns';
 import { ResetPasswordModal } from './reset-password-modal';
 import { EditUserModal } from './edit-user-modal';
+import { deleteUser } from '../lib/actions';
+import { useRouter } from 'next/navigation';
 import type { UserProfile } from '../types';
 
 interface UsersTableProps {
@@ -18,11 +20,18 @@ interface UsersTableProps {
 }
 
 export function UsersTable({ users, currentUserId }: UsersTableProps) {
+  const router = useRouter();
   const [resetPasswordUser, setResetPasswordUser] = useState<{
     id: string;
     name: string;
   } | null>(null);
   const [editUser, setEditUser] = useState<UserProfile | null>(null);
+  const [deleteUserData, setDeleteUserData] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+  const [isPending, startTransition] = useTransition();
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const handleResetPassword = useCallback(
     (userId: string, userName: string) => {
@@ -35,6 +44,10 @@ export function UsersTable({ users, currentUserId }: UsersTableProps) {
     setEditUser(user);
   }, []);
 
+  const handleDeleteUser = useCallback((userId: string, userName: string) => {
+    setDeleteUserData({ id: userId, name: userName });
+  }, []);
+
   const closeResetPasswordModal = useCallback(() => {
     setResetPasswordUser(null);
   }, []);
@@ -43,15 +56,36 @@ export function UsersTable({ users, currentUserId }: UsersTableProps) {
     setEditUser(null);
   }, []);
 
+  const handleDeleteConfirm = useCallback(() => {
+    if (!deleteUserData) return;
+
+    setDeleteError(null);
+    startTransition(async () => {
+      const result = await deleteUser(deleteUserData.id);
+      if (result.success) {
+        setDeleteUserData(null);
+        router.refresh();
+      } else {
+        setDeleteError(result.error || 'Erreur lors de la suppression');
+      }
+    });
+  }, [deleteUserData, router]);
+
+  const handleDeleteCancel = useCallback(() => {
+    setDeleteUserData(null);
+  }, []);
+
   const columns = useMemo(
     () =>
       getUserColumns({
         onResetPassword: handleResetPassword,
         onEditUser: handleEditUser,
+        onDeleteUser: handleDeleteUser,
       }),
-    [handleResetPassword, handleEditUser]
+    [handleResetPassword, handleEditUser, handleDeleteUser]
   );
 
+  // Filtering is done server-side via URL params in getUsers()
   const table = useReactTable({
     data: users,
     columns,
@@ -61,6 +95,13 @@ export function UsersTable({ users, currentUserId }: UsersTableProps) {
 
   return (
     <>
+      {/* Delete error alert */}
+      {deleteError && (
+        <div className="mb-4">
+          <FormErrorAlert error={deleteError} />
+        </div>
+      )}
+
       {/* Table */}
       <div className="border rounded-md border-ld overflow-x-auto">
         <table className="w-full table-auto">
@@ -86,7 +127,10 @@ export function UsersTable({ users, currentUserId }: UsersTableProps) {
           </thead>
           <tbody className="bg-white dark:bg-dark">
             {table.getRowModel().rows.length === 0 ? (
-              <TableEmptyState colSpan={columns.length} message="Aucun utilisateur trouve" />
+              <TableEmptyState 
+                colSpan={columns.length} 
+                message="Aucun utilisateur trouvé" 
+              />
             ) : (
               table.getRowModel().rows.map((row) => (
                 <tr
@@ -96,7 +140,7 @@ export function UsersTable({ users, currentUserId }: UsersTableProps) {
                   {row.getVisibleCells().map((cell) => (
                     <td
                       key={cell.id}
-                      className="px-4 py-3 whitespace-nowrap text-sm"
+                      className="px-4 py-4 whitespace-nowrap text-sm"
                       style={{ width: cell.column.getSize() }}
                     >
                       {flexRender(
@@ -131,6 +175,19 @@ export function UsersTable({ users, currentUserId }: UsersTableProps) {
           isSelf={editUser.id === currentUserId}
         />
       )}
+
+      {/* Delete confirmation dialog */}
+      <ConfirmDialog
+        isOpen={deleteUserData !== null}
+        onClose={handleDeleteCancel}
+        onConfirm={handleDeleteConfirm}
+        title="Supprimer l'utilisateur"
+        message={`Êtes-vous sûr de vouloir supprimer l'utilisateur "${deleteUserData?.name}" ? Cette action est irréversible et supprimera définitivement le compte.`}
+        confirmLabel="Supprimer"
+        cancelLabel="Annuler"
+        variant="danger"
+        isPending={isPending}
+      />
     </>
   );
 }

@@ -1,27 +1,47 @@
 import { requireAdmin } from '@/modules/auth';
 import { PageHeader } from '@/modules/shared';
 import { getSalesUsers } from '@/modules/leads';
-import { ImportWizardView } from '@/modules/import/views/import-wizard-view';
+import { ImportDashboardView } from '@/modules/import/views/import-dashboard-view';
+import { getRecentImportJobs } from '@/modules/import/lib/actions';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Import - Meyda',
+  title: 'Import - Pulse CRM',
 };
 
-export default async function ImportPage() {
+interface ImportPageProps {
+  searchParams: Promise<{ resume?: string }>;
+}
+
+export default async function ImportPage({ searchParams }: ImportPageProps) {
   await requireAdmin();
 
-  // Fetch sales users for assignment dropdown
-  const salesUsers = await getSalesUsers();
+  // Get resume job ID from query params
+  const { resume: resumeJobId } = await searchParams;
+
+  // Fetch data in parallel
+  const [salesUsers, recentJobsResult] = await Promise.all([
+    getSalesUsers(),
+    getRecentImportJobs(10),
+  ]);
+
+  // Extract jobs data (fallback to empty array on error)
+  const initialJobs = recentJobsResult.success && recentJobsResult.data ? recentJobsResult.data.jobs : [];
+  const initialTotal = recentJobsResult.success && recentJobsResult.data ? recentJobsResult.data.total : 0;
 
   return (
     <div>
       <PageHeader
         title="Import de leads"
-        description="Importez des leads depuis un fichier CSV ou Excel"
+        description="Gerez vos imports de leads"
       />
 
-      <ImportWizardView salesUsers={salesUsers} />
+      <ImportDashboardView
+        salesUsers={salesUsers}
+        initialJobs={initialJobs}
+        initialTotal={initialTotal}
+        resumeJobId={resumeJobId}
+      />
     </div>
   );
 }

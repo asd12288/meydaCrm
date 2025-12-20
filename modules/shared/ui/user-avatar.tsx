@@ -6,7 +6,7 @@ import { getAvatarPath } from '@/lib/constants';
 interface UserAvatarProps {
   name: string | null | undefined;
   avatar?: string | null;
-  size?: 'sm' | 'md' | 'lg' | 'xl';
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'xxl';
   className?: string;
 }
 
@@ -44,17 +44,21 @@ function getInitials(name: string | null | undefined): string {
 }
 
 const sizeClasses = {
-  sm: 'w-6 h-6 text-xs',
-  md: 'w-8 h-8 text-sm',
-  lg: 'w-10 h-10 text-base',
-  xl: 'w-16 h-16 text-xl',
+  xs: 'w-6 h-6 text-xs',      // 24px - for very compact spaces
+  sm: 'w-8 h-8 text-xs',      // 32px - dropdowns, filters
+  md: 'w-10 h-10 text-sm',    // 40px - tables, lists
+  lg: 'w-12 h-12 text-base',  // 48px - comments, cards
+  xl: 'w-20 h-20 text-xl',    // 80px - profile cards
+  xxl: 'w-24 h-24 text-2xl',  // 96px - large profile views
 };
 
 const imageSizes = {
-  sm: 24,
-  md: 32,
-  lg: 40,
-  xl: 64,
+  xs: 24,
+  sm: 32,
+  md: 40,
+  lg: 48,
+  xl: 80,
+  xxl: 96,
 };
 
 export function UserAvatar({

@@ -12,7 +12,9 @@ export { EditUserForm } from './components/edit-user-form';
 
 // UI
 export { RoleBadge } from './ui/role-badge';
-export { UsersTableSkeleton } from './ui/users-table-skeleton';
+export { UsersTableSkeleton, UsersFiltersSkeleton, UsersPaginationSkeleton, UsersPageSkeleton } from './ui/users-table-skeleton';
+export { UserFilters } from './ui/user-filters';
+export { UsersPagination } from './ui/users-pagination';
 
 // Actions
 export { getUsers, createUser, resetPassword, updateUser } from './lib/actions';

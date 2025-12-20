@@ -1,8 +1,13 @@
-import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect, afterEach } from 'vitest';
+import { render, screen, cleanup } from '@testing-library/react';
 import { UserAvatar } from '../ui/user-avatar';
 
 describe('UserAvatar', () => {
+  // Clean up after each test to prevent DOM pollution
+  afterEach(() => {
+    cleanup();
+  });
+
   it('renders initials from single word name', () => {
     render(<UserAvatar name="John" />);
     expect(screen.getByText('JO')).toBeInTheDocument();
@@ -15,6 +20,7 @@ describe('UserAvatar', () => {
 
   it('renders initials from multi-word name (first and last)', () => {
     render(<UserAvatar name="John Middle Doe" />);
+    // Takes first letter of first word + first letter of last word
     expect(screen.getByText('JD')).toBeInTheDocument();
   });
 
@@ -28,27 +34,37 @@ describe('UserAvatar', () => {
     expect(screen.getByText('?')).toBeInTheDocument();
   });
 
-  it('applies correct size classes', () => {
-    const { container: smContainer } = render(<UserAvatar name="Test" size="sm" />);
-    expect(smContainer.firstChild).toHaveClass('w-6', 'h-6');
+  it('applies size classes correctly', () => {
+    // Test each size in isolation
+    const { container: xsContainer, unmount: unmountXs } = render(<UserAvatar name="Test" size="xs" />);
+    expect(xsContainer.firstChild).toHaveClass('w-6', 'h-6');
+    unmountXs();
 
-    const { container: mdContainer } = render(<UserAvatar name="Test" size="md" />);
-    expect(mdContainer.firstChild).toHaveClass('w-8', 'h-8');
+    const { container: smContainer, unmount: unmountSm } = render(<UserAvatar name="Test" size="sm" />);
+    expect(smContainer.firstChild).toHaveClass('w-8', 'h-8');
+    unmountSm();
 
-    const { container: lgContainer } = render(<UserAvatar name="Test" size="lg" />);
-    expect(lgContainer.firstChild).toHaveClass('w-10', 'h-10');
+    const { container: mdContainer, unmount: unmountMd } = render(<UserAvatar name="Test" size="md" />);
+    expect(mdContainer.firstChild).toHaveClass('w-10', 'h-10');
+    unmountMd();
+
+    const { container: lgContainer, unmount: unmountLg } = render(<UserAvatar name="Test" size="lg" />);
+    expect(lgContainer.firstChild).toHaveClass('w-12', 'h-12');
+    unmountLg();
 
     const { container: xlContainer } = render(<UserAvatar name="Test" size="xl" />);
-    expect(xlContainer.firstChild).toHaveClass('w-16', 'h-16');
+    expect(xlContainer.firstChild).toHaveClass('w-20', 'h-20');
   });
 
   it('applies consistent color based on name', () => {
-    const { container: first } = render(<UserAvatar name="John Doe" />);
+    const { container: first, unmount: unmountFirst } = render(<UserAvatar name="John Doe" />);
+    const firstClasses = (first.firstChild as HTMLElement)?.className;
+    unmountFirst();
+
     const { container: second } = render(<UserAvatar name="John Doe" />);
+    const secondClasses = (second.firstChild as HTMLElement)?.className;
 
     // Same name should produce same color class
-    const firstClasses = (first.firstChild as HTMLElement)?.className;
-    const secondClasses = (second.firstChild as HTMLElement)?.className;
     expect(firstClasses).toBe(secondClasses);
   });
 

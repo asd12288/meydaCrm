@@ -115,32 +115,40 @@ export async function deleteTestUser(
 
 /**
  * Sign in and return authenticated client
- * Adds a small delay to avoid rate limiting in tests
+ * Adds retry logic with exponential backoff for rate limiting
  */
 export async function signInAsUser(
   email: string,
-  password: string
+  password: string,
+  retries = 3
 ): Promise<SupabaseClient> {
   const client = createAnonClient()
-  const { error } = await client.auth.signInWithPassword({ email, password })
+  let lastError: Error | null = null
 
-  if (error) {
-    // If rate limited, wait a bit and retry once
-    if (error.message.includes('rate limit')) {
-      await new Promise((resolve) => setTimeout(resolve, 2000))
-      const retryClient = createAnonClient()
-      const { error: retryError } = await retryClient.auth.signInWithPassword({ email, password })
-      if (retryError) {
-        throw new Error(`Failed to sign in as ${email}: ${retryError.message}`)
-      }
-      return retryClient
+  for (let attempt = 0; attempt < retries; attempt++) {
+    if (attempt > 0) {
+      // Exponential backoff: 1s, 2s, 4s
+      const delay = Math.pow(2, attempt - 1) * 1000
+      await new Promise((resolve) => setTimeout(resolve, delay))
     }
-    throw new Error(`Failed to sign in as ${email}: ${error.message}`)
+
+    const { error } = await client.auth.signInWithPassword({ email, password })
+
+    if (!error) {
+      // Small delay after successful sign-in to avoid rate limiting
+      await new Promise((resolve) => setTimeout(resolve, 150))
+      return client
+    }
+
+    lastError = new Error(error.message)
+
+    // If not rate limited, don't retry
+    if (!error.message.toLowerCase().includes('rate limit') && !error.message.toLowerCase().includes('too many')) {
+      throw new Error(`Failed to sign in as ${email}: ${error.message}`)
+    }
   }
 
-  // Small delay to avoid rate limiting
-  await new Promise((resolve) => setTimeout(resolve, 100))
-  return client
+  throw new Error(`Failed to sign in as ${email} after ${retries} attempts: ${lastError?.message}`)
 }
 
 /**

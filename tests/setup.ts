@@ -1,4 +1,4 @@
-import { beforeAll, afterAll } from 'vitest'
+import { beforeAll } from 'vitest'
 import { config } from 'dotenv'
 import '@testing-library/jest-dom'
 
@@ -19,6 +19,4 @@ beforeAll(() => {
   }
 })
 
-afterAll(() => {
-  // Global cleanup if needed
-})
+// Global cleanup runs after all tests via globalSetup in vitest.config.ts

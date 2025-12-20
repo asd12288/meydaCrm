@@ -7,6 +7,8 @@ import { extractValidationError } from '@/lib/validation';
 import { FR_MESSAGES } from '@/lib/errors';
 import { LEAD_STATUS_LABELS } from '@/db/types';
 import type { LeadStatus } from '@/db/types';
+import { notifyLeadAssigned, notifyLeadComment } from '@/modules/notifications';
+import { getCached, invalidateDashboardCache, CACHE_KEYS, CACHE_TTL } from '@/lib/cache';
 import type {
   LeadFilters,
   PaginatedLeadsResponse,
@@ -18,6 +20,7 @@ import type {
   HistoryEventWithActor,
 } from '../types';
 import { leadUpdateSchema, commentSchema } from '../types';
+import { MIN_SEARCH_LENGTH } from '../config/constants';
 
 /**
  * Fetch paginated leads with filters
@@ -29,6 +32,7 @@ export async function getLeads(
   const supabase = await createClient();
 
   // Build base query with assignee join
+  // Use 'exact' count for accurate totals
   let query = supabase
     .from('leads')
     .select('*, assignee:profiles!leads_assigned_to_profiles_id_fk(id, display_name)', {
@@ -36,9 +40,10 @@ export async function getLeads(
     })
     .is('deleted_at', null);
 
-  // Apply search filter (across multiple fields)
-  if (filters.search) {
-    const searchTerm = `%${filters.search}%`;
+  // Apply search filter only if minimum length is met (performance optimization)
+  // Short searches on 290k rows are very expensive
+  if (filters.search && filters.search.trim().length >= MIN_SEARCH_LENGTH) {
+    const searchTerm = `%${filters.search.trim()}%`;
     query = query.or(
       `first_name.ilike.${searchTerm},last_name.ilike.${searchTerm},email.ilike.${searchTerm},phone.ilike.${searchTerm},company.ilike.${searchTerm}`
     );
@@ -92,22 +97,69 @@ export async function getLeads(
 }
 
 /**
- * Get all users for assignee dropdown (admin only)
+ * Get all users for assignee dropdown (excludes developers)
+ * Accessible to all authenticated users (sales needs this for UI)
+ * RLS policies on profiles table control access
+ * 
+ * Cached for 5 minutes - user list rarely changes
  */
 export async function getSalesUsers(): Promise<SalesUser[]> {
-  const supabase = await createClient();
+  return getCached(
+    CACHE_KEYS.SALES_USERS,
+    async () => {
+      const supabase = await createClient();
 
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('id, display_name, role, avatar')
-    .order('display_name');
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, display_name, role, avatar')
+        .neq('role', 'developer') // Exclude developers from all user selectors
+        .order('display_name');
 
-  if (error) {
-    console.error('Error fetching sales users:', error);
-    return [];
+      if (error) {
+        console.error('Error fetching sales users:', error);
+        return [];
+      }
+
+      return data || [];
+    },
+    CACHE_TTL.SALES_USERS
+  );
+}
+
+/**
+ * Get count and IDs of unassigned leads with "Nouveau" status (admin only)
+ * Used for the quick assignment banner on leads page
+ */
+export async function getUnassignedNewLeadsCount(): Promise<{
+  count: number;
+  leadIds: string[];
+}> {
+  // Silently return empty if not admin (no error for UI display)
+  try {
+    await requireAdmin();
+  } catch {
+    return { count: 0, leadIds: [] };
   }
 
-  return data || [];
+  const supabase = await createClient();
+
+  const { data, count, error } = await supabase
+    .from('leads')
+    .select('id', { count: 'exact' })
+    .eq('status', 'new') // Database uses lowercase English status keys
+    .is('assigned_to', null)
+    .is('deleted_at', null)
+    .limit(500); // Cap at 500 for bulk operations
+
+  if (error) {
+    console.error('Error fetching unassigned new leads count:', error);
+    return { count: 0, leadIds: [] };
+  }
+
+  return {
+    count: count || 0,
+    leadIds: data?.map((lead) => lead.id) || [],
+  };
 }
 
 /**
@@ -165,6 +217,10 @@ export async function updateLeadStatus(
   }
 
   revalidatePath('/leads');
+  
+  // Invalidate dashboard cache (status counts changed)
+  await invalidateDashboardCache();
+  
   return { success: true };
 }
 
@@ -220,9 +276,32 @@ export async function bulkAssignLeads(
       console.error('Error creating history entries:', historyError);
       // Don't fail the operation for history errors
     }
+
+    // Send notifications to assignee if assigned
+    if (assigneeId) {
+      // Fetch lead details for notification
+      const { data: leadsWithNames } = await supabase
+        .from('leads')
+        .select('id, first_name, last_name')
+        .in('id', leadIds);
+
+      // Create notifications for each assigned lead
+      await Promise.all(
+        (leadsWithNames || []).map((lead) => {
+          const leadName = lead.first_name || lead.last_name
+            ? `${lead.first_name || ''} ${lead.last_name || ''}`.trim()
+            : undefined;
+          return notifyLeadAssigned(assigneeId, lead.id, leadName);
+        })
+      );
+    }
   }
 
   revalidatePath('/leads');
+  
+  // Invalidate dashboard cache (assignment stats changed)
+  await invalidateDashboardCache();
+  
   return { success: true, count: leadIds.length };
 }
 
@@ -430,8 +509,28 @@ export async function assignLead(
     console.error('Error creating history entry:', historyError);
   }
 
+  // Send notification to assignee if assigned
+  if (assigneeId) {
+    // Fetch lead name for notification
+    const { data: lead } = await supabase
+      .from('leads')
+      .select('first_name, last_name')
+      .eq('id', leadId)
+      .single();
+
+    const leadName = lead
+      ? `${lead.first_name || ''} ${lead.last_name || ''}`.trim() || undefined
+      : undefined;
+
+    await notifyLeadAssigned(assigneeId, leadId, leadName);
+  }
+
   revalidatePath(`/leads/${leadId}`);
   revalidatePath('/leads');
+  
+  // Invalidate dashboard cache (assignment stats changed)
+  await invalidateDashboardCache();
+  
   return { success: true };
 }
 
@@ -483,6 +582,27 @@ export async function addComment(
     console.error('Error creating history entry:', historyError);
   }
 
+  // Send notification to assigned user (if not the comment author)
+  const { data: lead } = await supabase
+    .from('leads')
+    .select('assigned_to, first_name, last_name')
+    .eq('id', leadId)
+    .single();
+
+  if (lead?.assigned_to && lead.assigned_to !== user.id) {
+    const leadName = lead.first_name || lead.last_name
+      ? `${lead.first_name || ''} ${lead.last_name || ''}`.trim()
+      : undefined;
+    const commentPreview = body.trim().substring(0, 100);
+    await notifyLeadComment(
+      lead.assigned_to,
+      leadId,
+      comment.id,
+      leadName,
+      commentPreview
+    );
+  }
+
   revalidatePath(`/leads/${leadId}`);
   return { success: true, comment: comment as CommentWithAuthor };
 }
@@ -529,5 +649,66 @@ export async function deleteComment(
   }
 
   revalidatePath(`/leads/${comment.lead_id}`);
+  return { success: true };
+}
+
+/**
+ * Delete a lead (soft delete - sets deleted_at)
+ * Admin only
+ */
+export async function deleteLead(
+  leadId: string
+): Promise<{ success?: boolean; error?: string }> {
+  const user = await requireAdmin();
+  const supabase = await createClient();
+
+  // Get current lead data for history
+  const { data: currentLead, error: fetchError } = await supabase
+    .from('leads')
+    .select('id, first_name, last_name')
+    .eq('id', leadId)
+    .is('deleted_at', null)
+    .single();
+
+  if (fetchError || !currentLead) {
+    return { error: FR_MESSAGES.LEAD_NOT_FOUND };
+  }
+
+  // Soft delete (set deleted_at)
+  const { error: deleteError } = await supabase
+    .from('leads')
+    .update({
+      deleted_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', leadId);
+
+  if (deleteError) {
+    console.error('Error deleting lead:', deleteError);
+    return { error: deleteError.message || FR_MESSAGES.ERROR_DELETE };
+  }
+
+  // Create history entry
+  const { error: historyError } = await supabase.from('lead_history').insert({
+    lead_id: leadId,
+    actor_id: user.id,
+    event_type: 'deleted',
+    before_data: {
+      first_name: currentLead.first_name,
+      last_name: currentLead.last_name,
+    },
+    after_data: { deleted_at: new Date().toISOString() },
+  });
+
+  if (historyError) {
+    console.error('Error creating history entry:', historyError);
+    // Don't fail the operation for history errors
+  }
+
+  revalidatePath('/leads');
+  
+  // Invalidate dashboard cache (lead counts changed)
+  await invalidateDashboardCache();
+  
   return { success: true };
 }

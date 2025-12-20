@@ -1,5 +1,5 @@
-import { render } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { render, cleanup } from '@testing-library/react';
+import { describe, expect, it, afterEach } from 'vitest';
 import {
   LeadsFiltersSkeleton,
   LeadsPageSkeleton,
@@ -8,6 +8,11 @@ import {
 } from '../ui/leads-table-skeleton';
 
 describe('Skeleton Components', () => {
+  // Clean up after each test to prevent DOM pollution
+  afterEach(() => {
+    cleanup();
+  });
+
   describe('LeadsTableSkeleton', () => {
     it('should render without crashing', () => {
       render(<LeadsTableSkeleton />);
@@ -16,10 +21,11 @@ describe('Skeleton Components', () => {
       expect(skeletons.length).toBeGreaterThan(0);
     });
 
-    it('should render 10 skeleton rows', () => {
+    it('should render skeleton rows in table', () => {
       render(<LeadsTableSkeleton />);
-      const skeletonRows = document.querySelectorAll('.skeleton-row');
-      expect(skeletonRows).toHaveLength(10);
+      // TableSkeleton uses actual <tr> elements
+      const tableRows = document.querySelectorAll('tbody tr');
+      expect(tableRows.length).toBe(10);
     });
   });
 
@@ -30,11 +36,11 @@ describe('Skeleton Components', () => {
       expect(skeletons.length).toBeGreaterThan(0);
     });
 
-    it('should render 3 filter skeletons', () => {
+    it('should render filter skeleton elements', () => {
       render(<LeadsFiltersSkeleton />);
-      const container = document.querySelector('.flex');
-      const skeletons = container?.querySelectorAll('.skeleton');
-      expect(skeletons).toHaveLength(3);
+      // The filters are direct children with .skeleton class
+      const skeletons = document.querySelectorAll('.skeleton');
+      expect(skeletons.length).toBe(3);
     });
   });
 
@@ -50,13 +56,13 @@ describe('Skeleton Components', () => {
     it('should render all skeleton components', () => {
       render(<LeadsPageSkeleton />);
 
-      // Should have filter skeletons
-      const filterSkeletons = document.querySelectorAll('.mb-4 .skeleton');
-      expect(filterSkeletons.length).toBeGreaterThan(0);
+      // Should have filter skeletons (more than 0)
+      const allSkeletons = document.querySelectorAll('.skeleton');
+      expect(allSkeletons.length).toBeGreaterThan(0);
 
-      // Should have table skeleton rows
-      const skeletonRows = document.querySelectorAll('.skeleton-row');
-      expect(skeletonRows).toHaveLength(10);
+      // Should have table rows
+      const tableRows = document.querySelectorAll('tbody tr');
+      expect(tableRows.length).toBe(10);
     });
   });
 });

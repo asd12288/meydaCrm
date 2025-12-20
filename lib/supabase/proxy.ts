@@ -35,6 +35,17 @@ export async function updateSession(request: NextRequest) {
   // Public routes that don't require auth
   const isPublicRoute = pathname === '/login' || pathname === '/';
 
+  // QStash webhook routes - authenticated via signature, not cookies
+  const isQStashWebhook =
+    pathname === '/api/import/parse' ||
+    pathname === '/api/import/commit' ||
+    pathname === '/api/import/error-report';
+
+  // Allow QStash webhooks through without cookie auth
+  if (isQStashWebhook) {
+    return supabaseResponse;
+  }
+
   // Redirect unauthenticated users to login
   if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone();
@@ -55,6 +66,9 @@ export async function updateSession(request: NextRequest) {
     url.pathname = '/dashboard';
     return NextResponse.redirect(url);
   }
+
+  // Add pathname header for layout to use
+  supabaseResponse.headers.set('x-pathname', pathname);
 
   return supabaseResponse;
 }

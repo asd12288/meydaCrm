@@ -2,8 +2,8 @@ import { LoginView } from '@/modules/auth';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Connexion - Meyda',
-  description: 'Connectez-vous a votre CRM',
+  title: 'Connexion - Pulse CRM',
+  description: 'Connectez-vous à votre CRM',
 };
 
 export default function LoginPage() {

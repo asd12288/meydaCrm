@@ -74,7 +74,7 @@ export const emailSchema = z
 /**
  * Role enum for user roles
  */
-export const roleEnum = z.enum(['admin', 'sales'] as const);
+export const roleEnum = z.enum(['admin', 'sales', 'developer'] as const);
 export type UserRole = z.infer<typeof roleEnum>;
 
 /**

@@ -14,7 +14,7 @@ import {
 } from '@/modules/shared';
 import { createUserSchema, USER_FIELD_LABELS } from '../types';
 import type { CreateUserInput } from '../types';
-import { ROLE_OPTIONS } from '@/lib/constants';
+import { ROLE_OPTIONS, ROLES } from '@/lib/constants';
 import { createUser } from '../lib/actions';
 
 interface CreateUserFormProps {
@@ -75,7 +75,7 @@ export function CreateUserForm({ onSuccess, onCancel }: CreateUserFormProps) {
 
       <FormSelect
         label={USER_FIELD_LABELS.role}
-        options={[...ROLE_OPTIONS]}
+        options={ROLE_OPTIONS.filter((option) => option.value !== ROLES.DEVELOPER)}
         error={errors.role?.message}
         {...register('role')}
       />

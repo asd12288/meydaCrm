@@ -64,6 +64,9 @@ export const PAGE_SIZE_OPTIONS = [20, 50, 100];
 // Search debounce delay in milliseconds
 export const SEARCH_DEBOUNCE_MS = 300;
 
+// Minimum characters required for search (performance optimization for 290k+ leads)
+export const MIN_SEARCH_LENGTH = 3;
+
 // Table column labels (French)
 export const COLUMN_LABELS = {
   selection: '',

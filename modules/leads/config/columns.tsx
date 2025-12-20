@@ -3,7 +3,7 @@
 import { createColumnHelper } from '@tanstack/react-table';
 import Link from 'next/link';
 import { Dropdown, DropdownItem } from 'flowbite-react';
-import { IconDots, IconEye, IconEdit } from '@tabler/icons-react';
+import { IconDots, IconEye, IconEdit, IconTrash } from '@tabler/icons-react';
 import { CopyableText } from '@/modules/shared';
 import { LeadStatusBadge } from '../ui/lead-status-badge';
 import { SortableHeader } from '../ui/sortable-header';
@@ -15,10 +15,19 @@ const columnHelper = createColumnHelper<LeadWithAssignee>();
 interface ColumnOptions {
   isAdmin: boolean;
   includeSelection: boolean;
+  onDelete?: (leadId: string) => void;
 }
 
 // Row actions dropdown component using Flowbite
-function RowActionsDropdown({ leadId }: { leadId: string }) {
+function RowActionsDropdown({
+  leadId,
+  isAdmin,
+  onDelete,
+}: {
+  leadId: string;
+  isAdmin: boolean;
+  onDelete?: (leadId: string) => void;
+}) {
   return (
     <Dropdown
       label=""
@@ -45,11 +54,20 @@ function RowActionsDropdown({ leadId }: { leadId: string }) {
         <IconEdit size={16} />
         Modifier
       </DropdownItem>
+      {isAdmin && onDelete && (
+        <DropdownItem
+          onClick={() => onDelete(leadId)}
+          className="flex items-center gap-3 text-error"
+        >
+          <IconTrash size={16} />
+          Supprimer
+        </DropdownItem>
+      )}
     </Dropdown>
   );
 }
 
-export function getLeadColumns({ isAdmin, includeSelection }: ColumnOptions) {
+export function getLeadColumns({ isAdmin, includeSelection, onDelete }: ColumnOptions) {
   const columns = [];
 
   // Selection column (admin only)
@@ -186,7 +204,13 @@ export function getLeadColumns({ isAdmin, includeSelection }: ColumnOptions) {
     columnHelper.display({
       id: 'actions',
       header: () => '',
-      cell: (info) => <RowActionsDropdown leadId={info.row.original.id} />,
+      cell: (info) => (
+        <RowActionsDropdown
+          leadId={info.row.original.id}
+          isAdmin={isAdmin}
+          onDelete={onDelete}
+        />
+      ),
       size: 50,
     })
   );

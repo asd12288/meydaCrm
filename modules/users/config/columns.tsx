@@ -2,7 +2,7 @@
 
 import { createColumnHelper } from '@tanstack/react-table';
 import { Dropdown, DropdownItem } from 'flowbite-react';
-import { IconDots, IconKey, IconEdit } from '@tabler/icons-react';
+import { IconDots, IconKey, IconEdit, IconTrash } from '@tabler/icons-react';
 import { UserAvatar } from '@/modules/shared';
 import { RoleBadge } from '../ui/role-badge';
 import { COLUMN_LABELS } from './constants';
@@ -13,6 +13,7 @@ const columnHelper = createColumnHelper<UserProfile>();
 interface ColumnOptions {
   onResetPassword: (userId: string, userName: string) => void;
   onEditUser: (user: UserProfile) => void;
+  onDeleteUser?: (userId: string, userName: string) => void;
 }
 
 // Row actions dropdown component
@@ -20,10 +21,12 @@ function RowActionsDropdown({
   user,
   onResetPassword,
   onEditUser,
+  onDeleteUser,
 }: {
   user: UserProfile;
   onResetPassword: (userId: string, userName: string) => void;
   onEditUser: (user: UserProfile) => void;
+  onDeleteUser?: (userId: string, userName: string) => void;
 }) {
   return (
     <Dropdown
@@ -49,6 +52,15 @@ function RowActionsDropdown({
         <IconKey size={16} />
         Reinitialiser le mot de passe
       </DropdownItem>
+      {onDeleteUser && (
+        <DropdownItem
+          onClick={() => onDeleteUser(user.id, user.display_name)}
+          className="flex items-center gap-3 text-error"
+        >
+          <IconTrash size={16} />
+          Supprimer
+        </DropdownItem>
+      )}
     </Dropdown>
   );
 }
@@ -72,7 +84,11 @@ function formatLastLogin(date: string | null): string {
   return loginDate.toLocaleDateString('fr-FR');
 }
 
-export function getUserColumns({ onResetPassword, onEditUser }: ColumnOptions) {
+export function getUserColumns({
+  onResetPassword,
+  onEditUser,
+  onDeleteUser,
+}: ColumnOptions) {
   return [
     // Avatar + Display name
     columnHelper.accessor('display_name', {
@@ -82,7 +98,7 @@ export function getUserColumns({ onResetPassword, onEditUser }: ColumnOptions) {
           <UserAvatar
             name={info.getValue()}
             avatar={info.row.original.avatar}
-            size="sm"
+            size="lg"
           />
           <span className="font-medium text-ld">{info.getValue()}</span>
         </div>
@@ -128,6 +144,7 @@ export function getUserColumns({ onResetPassword, onEditUser }: ColumnOptions) {
           user={info.row.original}
           onResetPassword={onResetPassword}
           onEditUser={onEditUser}
+          onDeleteUser={onDeleteUser}
         />
       ),
       size: 60,

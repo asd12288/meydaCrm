@@ -1,15 +1,21 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useTransition, useRef } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
   flexRender,
 } from '@tanstack/react-table';
-import { TableEmptyState } from '@/modules/shared';
+import { useVirtualizer } from '@tanstack/react-virtual';
+import { TableEmptyState, ConfirmDialog } from '@/modules/shared';
 import { getLeadColumns } from '../config/columns';
 import { BulkActionsBar } from './bulk-actions-bar';
+import { deleteLead } from '../lib/actions';
+import { useRouter } from 'next/navigation';
 import type { LeadWithAssignee, SalesUser } from '../types';
+
+// Row height for virtualization (must match CSS)
+const ROW_HEIGHT = 45;
 
 interface LeadsTableProps {
   leads: LeadWithAssignee[];
@@ -18,13 +24,40 @@ interface LeadsTableProps {
 }
 
 export function LeadsTable({ leads, isAdmin, salesUsers }: LeadsTableProps) {
+  const router = useRouter();
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
+  const [deleteLeadId, setDeleteLeadId] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+
+  const handleDeleteClick = (leadId: string) => {
+    setDeleteLeadId(leadId);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (!deleteLeadId) return;
+
+    startTransition(async () => {
+      const result = await deleteLead(deleteLeadId);
+      if (result.success) {
+        setDeleteLeadId(null);
+        router.refresh();
+      } else {
+        // TODO: Show error toast
+        console.error(result.error);
+      }
+    });
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteLeadId(null);
+  };
 
   const columns = useMemo(
     () =>
       getLeadColumns({
         isAdmin,
         includeSelection: isAdmin,
+        onDelete: isAdmin ? handleDeleteClick : undefined,
       }),
     [isAdmin]
   );
@@ -49,10 +82,24 @@ export function LeadsTable({ leads, isAdmin, salesUsers }: LeadsTableProps) {
     setRowSelection({});
   };
 
+  // Virtualization setup
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+  const { rows } = table.getRowModel();
+
+  const rowVirtualizer = useVirtualizer({
+    count: rows.length,
+    estimateSize: () => ROW_HEIGHT,
+    getScrollElement: () => tableContainerRef.current,
+    overscan: 5, // Render 5 extra rows above/below viewport for smooth scrolling
+  });
+
   return (
     <>
-      {/* Table container with sticky header support */}
-      <div className="border rounded-md border-ld overflow-x-auto max-h-[calc(100vh-320px)]">
+      {/* Table container with virtualization */}
+      <div
+        ref={tableContainerRef}
+        className="border rounded-md border-ld overflow-auto max-h-[calc(100vh-320px)]"
+      >
         <table className="w-full table-auto">
           <thead className="bg-lightgray dark:bg-darkgray sticky top-0 z-10 shadow-sm">
             {table.getHeaderGroups().map((headerGroup) => (
@@ -75,34 +122,60 @@ export function LeadsTable({ leads, isAdmin, salesUsers }: LeadsTableProps) {
             ))}
           </thead>
           <tbody className="bg-white dark:bg-dark">
-            {table.getRowModel().rows.length === 0 ? (
+            {rows.length === 0 ? (
               <TableEmptyState
                 colSpan={columns.length}
                 message="Aucun lead trouve"
                 className="px-3"
               />
             ) : (
-              table.getRowModel().rows.map((row) => (
-                <tr
-                  key={row.id}
-                  className={`border-b border-ld last:border-b-0 hover:bg-lighthover dark:hover:bg-darkgray transition-colors ${
-                    row.getIsSelected() ? 'bg-lightprimary dark:bg-darkborder' : ''
-                  }`}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <td
-                      key={cell.id}
-                      className="px-3 py-2.5 whitespace-nowrap text-sm"
-                      style={{ width: cell.column.getSize() }}
+              <>
+                {/* Spacer for virtualization - pushes content to correct position */}
+                {rowVirtualizer.getVirtualItems().length > 0 && (
+                  <tr style={{ height: rowVirtualizer.getVirtualItems()[0]?.start || 0 }}>
+                    <td colSpan={columns.length} />
+                  </tr>
+                )}
+                {/* Virtualized rows - only render visible rows */}
+                {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                  const row = rows[virtualRow.index];
+                  return (
+                    <tr
+                      key={row.id}
+                      data-index={virtualRow.index}
+                      ref={(node) => rowVirtualizer.measureElement(node)}
+                      className={`border-b border-ld last:border-b-0 hover:bg-lighthover dark:hover:bg-darkgray transition-colors ${
+                        row.getIsSelected() ? 'bg-lightprimary dark:bg-darkborder' : ''
+                      }`}
                     >
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </td>
-                  ))}
-                </tr>
-              ))
+                      {row.getVisibleCells().map((cell) => (
+                        <td
+                          key={cell.id}
+                          className="px-3 py-2.5 whitespace-nowrap text-sm"
+                          style={{ width: cell.column.getSize() }}
+                        >
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext()
+                          )}
+                        </td>
+                      ))}
+                    </tr>
+                  );
+                })}
+                {/* Bottom spacer for virtualization */}
+                {rowVirtualizer.getVirtualItems().length > 0 && (
+                  <tr
+                    style={{
+                      height:
+                        rowVirtualizer.getTotalSize() -
+                        (rowVirtualizer.getVirtualItems()[rowVirtualizer.getVirtualItems().length - 1]?.end || 0),
+                    }}
+                  >
+                    <td colSpan={columns.length} />
+                  </tr>
+                )}
+              </>
             )}
           </tbody>
         </table>
@@ -114,6 +187,21 @@ export function LeadsTable({ leads, isAdmin, salesUsers }: LeadsTableProps) {
           selectedIds={selectedIds}
           salesUsers={salesUsers}
           onClearSelection={clearSelection}
+        />
+      )}
+
+      {/* Delete confirmation dialog */}
+      {isAdmin && (
+        <ConfirmDialog
+          isOpen={deleteLeadId !== null}
+          onClose={handleDeleteCancel}
+          onConfirm={handleDeleteConfirm}
+          title="Supprimer le lead"
+          message="Êtes-vous sûr de vouloir supprimer ce lead ? Cette action est irréversible."
+          confirmLabel="Supprimer"
+          cancelLabel="Annuler"
+          variant="danger"
+          isPending={isPending}
         />
       )}
     </>

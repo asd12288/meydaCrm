@@ -56,7 +56,12 @@ export function getAppUrl(): string {
     return process.env.NEXT_PUBLIC_APP_URL;
   }
 
-  // Local development
+  // Development mode: use ngrok domain for webhook callbacks
+  if (process.env.NODE_ENV === 'development') {
+    return 'https://sheep-wanted-squirrel.ngrok-free.app';
+  }
+
+  // Local development fallback
   return 'http://localhost:3000';
 }
 

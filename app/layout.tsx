@@ -9,8 +9,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'Meyda - CRM Solution',
-  description: 'Systeme de gestion des leads',
+  title: 'Pulse CRM',
+  description: 'Gestion des leads - Rapide, Fiable, Sécurisé',
 };
 
 export default function RootLayout({

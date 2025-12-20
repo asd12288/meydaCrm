@@ -36,7 +36,9 @@
       "SlashCommand(/review)",
       "Bash(npx supabase functions deploy:*)",
       "Bash(npx supabase functions list:*)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Bash(npx eslint --fix .)",
+      "Bash(npx eslint:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

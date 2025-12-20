@@ -11,7 +11,7 @@ interface CreateUserRequest {
   username: string;
   password: string;
   displayName: string;
-  role: "admin" | "sales";
+  role: "admin" | "sales" | "developer";
 }
 
 Deno.serve(async (req: Request) => {

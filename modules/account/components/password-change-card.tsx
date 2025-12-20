@@ -17,7 +17,7 @@ import type { ChangePasswordInput } from '../types';
 import { changePassword } from '../lib/actions';
 
 export function PasswordChangeCard() {
-  const { isPending, startTransition, error, setError, success, setSuccess, resetAll } =
+  const { isPending, startTransition, error, setError, success, handleFormSuccess, resetAll } =
     useFormState();
 
   const {
@@ -47,8 +47,8 @@ export function PasswordChangeCard() {
       if (result.error) {
         setError(result.error);
       } else {
-        setSuccess(true);
         reset();
+        handleFormSuccess();
       }
     });
   };
