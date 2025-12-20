@@ -1,10 +1,6 @@
 import type { UserRole } from '@/db/types';
 
-// Role options for dropdown
-export const ROLE_OPTIONS: { value: UserRole; label: string }[] = [
-  { value: 'sales', label: 'Commercial' },
-  { value: 'admin', label: 'Administrateur' },
-];
+// Note: ROLE_OPTIONS and ROLE_LABELS are centralized in @/lib/constants
 
 // Role colors mapping to globals.css badge classes
 export const ROLE_COLORS: Record<UserRole, string> = {
@@ -14,8 +10,9 @@ export const ROLE_COLORS: Record<UserRole, string> = {
 
 // Table column labels (French)
 export const COLUMN_LABELS = {
-  displayName: 'Nom complet',
+  displayName: 'Utilisateur',
   role: 'Role',
+  lastLogin: 'Derniere connexion',
   createdAt: 'Cree le',
   actions: '',
 } as const;

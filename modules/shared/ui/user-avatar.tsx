@@ -1,7 +1,11 @@
 'use client';
 
+import Image from 'next/image';
+import { getAvatarPath } from '@/lib/constants';
+
 interface UserAvatarProps {
   name: string | null | undefined;
+  avatar?: string | null;
   size?: 'sm' | 'md' | 'lg' | 'xl';
   className?: string;
 }
@@ -46,10 +50,46 @@ const sizeClasses = {
   xl: 'w-16 h-16 text-xl',
 };
 
-export function UserAvatar({ name, size = 'md', className = '' }: UserAvatarProps) {
+const imageSizes = {
+  sm: 24,
+  md: 32,
+  lg: 40,
+  xl: 64,
+};
+
+export function UserAvatar({
+  name,
+  avatar,
+  size = 'md',
+  className = '',
+}: UserAvatarProps) {
   const initials = getInitials(name);
   const colorClass = name ? getAvatarColor(name) : 'bg-gray-400 text-white';
 
+  // If avatar is set, show the image
+  if (avatar) {
+    return (
+      <div
+        className={`
+          ${sizeClasses[size]}
+          rounded-full overflow-hidden shrink-0 bg-lightgray
+          ${className}
+        `}
+        title={name || 'Inconnu'}
+      >
+        <Image
+          src={getAvatarPath(avatar)}
+          alt={name || 'Avatar'}
+          width={imageSizes[size]}
+          height={imageSizes[size]}
+          className="w-full h-full object-cover"
+          unoptimized // Skip optimization for local images
+        />
+      </div>
+    );
+  }
+
+  // Fallback to initials
   return (
     <div
       className={`

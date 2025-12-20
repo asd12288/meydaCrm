@@ -112,7 +112,15 @@ export function LeadProfileCard({
                 disabled={isPending}
                 className="inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm bg-lightgray dark:bg-darkborder hover:bg-lightprimary dark:hover:bg-primary/20 transition-colors disabled:opacity-50"
               >
-                <IconUser size={14} />
+                {currentAssignee ? (
+                  <UserAvatar
+                    name={currentAssignee.display_name}
+                    avatar={salesUsers.find((u) => u.id === currentAssignee.id)?.avatar}
+                    size="sm"
+                  />
+                ) : (
+                  <IconUser size={14} />
+                )}
                 {currentAssignee?.display_name || 'Non assigné'}
                 <IconChevronDown size={14} />
               </button>
@@ -122,7 +130,12 @@ export function LeadProfileCard({
               onClick={() => handleAssigneeChange(null)}
               className={!currentAssignee ? 'font-medium bg-lightgray dark:bg-darkborder' : ''}
             >
-              Non assigné
+              <span className="flex items-center gap-2">
+                <span className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center">
+                  <IconUser size={12} />
+                </span>
+                Non assigné
+              </span>
             </DropdownItem>
             {salesUsers.map((user) => (
               <DropdownItem
@@ -134,10 +147,13 @@ export function LeadProfileCard({
                     : ''
                 }
               >
-                {user.display_name || user.id.slice(0, 8)}
-                {user.role === 'admin' && (
-                  <span className="ml-2 text-xs text-darklink">(Admin)</span>
-                )}
+                <span className="flex items-center gap-2">
+                  <UserAvatar name={user.display_name} avatar={user.avatar} size="sm" />
+                  <span>{user.display_name || user.id.slice(0, 8)}</span>
+                  {user.role === 'admin' && (
+                    <span className="text-xs text-darklink">(Admin)</span>
+                  )}
+                </span>
               </DropdownItem>
             ))}
           </Dropdown>

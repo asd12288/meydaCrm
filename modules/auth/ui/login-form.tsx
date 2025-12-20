@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useFormStatus } from 'react-dom';
+import { PasswordInput, FormErrorAlert } from '@/modules/shared';
 import { login } from '../lib/actions';
 
 function SubmitButton() {
@@ -31,17 +32,12 @@ export function LoginForm() {
 
   return (
     <form action={handleSubmit} className="mt-6">
-      {error && (
-        <div className="mb-4 p-3 rounded-md bg-lighterror text-error text-sm">
-          {error}
-        </div>
-      )}
+      <div className="mb-4">
+        <FormErrorAlert error={error} />
+      </div>
 
       <div className="mb-4">
-        <label
-          htmlFor="username"
-          className="block mb-2 text-sm font-medium text-ld"
-        >
+        <label htmlFor="username" className="form-label">
           Identifiant
         </label>
         <input
@@ -56,19 +52,14 @@ export function LoginForm() {
       </div>
 
       <div className="mb-6">
-        <label
-          htmlFor="password"
-          className="block mb-2 text-sm font-medium text-ld"
-        >
+        <label htmlFor="password" className="form-label">
           Mot de passe
         </label>
-        <input
+        <PasswordInput
           id="password"
           name="password"
-          type="password"
           required
           autoComplete="current-password"
-          className="form-control-input w-full"
           placeholder="••••••••"
         />
       </div>

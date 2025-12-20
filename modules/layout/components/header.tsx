@@ -1,20 +1,21 @@
 'use client';
 
-import { IconLogout, IconUser } from '@tabler/icons-react';
+import { IconLogout } from '@tabler/icons-react';
 import Link from 'next/link';
 import { logout } from '@/modules/auth/lib/actions';
-import { ThemeSwitcher } from '@/modules/shared';
+import { ThemeSwitcher, UserAvatar } from '@/modules/shared';
 
 interface HeaderProps {
   displayName: string;
   role: string;
+  avatar: string | null;
 }
 
-export function Header({ displayName, role }: HeaderProps) {
+export function Header({ displayName, role, avatar }: HeaderProps) {
   const roleLabel = role === 'admin' ? 'Administrateur' : 'Commercial';
 
   return (
-    <header className="sticky top-0 z-30 h-[70px] bg-white dark:bg-darkgray border-b border-ld">
+    <header className="sticky top-0 z-30 h-17.5 bg-white dark:bg-darkgray border-b border-ld">
       <div className="flex items-center justify-between h-full px-6">
         <div>{/* Breadcrumb or page title can go here */}</div>
 
@@ -31,10 +32,10 @@ export function Header({ displayName, role }: HeaderProps) {
           {/* Profile link */}
           <Link
             href="/account"
-            className="btn-circle-hover text-link dark:text-darklink"
+            className="hover:opacity-80 transition-opacity"
             title="Mon compte"
           >
-            <IconUser size={20} />
+            <UserAvatar name={displayName} avatar={avatar} size="md" />
           </Link>
 
           {/* Logout */}

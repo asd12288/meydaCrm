@@ -3,28 +3,90 @@
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/modules/auth';
-import type { UserProfile, CreateUserInput, ResetPasswordInput } from '../types';
-import { createUserSchema, resetPasswordSchema } from '../types';
+import { extractValidationError } from '@/lib/validation';
+import type {
+  UserProfile,
+  CreateUserInput,
+  ResetPasswordInput,
+  EditUserInput,
+} from '../types';
+import { createUserSchema, resetPasswordSchema, editUserSchema } from '../types';
 
 /**
- * Get all users with their profiles
+ * Get all users with their profiles and auth data (last_sign_in_at)
  * Admin only - requireAdmin() enforces this
  */
 export async function getUsers(): Promise<UserProfile[]> {
   await requireAdmin();
   const supabase = await createClient();
 
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('id, role, display_name, created_at, updated_at')
-    .order('created_at', { ascending: false });
+  // Use the database function that joins profiles with auth.users
+  const { data, error } = await supabase.rpc('get_users_with_auth');
 
   if (error) {
     console.error('Error fetching users:', error);
     return [];
   }
 
-  return data || [];
+  return (data as UserProfile[]) || [];
+}
+
+/**
+ * Update user profile (display_name and role)
+ * Admin only
+ * Note: Admins cannot change their own role (safety feature)
+ */
+export async function updateUser(
+  userId: string,
+  input: EditUserInput
+): Promise<{ success?: boolean; error?: string }> {
+  await requireAdmin();
+  const supabase = await createClient();
+
+  // Validate input
+  const validationResult = editUserSchema.safeParse(input);
+  if (!validationResult.success) {
+    return { error: extractValidationError(validationResult) };
+  }
+
+  // Get current user to check if trying to change own role
+  const {
+    data: { user: currentUser },
+  } = await supabase.auth.getUser();
+
+  if (!currentUser) {
+    return { error: 'Session expiree' };
+  }
+
+  // Prevent admin from changing their own role
+  if (userId === currentUser.id) {
+    // Get current role
+    const { data: currentProfile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', currentUser.id)
+      .single();
+
+    if (currentProfile && currentProfile.role !== input.role) {
+      return { error: 'Vous ne pouvez pas modifier votre propre role' };
+    }
+  }
+
+  const { error } = await supabase
+    .from('profiles')
+    .update({
+      display_name: input.displayName,
+      role: input.role,
+    })
+    .eq('id', userId);
+
+  if (error) {
+    console.error('Error updating user:', error);
+    return { error: 'Erreur lors de la mise a jour' };
+  }
+
+  revalidatePath('/users');
+  return { success: true };
 }
 
 /**
@@ -40,8 +102,7 @@ export async function createUser(
   // Validate input
   const validationResult = createUserSchema.safeParse(input);
   if (!validationResult.success) {
-    const firstError = validationResult.error.issues[0];
-    return { error: firstError?.message || 'Donnees invalides' };
+    return { error: extractValidationError(validationResult) };
   }
 
   // Get current session for auth header
@@ -99,8 +160,7 @@ export async function resetPassword(
   // Validate input
   const validationResult = resetPasswordSchema.safeParse(input);
   if (!validationResult.success) {
-    const firstError = validationResult.error.issues[0];
-    return { error: firstError?.message || 'Donnees invalides' };
+    return { error: extractValidationError(validationResult) };
   }
 
   // Get current session for auth header

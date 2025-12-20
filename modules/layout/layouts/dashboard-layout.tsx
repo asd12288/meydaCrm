@@ -16,7 +16,11 @@ export function DashboardLayout({ children, profile }: DashboardLayoutProps) {
         <Sidebar userRole={profile.role} />
 
         <MainContent>
-          <Header displayName={profile.displayName} role={profile.role} />
+          <Header
+            displayName={profile.displayName}
+            role={profile.role}
+            avatar={profile.avatar}
+          />
 
           <main className="p-6 min-h-[calc(100vh-70px)]">{children}</main>
         </MainContent>

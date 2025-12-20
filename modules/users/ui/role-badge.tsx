@@ -1,6 +1,6 @@
 import type { UserRole } from '@/db/types';
+import { ROLE_LABELS } from '@/lib/constants';
 import { ROLE_COLORS } from '../config/constants';
-import { ROLE_LABELS } from '../types';
 
 interface RoleBadgeProps {
   role: UserRole;

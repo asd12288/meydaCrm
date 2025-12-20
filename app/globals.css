@@ -346,6 +346,108 @@ select.select-md:focus {
 }
 
 /* ============================================
+   Form Labels & Messages (DRY)
+   ============================================ */
+
+/* Form label - used for all form field labels */
+.form-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-dark);
+  margin-bottom: 0.25rem;
+}
+.dark .form-label {
+  color: var(--color-white);
+}
+
+/* Form error message - inline field validation errors */
+.form-error {
+  margin-top: 0.25rem;
+  font-size: 0.875rem;
+  color: var(--color-error);
+}
+
+/* Form warning message */
+.form-warning {
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: var(--color-warning);
+}
+
+/* Alert box - error state */
+.alert-error {
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  background-color: var(--color-lighterror);
+  color: var(--color-error);
+  font-size: 0.875rem;
+}
+
+/* Alert box - success state */
+.alert-success {
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  background-color: var(--color-lightsuccess);
+  color: var(--color-success);
+  font-size: 0.875rem;
+}
+
+/* Alert box - warning state */
+.alert-warning {
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  background-color: var(--color-lightwarning);
+  color: var(--color-warning);
+  font-size: 0.875rem;
+}
+
+/* Alert box - info state */
+.alert-info {
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  background-color: var(--color-lightinfo);
+  color: var(--color-info);
+  font-size: 0.875rem;
+}
+
+/* Form action buttons row - submit/cancel footer */
+.form-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-border);
+}
+.dark .form-actions {
+  border-top-color: var(--color-darkborder);
+}
+
+/* Form actions without border */
+.form-actions-plain {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding-top: 1rem;
+}
+
+/* Profile label - small uppercase for metadata */
+.profile-label {
+  font-size: 0.75rem;
+  color: var(--color-darklink);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Card header with icon */
+.card-header-icon {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+/* ============================================
    Button Styles
    ============================================ */
 
@@ -435,6 +537,55 @@ button.bg-info:hover,
   color: white;
   font-weight: 500;
   border-radius: 9999px;
+}
+
+/* Primary action button - for main form actions */
+.btn-primary-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  background-color: var(--color-primary);
+  color: white;
+  font-weight: 500;
+  border-radius: 9999px;
+  transition: all 0.15s ease-in-out;
+}
+.btn-primary-action:hover:not(:disabled) {
+  background-color: var(--color-primary-emphasis);
+}
+.btn-primary-action:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Secondary action button - for cancel/dismiss actions */
+.btn-secondary-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  background-color: var(--color-lightgray);
+  color: var(--color-dark);
+  font-weight: 500;
+  border-radius: 9999px;
+  transition: all 0.15s ease-in-out;
+}
+.dark .btn-secondary-action {
+  background-color: var(--color-darkborder);
+  color: var(--color-white);
+}
+.btn-secondary-action:hover:not(:disabled) {
+  background-color: var(--color-muted);
+}
+.dark .btn-secondary-action:hover:not(:disabled) {
+  background-color: var(--color-darkmuted);
+}
+.btn-secondary-action:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* ============================================

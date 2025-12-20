@@ -63,7 +63,7 @@ describe('LeadHistory', () => {
         after_data: null,
         metadata: null,
         created_at: new Date().toISOString(),
-        actor: { id: 'user-1', display_name: 'John Doe' },
+        actor: { id: 'user-1', display_name: 'John Doe', avatar: null },
       },
     ];
 

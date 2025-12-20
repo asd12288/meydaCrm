@@ -642,4 +642,199 @@ When building UI:
 
 ---
 
+## 16) Shared Utilities & DRY Components
+
+The codebase follows strict DRY (Don't Repeat Yourself) principles. Always use these shared utilities instead of duplicating code.
+
+### Shared UI Components (`modules/shared/`)
+
+Import from `@/modules/shared`:
+
+| Component | Purpose | Usage |
+|-----------|---------|-------|
+| `FormField` | Input with label + error message | `<FormField label="Nom" error={errors.name?.message} {...register('name')} />` |
+| `FormSelect` | Select dropdown with label + error | `<FormSelect label="Rôle" options={ROLE_OPTIONS} {...register('role')} />` |
+| `FormAlert` | Alert box (error/success/warning/info) | `<FormAlert type="error" message={error} />` |
+| `FormErrorAlert` | Conditional error alert | `<FormErrorAlert error={error} />` |
+| `FormSuccessAlert` | Conditional success alert | `<FormSuccessAlert show={success} message="Saved!" />` |
+| `FormActions` | Submit/cancel button row | `<FormActions isPending={isPending} submitLabel="Save" onCancel={close} />` |
+| `Modal` | Reusable modal with escape/scroll lock | `<Modal isOpen={isOpen} onClose={close} title="Title">{children}</Modal>` |
+| `PasswordInput` | Password input with show/hide toggle | `<PasswordInput {...register('password')} error={!!errors.password} />` |
+
+### Shared Hooks (`modules/shared/hooks/`)
+
+| Hook | Purpose | Returns |
+|------|---------|---------|
+| `useFormState` | Form state management | `{ isPending, startTransition, error, setError, success, setSuccess, resetAll }` |
+| `useModal` | Modal open/close state | `{ isOpen, data, open, close }` |
+
+### Form CSS Classes (`globals.css`)
+
+| Class | Purpose |
+|-------|---------|
+| `.form-label` | Form field labels |
+| `.form-error` | Inline validation error text |
+| `.form-warning` | Warning hint text |
+| `.alert-error` | Error message box |
+| `.alert-success` | Success message box |
+| `.alert-warning` | Warning message box |
+| `.alert-info` | Info message box |
+| `.form-actions` | Form button row with border-top |
+| `.form-actions-plain` | Form button row without border |
+| `.btn-primary-action` | Primary submit button |
+| `.btn-secondary-action` | Secondary/cancel button |
+| `.profile-label` | Small uppercase metadata label |
+| `.card-header-icon` | Card header with icon |
+
+### Utility Libraries (`lib/`)
+
+#### Validation Helpers (`lib/validation.ts`)
+
+```typescript
+import { extractValidationError, validateWithSchema, passwordSchema, displayNameSchema } from '@/lib/validation';
+
+// Extract first error from Zod result
+const error = extractValidationError(result, 'Default message');
+
+// Validate with standardized result
+const { success, data, error } = validateWithSchema(schema, input);
+
+// Reusable schemas
+passwordSchema    // min 6 chars, max 100
+displayNameSchema // min 2 chars, max 100
+emailSchema       // optional email validation
+roleEnum          // z.enum(['admin', 'sales'])
+```
+
+#### Error Handling (`lib/errors.ts`)
+
+```typescript
+import { getErrorMessage, logActionError, actionSuccess, actionError, FR_MESSAGES } from '@/lib/errors';
+
+// Extract message from unknown error
+const message = getErrorMessage(error);
+
+// Log with context
+logActionError('createUser', error);
+
+// Standardized action results
+return actionSuccess(data);
+return actionError(FR_MESSAGES.UNAUTHORIZED);
+
+// French error messages
+FR_MESSAGES.UNAUTHENTICATED  // 'Non authentifié'
+FR_MESSAGES.SESSION_EXPIRED  // 'Session expirée'
+FR_MESSAGES.UNAUTHORIZED     // "Vous n'avez pas accès..."
+FR_MESSAGES.INVALID_DATA     // 'Données invalides'
+FR_MESSAGES.NOT_FOUND        // 'Ressource non trouvée'
+FR_MESSAGES.SUCCESS_UPDATE   // 'Modifications enregistrées'
+```
+
+### Centralized Constants (`lib/constants/`)
+
+```typescript
+import { ROLES, ROLE_LABELS, ROLE_OPTIONS, getRoleLabel } from '@/lib/constants';
+import { LEAD_FIELD_LABELS, getLeadFieldLabel } from '@/lib/constants';
+import { LEAD_STATUSES, LEAD_STATUS_COLORS, getStatusColor } from '@/lib/constants';
+import { HISTORY_EVENT_LABELS, getHistoryEventLabel } from '@/lib/constants';
+```
+
+| File | Contents |
+|------|----------|
+| `roles.ts` | `ROLES`, `ROLE_LABELS`, `ROLE_OPTIONS` |
+| `lead-fields.ts` | `LEAD_FIELD_LABELS` (all field display names) |
+| `lead-statuses.ts` | `LEAD_STATUSES`, `LEAD_STATUS_COLORS`, `LEAD_STATUS_OPTIONS` |
+| `history.ts` | `HISTORY_EVENT_TYPES`, `HISTORY_EVENT_LABELS` |
+
+### Lead History Helpers (`modules/leads/lib/history-helpers.ts`)
+
+```typescript
+import {
+  createHistoryEntry,
+  createStatusChangeHistory,
+  createAssignmentHistory,
+  createUpdateHistory,
+  createCommentHistory
+} from '@/modules/leads/lib/history-helpers';
+
+// Create any history entry
+await createHistoryEntry(supabase, {
+  lead_id, actor_id, event_type,
+  before_data, after_data, metadata
+});
+
+// Convenience helpers
+await createStatusChangeHistory(supabase, leadId, actorId, oldStatus, newStatus);
+await createAssignmentHistory(supabase, leadId, actorId, oldAssignee, newAssignee);
+await createUpdateHistory(supabase, leadId, actorId, beforeData, afterData);
+await createCommentHistory(supabase, leadId, actorId, commentId, preview);
+```
+
+### Example: Refactored Form Component
+
+```tsx
+'use client';
+
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { IconCheck } from '@tabler/icons-react';
+import {
+  FormField,
+  FormErrorAlert,
+  FormSuccessAlert,
+  FormActions,
+  useFormState,
+} from '@/modules/shared';
+
+export function MyForm({ onSuccess, onCancel }) {
+  const { isPending, startTransition, error, setError, success, setSuccess, resetAll } =
+    useFormState();
+
+  const { register, handleSubmit, formState: { errors } } = useForm({
+    resolver: zodResolver(mySchema),
+  });
+
+  const onSubmit = (data) => {
+    resetAll();
+    startTransition(async () => {
+      const result = await myAction(data);
+      if (result.error) setError(result.error);
+      else setSuccess(true);
+    });
+  };
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <FormField
+        label="Nom"
+        error={errors.name?.message}
+        {...register('name')}
+      />
+
+      <FormErrorAlert error={error} />
+      <FormSuccessAlert show={success} message="Enregistré avec succès" />
+
+      <FormActions
+        isPending={isPending}
+        submitLabel="Enregistrer"
+        submitIcon={<IconCheck size={18} />}
+        onCancel={onCancel}
+      />
+    </form>
+  );
+}
+```
+
+### DRY Rules (MUST follow)
+
+1. **Never duplicate form state** - Use `useFormState()` hook
+2. **Never duplicate alerts** - Use `FormErrorAlert` / `FormSuccessAlert`
+3. **Never duplicate modal boilerplate** - Use `Modal` component
+4. **Never duplicate form buttons** - Use `FormActions` component
+5. **Never hardcode French messages** - Use `FR_MESSAGES` from `lib/errors.ts`
+6. **Never duplicate constants** - Import from `lib/constants/`
+7. **Never duplicate history creation** - Use history helpers
+
+---
+
 End of CLAUDE.md

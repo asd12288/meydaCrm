@@ -99,7 +99,7 @@ export function AssignDropdown({
               onClick={() => handleSelect(user.id)}
               className="w-full px-3 py-2 flex items-center gap-3 text-sm text-left text-ld hover:bg-lightgray dark:hover:bg-darkmuted transition-colors"
             >
-              <UserAvatar name={user.display_name} size="sm" />
+              <UserAvatar name={user.display_name} avatar={user.avatar} size="sm" />
               <span className="truncate">{user.display_name || 'Sans nom'}</span>
             </button>
           ))}

@@ -7,3 +7,21 @@ export { Logo } from './ui/logo';
 export { FilterDropdown, type FilterOption } from './ui/filter-dropdown';
 export { CopyableText } from './ui/copyable-text';
 export { UserAvatar } from './ui/user-avatar';
+export { PasswordInput } from './ui/password-input';
+
+// Form components (DRY)
+export { FormField, type FormFieldProps } from './ui/form-field';
+export {
+  FormAlert,
+  FormErrorAlert,
+  FormSuccessAlert,
+  type FormAlertProps,
+  type FormAlertType,
+} from './ui/form-alert';
+export { FormActions, type FormActionsProps } from './ui/form-actions';
+export { FormSelect, type FormSelectProps, type FormSelectOption } from './ui/form-select';
+export { Modal, useModal, type ModalProps, type ModalSize } from './ui/modal';
+export { SectionHeader } from './ui/section-header';
+
+// Hooks
+export { useFormState, type UseFormStateReturn } from './hooks/use-form-state';

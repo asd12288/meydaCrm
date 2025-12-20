@@ -1,4 +1,4 @@
-import { CardBox, PageHeader } from '@/modules/shared';
+import { AccountView } from '@/modules/account';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -6,18 +6,5 @@ export const metadata: Metadata = {
 };
 
 export default function AccountPage() {
-  return (
-    <div>
-      <PageHeader
-        title="Mon compte"
-        description="Gerez vos parametres personnels"
-      />
-
-      <CardBox>
-        <p className="text-darklink">
-          Les parametres du compte seront implementes plus tard.
-        </p>
-      </CardBox>
-    </div>
-  );
+  return <AccountView />;
 }

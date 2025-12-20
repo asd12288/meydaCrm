@@ -2,9 +2,16 @@
 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useState, useTransition } from 'react';
-import { IconDeviceFloppy, IconX } from '@tabler/icons-react';
-import { leadUpdateSchema, LEAD_FIELD_LABELS } from '../types';
+import { IconDeviceFloppy } from '@tabler/icons-react';
+import {
+  FormField,
+  FormErrorAlert,
+  FormSuccessAlert,
+  FormActions,
+  useFormState,
+} from '@/modules/shared';
+import { leadUpdateSchema } from '../types';
+import { LEAD_FIELD_LABELS } from '@/lib/constants';
 import type { LeadUpdateInput, LeadWithFullDetails } from '../types';
 import { updateLead } from '../lib/actions';
 
@@ -14,9 +21,8 @@ interface LeadEditFormProps {
 }
 
 export function LeadEditForm({ lead, onSuccess }: LeadEditFormProps) {
-  const [isPending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const { isPending, startTransition, error, setError, success, setSuccess, resetAll } =
+    useFormState();
 
   const {
     register,
@@ -42,8 +48,7 @@ export function LeadEditForm({ lead, onSuccess }: LeadEditFormProps) {
   });
 
   const onSubmit = (data: LeadUpdateInput) => {
-    setError(null);
-    setSuccess(false);
+    resetAll();
 
     startTransition(async () => {
       const result = await updateLead(lead.id, data);
@@ -52,13 +57,10 @@ export function LeadEditForm({ lead, onSuccess }: LeadEditFormProps) {
         setError(result.error);
       } else {
         setSuccess(true);
-        // Reset form with new values to clear dirty state
         reset(data);
-        // Call onSuccess callback after a brief delay to show success message
         if (onSuccess) {
           setTimeout(() => onSuccess(), 1000);
         } else {
-          // Clear success message after 3 seconds if no callback
           setTimeout(() => setSuccess(false), 3000);
         }
       }
@@ -151,9 +153,7 @@ export function LeadEditForm({ lead, onSuccess }: LeadEditFormProps) {
       <div>
         <h4 className="card-subtitle mb-4">Notes</h4>
         <div>
-          <label className="block text-sm font-medium text-ld mb-1">
-            {LEAD_FIELD_LABELS.notes}
-          </label>
+          <label className="form-label">{LEAD_FIELD_LABELS.notes}</label>
           <textarea
             {...register('notes')}
             rows={4}
@@ -161,62 +161,24 @@ export function LeadEditForm({ lead, onSuccess }: LeadEditFormProps) {
             placeholder="Notes sur ce lead..."
           />
           {errors.notes?.message && (
-            <p className="mt-1 text-sm text-error">{errors.notes.message}</p>
+            <p className="form-error">{errors.notes.message}</p>
           )}
         </div>
       </div>
 
-      {/* Error/Success messages */}
-      {error && (
-        <div className="p-3 rounded-md bg-lighterror text-error text-sm">
-          {error}
-        </div>
-      )}
-      {success && (
-        <div className="p-3 rounded-md bg-lightsuccess text-success text-sm">
-          Modifications enregistrées
-        </div>
-      )}
+      <FormErrorAlert error={error} />
+      <FormSuccessAlert show={success} message="Modifications enregistrées" />
 
-      {/* Form Actions - Always visible in modal context */}
-      <div className="flex items-center gap-3 pt-4 border-t border-ld">
-        <button
-          type="submit"
-          disabled={isPending || !isDirty}
-          className="ui-button bg-primary text-white flex items-center gap-2 disabled:opacity-50"
-        >
-          <IconDeviceFloppy size={18} />
-          {isPending ? 'Enregistrement...' : 'Enregistrer'}
-        </button>
-        <button
-          type="button"
-          onClick={() => reset()}
-          disabled={isPending || !isDirty}
-          className="ui-button bg-lightgray dark:bg-darkborder text-ld flex items-center gap-2 disabled:opacity-50"
-        >
-          <IconX size={18} />
-          Annuler
-        </button>
-      </div>
-    </form>
-  );
-}
-
-// Reusable form field component
-interface FormFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  label: string;
-  error?: string;
-}
-
-function FormField({ label, error, ...props }: FormFieldProps) {
-  return (
-    <div>
-      <label className="block text-sm font-medium text-ld mb-1">{label}</label>
-      <input
-        {...props}
-        className={`form-control-input w-full ${error ? 'border-error' : ''}`}
+      <FormActions
+        isPending={isPending}
+        isDirty={isDirty}
+        submitLabel="Enregistrer"
+        submitLabelPending="Enregistrement..."
+        submitIcon={<IconDeviceFloppy size={18} />}
+        showCancel={true}
+        onCancel={() => reset()}
+        cancelLabel="Annuler"
       />
-      {error && <p className="mt-1 text-sm text-error">{error}</p>}
-    </div>
+    </form>
   );
 }

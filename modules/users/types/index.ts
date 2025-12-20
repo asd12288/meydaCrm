@@ -46,14 +46,28 @@ export const resetPasswordSchema = z
 
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 
-// User profile from database
+// User profile from database (with auth data)
 export interface UserProfile {
   id: string;
   role: UserRole;
   display_name: string;
+  avatar: string | null;
   created_at: string;
   updated_at: string;
+  last_sign_in_at: string | null;
+  email: string | null;
 }
+
+// Edit user form schema
+export const editUserSchema = z.object({
+  displayName: z
+    .string()
+    .min(2, 'Minimum 2 caracteres')
+    .max(100, 'Maximum 100 caracteres'),
+  role: z.enum(['admin', 'sales'] as const),
+});
+
+export type EditUserInput = z.infer<typeof editUserSchema>;
 
 // Form field labels in French
 export const USER_FIELD_LABELS = {
@@ -65,11 +79,7 @@ export const USER_FIELD_LABELS = {
   role: 'Role',
 } as const;
 
-// Role labels in French
-export const ROLE_LABELS: Record<UserRole, string> = {
-  admin: 'Administrateur',
-  sales: 'Commercial',
-};
+// Note: ROLE_LABELS is centralized in @/lib/constants
 
 // Re-export for convenience
 export type { UserRole };

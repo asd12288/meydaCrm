@@ -33,7 +33,10 @@
       "Bash(taskkill:*)",
       "Bash(cmd //c \"taskkill /PID 35784 /F\")",
       "Bash(npm ls:*)",
-      "SlashCommand(/review)"
+      "SlashCommand(/review)",
+      "Bash(npx supabase functions deploy:*)",
+      "Bash(npx supabase functions list:*)",
+      "Bash(echo:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

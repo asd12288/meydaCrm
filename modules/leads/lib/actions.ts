@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { getCurrentUser, requireAdmin } from '@/modules/auth';
+import { extractValidationError } from '@/lib/validation';
 import { LEAD_STATUS_LABELS } from '@/db/types';
 import type { LeadStatus } from '@/db/types';
 import type {
@@ -97,7 +98,7 @@ export async function getSalesUsers(): Promise<SalesUser[]> {
 
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, display_name, role')
+    .select('id, display_name, role, avatar')
     .order('display_name');
 
   if (error) {
@@ -258,7 +259,7 @@ export async function getLeadById(
   // Fetch comments with author (use author_id column for relation)
   const { data: comments, error: commentsError } = await supabase
     .from('lead_comments')
-    .select('*, author:profiles!author_id(id, display_name)')
+    .select('*, author:profiles!author_id(id, display_name, avatar)')
     .eq('lead_id', leadId)
     .order('created_at', { ascending: false });
 
@@ -269,7 +270,7 @@ export async function getLeadById(
   // Fetch history with actor (use actor_id column for relation)
   const { data: history, error: historyError } = await supabase
     .from('lead_history')
-    .select('*, actor:profiles!actor_id(id, display_name)')
+    .select('*, actor:profiles!actor_id(id, display_name, avatar)')
     .eq('lead_id', leadId)
     .order('created_at', { ascending: false });
 
@@ -450,7 +451,7 @@ export async function addComment(
   // Validate input
   const validationResult = commentSchema.safeParse({ body });
   if (!validationResult.success) {
-    return { error: validationResult.error.issues[0]?.message || 'Commentaire invalide' };
+    return { error: extractValidationError(validationResult, 'Commentaire invalide') };
   }
 
   // Insert comment
@@ -461,7 +462,7 @@ export async function addComment(
       author_id: user.id,
       body: body.trim(),
     })
-    .select('*, author:profiles!author_id(id, display_name)')
+    .select('*, author:profiles!author_id(id, display_name, avatar)')
     .single();
 
   if (insertError) {

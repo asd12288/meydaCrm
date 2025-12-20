@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import { useState, useTransition, useOptimistic } from 'react';
-import { IconSend, IconTrash, IconMessageOff } from '@tabler/icons-react';
-import { UserAvatar } from '@/modules/shared';
-import { addComment, deleteComment } from '../lib/actions';
-import { formatRelativeTime } from '../lib/format';
-import type { CommentWithAuthor } from '../types';
+import { useState, useTransition, useOptimistic } from "react";
+import { IconSend, IconTrash, IconMessageOff } from "@tabler/icons-react";
+import { UserAvatar } from "@/modules/shared";
+import { addComment, deleteComment } from "../lib/actions";
+import { formatRelativeTime } from "../lib/format";
+import type { CommentWithAuthor } from "../types";
 
 interface LeadCommentsProps {
   leadId: string;
@@ -21,7 +21,7 @@ export function LeadComments({
   isAdmin,
 }: LeadCommentsProps) {
   const [isPending, startTransition] = useTransition();
-  const [newComment, setNewComment] = useState('');
+  const [newComment, setNewComment] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   // Optimistic state for comments
@@ -29,12 +29,14 @@ export function LeadComments({
     initialComments,
     (
       state: CommentWithAuthor[],
-      action: { type: 'add'; comment: CommentWithAuthor } | { type: 'delete'; id: string }
+      action:
+        | { type: "add"; comment: CommentWithAuthor }
+        | { type: "delete"; id: string }
     ) => {
-      if (action.type === 'add') {
+      if (action.type === "add") {
         return [action.comment, ...state];
       }
-      if (action.type === 'delete') {
+      if (action.type === "delete") {
         return state.filter((c) => c.id !== action.id);
       }
       return state;
@@ -47,7 +49,7 @@ export function LeadComments({
 
     setError(null);
     const commentText = newComment.trim();
-    setNewComment('');
+    setNewComment("");
 
     startTransition(async () => {
       // Optimistic update
@@ -58,9 +60,9 @@ export function LeadComments({
         body: commentText,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        author: { id: currentUserId, display_name: 'Vous' },
+        author: { id: currentUserId, display_name: "Vous", avatar: null },
       };
-      addOptimisticComment({ type: 'add', comment: tempComment });
+      addOptimisticComment({ type: "add", comment: tempComment });
 
       const result = await addComment(leadId, commentText);
 
@@ -72,10 +74,10 @@ export function LeadComments({
   };
 
   const handleDelete = (commentId: string) => {
-    if (!confirm('Supprimer ce commentaire ?')) return;
+    if (!confirm("Supprimer ce commentaire ?")) return;
 
     startTransition(async () => {
-      addOptimisticComment({ type: 'delete', id: commentId });
+      addOptimisticComment({ type: "delete", id: commentId });
 
       const result = await deleteComment(commentId);
 
@@ -151,29 +153,32 @@ interface CommentItemProps {
   isPending: boolean;
 }
 
-function CommentItem({ comment, canDelete, onDelete, isPending }: CommentItemProps) {
-  const isTemp = comment.id.startsWith('temp-');
-  const authorName = comment.author?.display_name || 'Utilisateur inconnu';
+function CommentItem({
+  comment,
+  canDelete,
+  onDelete,
+  isPending,
+}: CommentItemProps) {
+  const isTemp = comment.id.startsWith("temp-");
+  const authorName = comment.author?.display_name || "Utilisateur inconnu";
 
   return (
-    <div
-      className={`comment-bubble ${isTemp ? 'opacity-70' : ''}`}
-    >
+    <div className={`comment-bubble ${isTemp ? "opacity-70" : ""}`}>
       <div className="flex items-start gap-3">
-        {/* Avatar with initials */}
-        <UserAvatar name={authorName} size="md" />
+        {/* Avatar */}
+        <UserAvatar name={authorName} avatar={comment.author?.avatar} size="md" />
 
         {/* Content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <span className="font-medium text-sm text-ld">
-              {authorName}
-            </span>
+            <span className="font-medium text-sm text-ld">{authorName}</span>
             <span className="text-xs text-darklink">
               {formatRelativeTime(comment.created_at)}
             </span>
           </div>
-          <p className="text-sm text-ld whitespace-pre-wrap break-words">{comment.body}</p>
+          <p className="text-sm text-ld whitespace-pre-wrap wrap-break-word">
+            {comment.body}
+          </p>
         </div>
 
         {/* Delete button */}

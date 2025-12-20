@@ -89,6 +89,12 @@ export function LeadFilters({ salesUsers, isAdmin }: LeadFiltersProps) {
     [salesUsers]
   );
 
+  // Create a lookup map for user avatars
+  const userAvatarMap = useMemo(
+    () => new Map(salesUsers.map((user) => [user.id, user.avatar])),
+    [salesUsers]
+  );
+
   return (
     <div className="flex flex-wrap items-center gap-3 mb-4">
       {/* Search input */}
@@ -126,13 +132,13 @@ export function LeadFilters({ salesUsers, isAdmin }: LeadFiltersProps) {
           className="min-w-56"
           renderOption={(option) => (
             <span className="flex items-center gap-2">
-              <UserAvatar name={option.label} size="sm" />
+              <UserAvatar name={option.label} avatar={userAvatarMap.get(option.value)} size="sm" />
               <span className="truncate">{option.label}</span>
             </span>
           )}
           renderSelected={(option) => (
             <span className="flex items-center gap-2">
-              <UserAvatar name={option.label} size="sm" />
+              <UserAvatar name={option.label} avatar={userAvatarMap.get(option.value)} size="sm" />
               <span className="truncate">{option.label}</span>
             </span>
           )}

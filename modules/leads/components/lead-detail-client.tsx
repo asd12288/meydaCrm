@@ -38,7 +38,7 @@ export function LeadDetailClient({
 
         {/* Right Column: Activity Tabs (Comments/History) */}
         <div className="col-span-12 lg:col-span-7 xl:col-span-8">
-          <div className="h-[calc(100vh-12rem)] min-h-[400px]">
+          <div className="h-[calc(100vh-12rem)] min-h-100">
             <LeadActivityTabs
               commentsContent={
                 <LeadComments

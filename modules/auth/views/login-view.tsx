@@ -11,7 +11,7 @@ export function LoginView() {
 
       {/* Centered login card */}
       <div className="flex min-h-screen items-center justify-center px-4">
-        <div className="w-full max-w-[380px]">
+        <div className="w-full max-w-95">
           {/* Logo centered above the card */}
           <div className="flex justify-center mb-4">
             <Logo width={200} height={35} />

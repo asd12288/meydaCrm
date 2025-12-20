@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import { CardBox, PageHeader } from '@/modules/shared';
+import { UsersListView } from '@/modules/users';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -26,18 +26,5 @@ export default async function UsersPage() {
     redirect('/dashboard');
   }
 
-  return (
-    <div>
-      <PageHeader
-        title="Gestion des utilisateurs"
-        description="Creez et gerez les utilisateurs du CRM"
-      />
-
-      <CardBox>
-        <p className="text-darklink">
-          La gestion des utilisateurs sera implementee dans la Phase 5.
-        </p>
-      </CardBox>
-    </div>
-  );
+  return <UsersListView />;
 }

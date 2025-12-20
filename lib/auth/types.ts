@@ -13,6 +13,7 @@ export interface SupabaseProfile {
   id: string;
   role: UserRole;
   display_name: string;
+  avatar: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -25,6 +26,7 @@ export interface NormalizedProfile {
   id: string;
   role: UserRole;
   displayName: string;
+  avatar: string | null;
   createdAt: Date;
   updatedAt: Date;
 }

@@ -10,7 +10,7 @@ import {
   IconClock,
 } from '@tabler/icons-react';
 import { HISTORY_EVENT_LABELS } from '@/db/types';
-import { LEAD_FIELD_LABELS } from '../types';
+import { LEAD_FIELD_LABELS } from '@/lib/constants';
 import { formatRelativeTime, formatDisplayValue } from '../lib/format';
 import type { HistoryEventWithActor } from '../types';
 

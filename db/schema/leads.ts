@@ -64,6 +64,9 @@ export const leads = pgTable(
     index('leads_assigned_status_idx').on(table.assignedTo, table.status),
     index('leads_external_id_idx').on(table.externalId),
     index('leads_deleted_at_idx').on(table.deletedAt),
+    // Duplicate checking indexes (partial indexes in migration SQL)
+    index('leads_email_idx').on(table.email),
+    index('leads_phone_idx').on(table.phone),
 
     // RLS Policies
 

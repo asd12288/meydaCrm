@@ -40,6 +40,7 @@ export const importJobs = pgTable(
 
     // Current processing position (for resumability)
     currentChunk: integer('current_chunk').default(0),
+    totalChunks: integer('total_chunks'),
 
     // Column mapping configuration
     columnMapping: jsonb('column_mapping'),

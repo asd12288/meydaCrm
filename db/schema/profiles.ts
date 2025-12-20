@@ -20,6 +20,7 @@ export const profiles = pgTable(
 
     role: userRoleEnum('role').notNull().default('sales'),
     displayName: text('display_name').notNull(),
+    avatar: text('avatar'), // Avatar image identifier (e.g., 'avatar-01')
 
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()

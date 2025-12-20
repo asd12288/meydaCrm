@@ -1,6 +1,8 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import { CardBox, PageHeader } from '@/modules/shared';
+import { PageHeader } from '@/modules/shared';
+import { getSalesUsers } from '@/modules/leads';
+import { ImportWizardView } from '@/modules/import/views/import-wizard-view';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -26,6 +28,9 @@ export default async function ImportPage() {
     redirect('/dashboard');
   }
 
+  // Fetch sales users for assignment dropdown
+  const salesUsers = await getSalesUsers();
+
   return (
     <div>
       <PageHeader
@@ -33,11 +38,7 @@ export default async function ImportPage() {
         description="Importez des leads depuis un fichier CSV ou Excel"
       />
 
-      <CardBox>
-        <p className="text-darklink">
-          {"L'import de leads sera implemente dans les Phases 6-7."}
-        </p>
-      </CardBox>
+      <ImportWizardView salesUsers={salesUsers} />
     </div>
   );
 }

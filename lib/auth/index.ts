@@ -20,6 +20,7 @@ export function normalizeProfile(
     id: supabaseProfile.id,
     role: supabaseProfile.role,
     displayName: supabaseProfile.display_name,
+    avatar: supabaseProfile.avatar,
     createdAt: new Date(supabaseProfile.created_at),
     updatedAt: new Date(supabaseProfile.updated_at),
   };
@@ -74,6 +75,7 @@ export function createDefaultProfile(
     id: userId,
     role: 'sales',
     displayName,
+    avatar: null,
     createdAt: new Date(),
     updatedAt: new Date(),
   };

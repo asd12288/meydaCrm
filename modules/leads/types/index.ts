@@ -91,6 +91,7 @@ export interface SalesUser {
   id: string;
   display_name: string | null;
   role: string;
+  avatar: string | null;
 }
 
 // Re-export LeadStatus for convenience
@@ -134,21 +135,7 @@ export const commentSchema = z.object({
 
 export type CommentInput = z.infer<typeof commentSchema>;
 
-// Lead field labels in French
-export const LEAD_FIELD_LABELS: Record<keyof LeadUpdateInput, string> = {
-  first_name: 'Prénom',
-  last_name: 'Nom',
-  email: 'Email',
-  phone: 'Téléphone',
-  company: 'Entreprise',
-  job_title: 'Fonction',
-  address: 'Adresse',
-  city: 'Ville',
-  postal_code: 'Code postal',
-  country: 'Pays',
-  source: 'Source',
-  notes: 'Notes',
-};
+// Note: LEAD_FIELD_LABELS is centralized in @/lib/constants
 
 // Comment with author info (what Supabase returns)
 export interface CommentWithAuthor {
@@ -161,6 +148,7 @@ export interface CommentWithAuthor {
   author: {
     id: string;
     display_name: string | null;
+    avatar: string | null;
   } | null;
 }
 
@@ -177,6 +165,7 @@ export interface HistoryEventWithActor {
   actor: {
     id: string;
     display_name: string | null;
+    avatar: string | null;
   } | null;
 }
 
