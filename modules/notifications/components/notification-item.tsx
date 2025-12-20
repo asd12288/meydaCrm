@@ -1,9 +1,9 @@
 'use client';
 
-import { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { getNotificationIcon } from '../config/constants';
+import { NOTIFICATION_TYPES } from '../config/constants';
 import { formatRelativeTime } from '@/modules/leads/lib/format';
+import { IconBell } from '@tabler/icons-react';
 import type { Notification } from '../types';
 
 interface NotificationItemProps {
@@ -17,7 +17,8 @@ interface NotificationItemProps {
  */
 export function NotificationItem({ notification, onMarkAsRead }: NotificationItemProps) {
   const router = useRouter();
-  const NotificationIcon = useMemo(() => getNotificationIcon(notification.type), [notification.type]);
+  const iconConfig = NOTIFICATION_TYPES[notification.type];
+  const Icon = iconConfig?.icon || IconBell;
   const isRead = !!notification.readAt;
   const timeAgo = formatRelativeTime(notification.createdAt);
 
@@ -43,7 +44,7 @@ export function NotificationItem({ notification, onMarkAsRead }: NotificationIte
     >
       {/* Icon */}
       <div className={`shrink-0 mt-0.5 ${isRead ? 'text-darklink' : 'text-primary'}`}>
-        <NotificationIcon size={20} stroke={1.5} />
+        <Icon size={20} stroke={1.5} />
       </div>
 
       {/* Content */}

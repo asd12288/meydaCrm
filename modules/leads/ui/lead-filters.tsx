@@ -7,6 +7,7 @@ import {
   IconX,
   IconFilter,
   IconUser,
+  IconUserOff,
   IconCalendarEvent,
   IconPhoneOff,
   IconPhoneX,
@@ -20,6 +21,7 @@ import {
 import { FilterDropdown, type FilterOption, UserAvatar } from '@/modules/shared';
 import { useFilterNavigation } from '../hooks/use-filter-navigation';
 import { LEAD_STATUS_OPTIONS, STATUS_COLORS, SEARCH_DEBOUNCE_MS, MIN_SEARCH_LENGTH } from '../config/constants';
+import { UNASSIGNED_FILTER_VALUE } from '../types';
 import type { SalesUser } from '../types';
 
 // Map status to icon component
@@ -91,13 +93,22 @@ export function LeadFilters({ salesUsers, isAdmin }: LeadFiltersProps) {
     []
   );
 
-  // Convert sales users to FilterOption format
+  // Convert sales users to FilterOption format with "unassigned" option first
   const assigneeOptions: FilterOption[] = useMemo(
-    () =>
-      salesUsers.map((user) => ({
+    () => [
+      // Add "unassigned" option at the top
+      {
+        value: UNASSIGNED_FILTER_VALUE,
+        label: 'Non assignés',
+        icon: IconUserOff,
+        iconColorClass: 'text-warning',
+      },
+      // Then all sales users
+      ...salesUsers.map((user) => ({
         value: user.id,
         label: user.display_name || 'Sans nom',
       })),
+    ],
     [salesUsers]
   );
 
@@ -155,18 +166,42 @@ export function LeadFilters({ salesUsers, isAdmin }: LeadFiltersProps) {
           className="min-w-48 max-w-56"
           menuMaxWidth="max-w-64"
           scrollable
-          renderOption={(option) => (
-            <span className="flex items-center gap-2 min-w-0">
-              <UserAvatar name={option.label} avatar={userAvatarMap.get(option.value)} size="sm" className="shrink-0" />
-              <span className="truncate">{option.label}</span>
-            </span>
-          )}
-          renderSelected={(option) => (
-            <span className="flex items-center gap-2 min-w-0">
-              <UserAvatar name={option.label} avatar={userAvatarMap.get(option.value)} size="sm" className="shrink-0" />
-              <span className="truncate max-w-28">{option.label}</span>
-            </span>
-          )}
+          renderOption={(option) => {
+            // Special rendering for "unassigned" option
+            if (option.value === UNASSIGNED_FILTER_VALUE) {
+              return (
+                <span className="flex items-center gap-2 min-w-0">
+                  <span className="w-6 h-6 rounded-full bg-warning/20 flex items-center justify-center shrink-0">
+                    <IconUserOff size={14} className="text-warning" />
+                  </span>
+                  <span className="truncate text-warning font-medium">{option.label}</span>
+                </span>
+              );
+            }
+            return (
+              <span className="flex items-center gap-2 min-w-0">
+                <UserAvatar name={option.label} avatar={userAvatarMap.get(option.value)} size="sm" className="shrink-0" />
+                <span className="truncate">{option.label}</span>
+              </span>
+            );
+          }}
+          renderSelected={(option) => {
+            // Special rendering for "unassigned" option
+            if (option.value === UNASSIGNED_FILTER_VALUE) {
+              return (
+                <span className="flex items-center gap-2 min-w-0">
+                  <IconUserOff size={16} className="text-warning shrink-0" />
+                  <span className="truncate max-w-28 text-warning">{option.label}</span>
+                </span>
+              );
+            }
+            return (
+              <span className="flex items-center gap-2 min-w-0">
+                <UserAvatar name={option.label} avatar={userAvatarMap.get(option.value)} size="sm" className="shrink-0" />
+                <span className="truncate max-w-28">{option.label}</span>
+              </span>
+            );
+          }}
         />
       )}
 

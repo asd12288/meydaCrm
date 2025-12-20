@@ -67,7 +67,7 @@ export function SupportEmailView({
   }, []);
 
   // Load selected ticket details when ID changes
-  // eslint-disable-next-line react-hooks/set-state-in-effect
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     let isMounted = true;
 
@@ -94,6 +94,7 @@ export function SupportEmailView({
       isMounted = false;
     };
   }, [selectedTicketId]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Update URL when selection changes
   const updateUrl = useCallback((ticketId: string | null, status: SupportTicketStatus | null, search: string) => {

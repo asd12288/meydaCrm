@@ -109,7 +109,6 @@ export function useImportStatus(options: UseImportStatusOptions) {
     }
 
     // Initial poll - legitimately needed for immediate status check
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     poll();
 
     // Set up interval with smart timing
@@ -134,7 +133,6 @@ export function useImportStatus(options: UseImportStatusOptions) {
   }, [jobId, enabled, isPolling, poll, status, getPollingInterval]);
 
   // Auto-start polling when job ID is set
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     if (jobId && enabled && !isPolling) {
       setIsPolling(true);

@@ -19,7 +19,7 @@ import type {
   CommentWithAuthor,
   HistoryEventWithActor,
 } from '../types';
-import { leadUpdateSchema, commentSchema } from '../types';
+import { leadUpdateSchema, commentSchema, UNASSIGNED_FILTER_VALUE } from '../types';
 import { MIN_SEARCH_LENGTH } from '../config/constants';
 
 /**
@@ -56,7 +56,12 @@ export async function getLeads(
 
   // Apply assignee filter (admin only - sales can't filter by assignee)
   if (filters.assignedTo) {
-    query = query.eq('assigned_to', filters.assignedTo);
+    if (filters.assignedTo === UNASSIGNED_FILTER_VALUE) {
+      // Special value to filter for unassigned leads
+      query = query.is('assigned_to', null);
+    } else {
+      query = query.eq('assigned_to', filters.assignedTo);
+    }
   }
 
   // Apply sorting

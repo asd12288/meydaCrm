@@ -189,15 +189,15 @@ export function useNotifications(options: UseNotificationsOptions = {}): UseNoti
             
             // Transform snake_case to camelCase if needed
             const notification: Notification = {
-              id: notificationData.id,
-              userId: notificationData.user_id || notificationData.userId,
-              type: notificationData.type,
-              title: notificationData.title,
-              message: notificationData.message,
-              metadata: notificationData.metadata,
-              readAt: notificationData.read_at || notificationData.readAt,
-              actionUrl: notificationData.action_url || notificationData.actionUrl,
-              createdAt: notificationData.created_at || notificationData.createdAt,
+              id: notificationData.id as string,
+              userId: (notificationData.user_id || notificationData.userId) as string,
+              type: notificationData.type as Notification['type'],
+              title: notificationData.title as string,
+              message: notificationData.message as string,
+              metadata: (notificationData.metadata as Notification['metadata']) ?? null,
+              readAt: ((notificationData.read_at || notificationData.readAt) as string) ?? null,
+              actionUrl: ((notificationData.action_url || notificationData.actionUrl) as string) ?? null,
+              createdAt: (notificationData.created_at || notificationData.createdAt) as string,
             };
 
             // Add to top of list

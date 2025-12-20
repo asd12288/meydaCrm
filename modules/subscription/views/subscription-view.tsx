@@ -112,4 +112,7 @@ export function SubscriptionView({
       </div>
 
       {/* Payment history (compact) */}
-      <PaymentHistoryPr
+      <PaymentHistoryPreview payments={payments} />
+    </div>
+  );
+}

@@ -1,13 +1,23 @@
 import { z } from 'zod';
 import type { LeadStatus } from '@/db/types';
 
+// Special value for filtering unassigned leads
+export const UNASSIGNED_FILTER_VALUE = 'unassigned';
+
 // Lead filter schema for URL params validation
 export const leadFiltersSchema = z.object({
   page: z.coerce.number().min(1).default(1),
   pageSize: z.coerce.number().min(10).max(100).default(20),
   search: z.string().optional(),
   status: z.string().optional(),
-  assignedTo: z.string().uuid().optional(),
+  // Accept UUID or 'unassigned' special value
+  assignedTo: z
+    .string()
+    .refine(
+      (val) => val === UNASSIGNED_FILTER_VALUE || z.string().uuid().safeParse(val).success,
+      { message: 'Must be a valid UUID or "unassigned"' }
+    )
+    .optional(),
   sortBy: z
     .enum(['updated_at', 'created_at', 'last_name', 'company', 'status'])
     .default('updated_at'),
