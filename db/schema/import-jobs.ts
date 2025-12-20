@@ -13,6 +13,31 @@ import { authenticatedRole } from 'drizzle-orm/supabase';
 import { profiles } from './profiles';
 import { importStatusEnum } from './enums';
 
+// Type for assignment configuration
+export interface AssignmentConfig {
+  mode: 'none' | 'single' | 'round_robin' | 'by_column';
+  singleUserId?: string;
+  roundRobinUserIds?: string[];
+  assignmentColumn?: string;
+}
+
+// Type for duplicate handling configuration
+export interface DuplicateConfig {
+  strategy: 'skip' | 'update' | 'create';
+  checkFields: ('email' | 'phone' | 'external_id')[];
+  checkDatabase: boolean;
+  checkWithinFile: boolean;
+}
+
+// Type for checkpoint data
+export interface ImportCheckpoint {
+  chunkNumber: number;
+  rowNumber: number;
+  validCount: number;
+  invalidCount: number;
+  timestamp: string;
+}
+
 export const importJobs = pgTable(
   'import_jobs',
   {
@@ -45,6 +70,28 @@ export const importJobs = pgTable(
     // Column mapping configuration
     columnMapping: jsonb('column_mapping'),
 
+    // V2: New columns for reliable imports
+    // File hash for idempotency (prevent duplicate imports)
+    fileHash: text('file_hash'),
+
+    // Actual processed row count (not estimated)
+    processedRows: integer('processed_rows').default(0),
+
+    // Checkpoint for resume capability
+    lastCheckpoint: jsonb('last_checkpoint').$type<ImportCheckpoint>(),
+
+    // Path to error report CSV in Storage
+    errorReportPath: text('error_report_path'),
+
+    // Assignment configuration
+    assignmentConfig: jsonb('assignment_config').$type<AssignmentConfig>(),
+
+    // Duplicate handling configuration
+    duplicateConfig: jsonb('duplicate_config').$type<DuplicateConfig>(),
+
+    // QStash worker ID for tracking
+    workerId: text('worker_id'),
+
     // Error information
     errorMessage: text('error_message'),
     errorDetails: jsonb('error_details'),
@@ -61,37 +108,40 @@ export const importJobs = pgTable(
       .$onUpdate(() => new Date()),
   },
   (table) => [
+    // Indexes
     index('import_jobs_created_by_idx').on(table.createdBy),
     index('import_jobs_status_idx').on(table.status),
     index('import_jobs_created_at_idx').on(table.createdAt),
+    index('import_jobs_file_hash_idx').on(table.fileHash),
+    index('import_jobs_worker_id_idx').on(table.workerId),
 
     // RLS Policies - Only admin can access import jobs
+    // NOTE: These use public.get_user_role() to avoid infinite recursion
+    // The actual policies are created in migrations/0001_fix_rls_infinite_recursion.sql
 
     pgPolicy('admin_read_import_jobs', {
       for: 'select',
       to: authenticatedRole,
-      using: sql`(
-        SELECT role FROM profiles WHERE id = (select auth.uid())
-      ) = 'admin'`,
+      using: sql`public.get_user_role() = 'admin'`,
     }),
 
     pgPolicy('admin_insert_import_jobs', {
       for: 'insert',
       to: authenticatedRole,
-      withCheck: sql`(
-        SELECT role FROM profiles WHERE id = (select auth.uid())
-      ) = 'admin' AND ${table.createdBy} = (select auth.uid())`,
+      withCheck: sql`public.get_user_role() = 'admin' AND ${table.createdBy} = auth.uid()`,
     }),
 
     pgPolicy('admin_update_import_jobs', {
       for: 'update',
       to: authenticatedRole,
-      using: sql`(
-        SELECT role FROM profiles WHERE id = (select auth.uid())
-      ) = 'admin'`,
-      withCheck: sql`(
-        SELECT role FROM profiles WHERE id = (select auth.uid())
-      ) = 'admin'`,
+      using: sql`public.get_user_role() = 'admin'`,
+      withCheck: sql`public.get_user_role() = 'admin'`,
+    }),
+
+    pgPolicy('admin_delete_import_jobs', {
+      for: 'delete',
+      to: authenticatedRole,
+      using: sql`public.get_user_role() = 'admin'`,
     }),
   ]
 );

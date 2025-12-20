@@ -5,6 +5,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { IconDeviceFloppy } from '@tabler/icons-react';
 import {
   FormField,
+  FormTextarea,
+  FormSection,
   FormErrorAlert,
   FormSuccessAlert,
   FormActions,
@@ -21,7 +23,7 @@ interface LeadEditFormProps {
 }
 
 export function LeadEditForm({ lead, onSuccess }: LeadEditFormProps) {
-  const { isPending, startTransition, error, setError, success, setSuccess, resetAll } =
+  const { isPending, startTransition, error, setError, success, handleFormSuccess, resetAll } =
     useFormState();
 
   const {
@@ -56,13 +58,12 @@ export function LeadEditForm({ lead, onSuccess }: LeadEditFormProps) {
       if (result.error) {
         setError(result.error);
       } else {
-        setSuccess(true);
         reset(data);
-        if (onSuccess) {
-          setTimeout(() => onSuccess(), 1000);
-        } else {
-          setTimeout(() => setSuccess(false), 3000);
-        }
+        handleFormSuccess({
+          onSuccess,
+          onSuccessDelay: 1000,
+          autoResetDelay: onSuccess ? undefined : 3000,
+        });
       }
     });
   };
@@ -70,101 +71,86 @@ export function LeadEditForm({ lead, onSuccess }: LeadEditFormProps) {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       {/* Personal Information */}
-      <div>
-        <h4 className="card-subtitle mb-4">Informations personnelles</h4>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            label={LEAD_FIELD_LABELS.first_name}
-            error={errors.first_name?.message}
-            {...register('first_name')}
-          />
-          <FormField
-            label={LEAD_FIELD_LABELS.last_name}
-            error={errors.last_name?.message}
-            {...register('last_name')}
-          />
-          <FormField
-            label={LEAD_FIELD_LABELS.email}
-            type="email"
-            error={errors.email?.message}
-            {...register('email')}
-          />
-          <FormField
-            label={LEAD_FIELD_LABELS.phone}
-            type="tel"
-            error={errors.phone?.message}
-            {...register('phone')}
-          />
-        </div>
-      </div>
+      <FormSection title="Informations personnelles">
+        <FormField
+          label={LEAD_FIELD_LABELS.first_name}
+          error={errors.first_name?.message}
+          {...register('first_name')}
+        />
+        <FormField
+          label={LEAD_FIELD_LABELS.last_name}
+          error={errors.last_name?.message}
+          {...register('last_name')}
+        />
+        <FormField
+          label={LEAD_FIELD_LABELS.email}
+          type="email"
+          error={errors.email?.message}
+          {...register('email')}
+        />
+        <FormField
+          label={LEAD_FIELD_LABELS.phone}
+          type="tel"
+          error={errors.phone?.message}
+          {...register('phone')}
+        />
+      </FormSection>
 
       {/* Company Information */}
-      <div>
-        <h4 className="card-subtitle mb-4">Entreprise</h4>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            label={LEAD_FIELD_LABELS.company}
-            error={errors.company?.message}
-            {...register('company')}
-          />
-          <FormField
-            label={LEAD_FIELD_LABELS.job_title}
-            error={errors.job_title?.message}
-            {...register('job_title')}
-          />
-        </div>
-      </div>
+      <FormSection title="Entreprise">
+        <FormField
+          label={LEAD_FIELD_LABELS.company}
+          error={errors.company?.message}
+          {...register('company')}
+        />
+        <FormField
+          label={LEAD_FIELD_LABELS.job_title}
+          error={errors.job_title?.message}
+          {...register('job_title')}
+        />
+      </FormSection>
 
       {/* Address */}
-      <div>
-        <h4 className="card-subtitle mb-4">Adresse</h4>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="md:col-span-2">
-            <FormField
-              label={LEAD_FIELD_LABELS.address}
-              error={errors.address?.message}
-              {...register('address')}
-            />
-          </div>
+      <FormSection title="Adresse">
+        <div className="md:col-span-2">
           <FormField
-            label={LEAD_FIELD_LABELS.city}
-            error={errors.city?.message}
-            {...register('city')}
-          />
-          <FormField
-            label={LEAD_FIELD_LABELS.postal_code}
-            error={errors.postal_code?.message}
-            {...register('postal_code')}
-          />
-          <FormField
-            label={LEAD_FIELD_LABELS.country}
-            error={errors.country?.message}
-            {...register('country')}
-          />
-          <FormField
-            label={LEAD_FIELD_LABELS.source}
-            error={errors.source?.message}
-            {...register('source')}
+            label={LEAD_FIELD_LABELS.address}
+            error={errors.address?.message}
+            {...register('address')}
           />
         </div>
-      </div>
+        <FormField
+          label={LEAD_FIELD_LABELS.city}
+          error={errors.city?.message}
+          {...register('city')}
+        />
+        <FormField
+          label={LEAD_FIELD_LABELS.postal_code}
+          error={errors.postal_code?.message}
+          {...register('postal_code')}
+        />
+        <FormField
+          label={LEAD_FIELD_LABELS.country}
+          error={errors.country?.message}
+          {...register('country')}
+        />
+        <FormField
+          label={LEAD_FIELD_LABELS.source}
+          error={errors.source?.message}
+          {...register('source')}
+        />
+      </FormSection>
 
       {/* Notes */}
-      <div>
-        <h4 className="card-subtitle mb-4">Notes</h4>
-        <div>
-          <label className="form-label">{LEAD_FIELD_LABELS.notes}</label>
-          <textarea
-            {...register('notes')}
-            rows={4}
-            className="form-control-input w-full resize-none"
-            placeholder="Notes sur ce lead..."
-          />
-          {errors.notes?.message && (
-            <p className="form-error">{errors.notes.message}</p>
-          )}
-        </div>
-      </div>
+      <FormSection title="Notes" columns={1}>
+        <FormTextarea
+          label={LEAD_FIELD_LABELS.notes}
+          error={errors.notes?.message}
+          rows={4}
+          placeholder="Notes sur ce lead..."
+          {...register('notes')}
+        />
+      </FormSection>
 
       <FormErrorAlert error={error} />
       <FormSuccessAlert show={success} message="Modifications enregistrées" />

@@ -3,9 +3,11 @@
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/modules/auth';
+import { enqueueParseJob, enqueueCommitJob } from './queue';
 import type {
   ImportActionResult,
   ImportJobWithStats,
+  ImportRowWithDetails,
   ColumnMappingConfig,
   AssignmentConfig,
   DuplicateConfig,
@@ -20,7 +22,7 @@ import type {
  */
 export async function uploadImportFile(
   formData: FormData
-): Promise<ImportActionResult<{ importJobId: string; storagePath: string }>> {
+): Promise<ImportActionResult<{ importJobId: string; storagePath: string; isDuplicate?: boolean }>> {
   try {
     const user = await requireAdmin();
     const supabase = await createClient();
@@ -39,6 +41,36 @@ export async function uploadImportFile(
     // Validate file size (100MB max for large imports)
     if (file.size > 100 * 1024 * 1024) {
       return { success: false, error: 'Fichier trop volumineux (max 100 MB)' };
+    }
+
+    // Calculate file hash for idempotency check
+    const fileBuffer = await file.arrayBuffer();
+    const hashBuffer = await crypto.subtle.digest('SHA-256', fileBuffer);
+    const fileHash = Array.from(new Uint8Array(hashBuffer))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+
+    // Check for duplicate import
+    const { data: existingImport } = await supabase
+      .rpc('check_duplicate_import', { p_file_hash: fileHash });
+
+    if (existingImport && existingImport.length > 0) {
+      const existing = existingImport[0];
+      const importDate = new Date(existing.created_at).toLocaleDateString('fr-FR', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      });
+      
+      return {
+        success: false,
+        error: `Ce fichier a déjà été importé le ${importDate}`,
+        details: {
+          existingJobId: existing.job_id,
+          existingStatus: existing.status,
+          createdAt: existing.created_at,
+        },
+      };
     }
 
     // Generate unique storage path
@@ -62,7 +94,7 @@ export async function uploadImportFile(
       };
     }
 
-    // Create import job record
+    // Create import job record with file hash
     const { data: importJob, error: dbError } = await supabase
       .from('import_jobs')
       .insert({
@@ -70,6 +102,7 @@ export async function uploadImportFile(
         file_name: file.name,
         file_type: ext,
         storage_path: storagePath,
+        file_hash: fileHash,
         status: 'pending',
       })
       .select('id')
@@ -195,49 +228,100 @@ export async function updateImportJobMapping(
 }
 
 // =============================================================================
-// EDGE FUNCTION INVOCATION
+// QSTASH JOB QUEUE
 // =============================================================================
 
 /**
- * Start the import parsing process via Edge Function
+ * Start the import parsing process via QStash queue
+ * The parse worker will:
+ * 1. Download file from Supabase Storage
+ * 2. Stream parse CSV/XLSX row by row
+ * 3. Validate each row
+ * 4. Insert into import_rows table in batches
+ * 5. Update progress with checkpoints
+ * 6. Mark job as ready when complete
  */
 export async function startImportParsing(
   importJobId: string
-): Promise<ImportActionResult<void>> {
+): Promise<ImportActionResult<{ messageId: string }>> {
   try {
     await requireAdmin();
     const supabase = await createClient();
 
-    // Get current session for auth token
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      return { success: false, error: 'Session expirée' };
+    // Verify job exists and is in pending/failed state
+    const { data: job, error: jobError } = await supabase
+      .from('import_jobs')
+      .select('status')
+      .eq('id', importJobId)
+      .single();
+
+    if (jobError || !job) {
+      return { success: false, error: 'Job non trouvé' };
     }
 
-    // Update status to parsing
+    // Allow retrying from pending, failed, or stuck states
+    if (!['pending', 'failed', 'validating', 'parsing'].includes(job.status)) {
+      return { success: false, error: 'Ce job ne peut pas être relancé (statut: ' + job.status + ')' };
+    }
+
+    // Update status to queued
     await supabase
       .from('import_jobs')
-      .update({ status: 'parsing', started_at: new Date().toISOString() })
+      .update({ status: 'queued', error_message: null })
       .eq('id', importJobId);
 
-    // Invoke edge function
-    const { error } = await supabase.functions.invoke('import-parse', {
-      body: { importJobId },
-    });
+    // Check if running locally (no public URL for QStash)
+    const isLocal = typeof window === 'undefined' && 
+      (!process.env.VERCEL_URL && !process.env.APP_URL);
 
-    if (error) {
-      // Revert status on error
-      await supabase
-        .from('import_jobs')
-        .update({ status: 'failed', error_message: error.message })
-        .eq('id', importJobId);
+    if (isLocal) {
+      // Use direct API route for local development
+      console.log('[Import] Using direct parse endpoint for local development');
+      
+      try {
+        const response = await fetch('/api/import/parse-direct', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ importJobId }),
+        });
 
-      return { success: false, error: error.message };
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Parse failed');
+        }
+
+        revalidatePath('/import');
+        return { success: true, data: { messageId: 'direct-local' } };
+      } catch (error) {
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : 'Erreur de parsing direct',
+        };
+      }
     }
 
+    // Enqueue parse job via QStash (production)
+    const messageId = await enqueueParseJob({ importJobId });
+
     revalidatePath('/import');
-    return { success: true };
+    return { success: true, data: { messageId } };
   } catch (error) {
+    console.error('Failed to enqueue parse job:', error);
+
+    // Try to update status to failed
+    try {
+      const supabase = await createClient();
+      await supabase
+        .from('import_jobs')
+        .update({
+          status: 'failed',
+          error_message: error instanceof Error ? error.message : 'Erreur lors de la mise en file',
+        })
+        .eq('id', importJobId);
+    } catch {
+      // Ignore secondary errors
+    }
+
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Erreur inconnue',
@@ -246,7 +330,16 @@ export async function startImportParsing(
 }
 
 /**
- * Start the import commit process via Edge Function
+ * Start the import commit process via QStash queue
+ * The commit worker will:
+ * 1. Build dedupe set from existing leads (cursor pagination)
+ * 2. Read validated rows from import_rows in batches
+ * 3. Check for duplicates
+ * 4. Apply assignment logic
+ * 5. Batch insert into leads table
+ * 6. Create lead_history audit events
+ * 7. Update import_rows with lead_id
+ * 8. Mark job as completed
  */
 export async function startImportCommit(
   importJobId: string,
@@ -256,42 +349,104 @@ export async function startImportCommit(
     defaultStatus?: string;
     defaultSource?: string;
   }
-): Promise<ImportActionResult<void>> {
+): Promise<ImportActionResult<{ messageId: string }>> {
   try {
     await requireAdmin();
     const supabase = await createClient();
 
-    // Get current session for auth token
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      return { success: false, error: 'Session expirée' };
+    // Verify job exists and is in ready state
+    const { data: job, error: jobError } = await supabase
+      .from('import_jobs')
+      .select('status, valid_rows')
+      .eq('id', importJobId)
+      .single();
+
+    if (jobError || !job) {
+      return { success: false, error: 'Job non trouvé' };
     }
 
-    // Note: Don't update status here - the edge function checks for "ready" status
-    // and will set it to "importing" internally
+    if (job.status !== 'ready') {
+      return {
+        success: false,
+        error: `Le job n'est pas prêt pour l'import (status: ${job.status})`,
+      };
+    }
 
-    // Invoke edge function
-    const { error } = await supabase.functions.invoke('import-commit', {
-      body: {
-        importJobId,
-        ...config,
-      },
+    if (!job.valid_rows || job.valid_rows === 0) {
+      return { success: false, error: 'Aucune ligne valide à importer' };
+    }
+
+    // Update status to queued
+    await supabase
+      .from('import_jobs')
+      .update({
+        status: 'queued',
+        assignment_config: config.assignment as unknown as Record<string, unknown>,
+        duplicate_config: config.duplicates as unknown as Record<string, unknown>,
+      })
+      .eq('id', importJobId);
+
+    // Check if running locally
+    const isLocal = typeof window === 'undefined' && 
+      (!process.env.VERCEL_URL && !process.env.APP_URL);
+
+    if (isLocal) {
+      // Use direct API route for local development
+      console.log('[Import] Using direct commit endpoint for local development');
+      
+      try {
+        const response = await fetch('/api/import/commit-direct', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            importJobId,
+            assignment: config.assignment,
+            duplicates: config.duplicates,
+            defaultStatus: config.defaultStatus,
+            defaultSource: config.defaultSource,
+          }),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Commit failed');
+        }
+
+        revalidatePath('/import');
+        return { success: true, data: { messageId: 'direct-local' } };
+      } catch (error) {
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : 'Erreur de commit direct',
+        };
+      }
+    }
+
+    // Enqueue commit job via QStash (production)
+    const messageId = await enqueueCommitJob({
+      importJobId,
+      assignment: config.assignment,
+      duplicates: config.duplicates,
+      defaultStatus: config.defaultStatus,
+      defaultSource: config.defaultSource,
     });
 
-    if (error) {
-      // Revert status on error
+    revalidatePath('/import');
+    return { success: true, data: { messageId } };
+  } catch (error) {
+    console.error('Failed to enqueue commit job:', error);
+
+    // Try to update status back to ready
+    try {
+      const supabase = await createClient();
       await supabase
         .from('import_jobs')
-        .update({ status: 'failed', error_message: error.message })
+        .update({ status: 'ready' })
         .eq('id', importJobId);
-
-      return { success: false, error: error.message };
+    } catch {
+      // Ignore secondary errors
     }
 
-    revalidatePath('/import');
-    revalidatePath('/leads');
-    return { success: true };
-  } catch (error) {
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Erreur inconnue',
@@ -415,15 +570,11 @@ export async function getImportRows(
   } = {}
 ): Promise<
   ImportActionResult<{
-    rows: Array<{
-      id: string;
-      row_number: number;
-      status: string;
-      raw_data: Record<string, unknown>;
-      normalized_data: Record<string, unknown> | null;
-      validation_errors: Record<string, string> | null;
-    }>;
+    rows: ImportRowWithDetails[];
     total: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
   }>
 > {
   try {
@@ -453,11 +604,16 @@ export async function getImportRows(
       return { success: false, error: error.message };
     }
 
+    const totalPages = Math.ceil((count || 0) / pageSize);
+
     return {
       success: true,
       data: {
-        rows: data || [],
+        rows: (data || []) as ImportRowWithDetails[],
         total: count || 0,
+        page,
+        pageSize,
+        totalPages,
       },
     };
   } catch (error) {
@@ -515,6 +671,274 @@ export async function deleteImportJob(
 
     revalidatePath('/import');
     return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Erreur inconnue',
+    };
+  }
+}
+
+/**
+ * Cancel an in-progress import job
+ * Note: This only marks the job as cancelled - the worker will check this status
+ * and stop processing if it sees it has been cancelled.
+ */
+export async function cancelImportJob(
+  importJobId: string
+): Promise<ImportActionResult<void>> {
+  try {
+    await requireAdmin();
+    const supabase = await createClient();
+
+    // Get the job to check status
+    const { data: job, error: jobError } = await supabase
+      .from('import_jobs')
+      .select('status')
+      .eq('id', importJobId)
+      .single();
+
+    if (jobError || !job) {
+      return { success: false, error: 'Job non trouvé' };
+    }
+
+    // Only allow cancellation of queued/parsing/importing jobs
+    if (!['queued', 'parsing', 'importing'].includes(job.status)) {
+      return { success: false, error: 'Ce job ne peut pas être annulé' };
+    }
+
+    // Mark as cancelled
+    const { error } = await supabase
+      .from('import_jobs')
+      .update({
+        status: 'cancelled',
+        error_message: 'Annulé par l\'utilisateur',
+      })
+      .eq('id', importJobId);
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    revalidatePath('/import');
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Erreur inconnue',
+    };
+  }
+}
+
+/**
+ * Poll import job status (used by UI for real-time updates)
+ * Returns minimal data for efficient polling
+ */
+export async function pollImportJobStatus(
+  importJobId: string
+): Promise<
+  ImportActionResult<{
+    status: string;
+    totalRows: number;
+    validRows: number;
+    invalidRows: number;
+    importedRows: number;
+    skippedRows: number;
+    processedRows: number;
+    errorMessage: string | null;
+    completedAt: string | null;
+  }>
+> {
+  try {
+    await requireAdmin();
+    const supabase = await createClient();
+
+    const { data: job, error } = await supabase
+      .from('import_jobs')
+      .select(`
+        status,
+        total_rows,
+        valid_rows,
+        invalid_rows,
+        imported_rows,
+        skipped_rows,
+        processed_rows,
+        error_message,
+        completed_at
+      `)
+      .eq('id', importJobId)
+      .single();
+
+    if (error || !job) {
+      return { success: false, error: 'Job non trouvé' };
+    }
+
+    return {
+      success: true,
+      data: {
+        status: job.status,
+        totalRows: job.total_rows || 0,
+        validRows: job.valid_rows || 0,
+        invalidRows: job.invalid_rows || 0,
+        importedRows: job.imported_rows || 0,
+        skippedRows: job.skipped_rows || 0,
+        processedRows: job.processed_rows || 0,
+        errorMessage: job.error_message,
+        completedAt: job.completed_at,
+      },
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Erreur inconnue',
+    };
+  }
+}
+
+/**
+ * Generate error report for an import job
+ */
+export async function generateErrorReport(
+  importJobId: string
+): Promise<ImportActionResult<{ reportPath: string }>> {
+  try {
+    await requireAdmin();
+    const supabase = await createClient();
+
+    // Get the job to verify it has errors
+    const { data: job, error: jobError } = await supabase
+      .from('import_jobs')
+      .select('invalid_rows, error_report_path')
+      .eq('id', importJobId)
+      .single();
+
+    if (jobError || !job) {
+      return { success: false, error: 'Job non trouvé' };
+    }
+
+    if (!job.invalid_rows || job.invalid_rows === 0) {
+      return { success: false, error: 'Aucune erreur à signaler' };
+    }
+
+    // If report already exists, return it
+    if (job.error_report_path) {
+      return { success: true, data: { reportPath: job.error_report_path } };
+    }
+
+    // Enqueue error report generation
+    const { enqueueErrorReportJob } = await import('./queue');
+    const messageId = await enqueueErrorReportJob({ importJobId });
+
+    console.log(`[ErrorReport] Enqueued for job ${importJobId}: ${messageId}`);
+
+    return { success: true, data: { reportPath: '' } };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Erreur inconnue',
+    };
+  }
+}
+
+/**
+ * Get error report download URL
+ */
+export async function getErrorReportUrl(
+  importJobId: string
+): Promise<ImportActionResult<{ url: string }>> {
+  try {
+    await requireAdmin();
+    const supabase = await createClient();
+
+    const { data: job } = await supabase
+      .from('import_jobs')
+      .select('error_report_path')
+      .eq('id', importJobId)
+      .single();
+
+    if (!job?.error_report_path) {
+      return { success: false, error: 'Rapport non disponible' };
+    }
+
+    // Get signed URL for download
+    const { data: urlData, error: urlError } = await supabase.storage
+      .from('imports')
+      .createSignedUrl(job.error_report_path, 3600); // 1 hour expiry
+
+    if (urlError || !urlData?.signedUrl) {
+      return { success: false, error: 'Erreur lors de la génération du lien' };
+    }
+
+    return { success: true, data: { url: urlData.signedUrl } };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Erreur inconnue',
+    };
+  }
+}
+
+/**
+ * Retry a failed import job
+ * Resets the job status and re-queues it for processing
+ */
+export async function retryImportJob(
+  importJobId: string,
+  retryPhase: 'parse' | 'commit'
+): Promise<ImportActionResult<{ messageId: string }>> {
+  try {
+    await requireAdmin();
+    const supabase = await createClient();
+
+    // Get the job to verify state
+    const { data: job, error: jobError } = await supabase
+      .from('import_jobs')
+      .select('status')
+      .eq('id', importJobId)
+      .single();
+
+    if (jobError || !job) {
+      return { success: false, error: 'Job non trouvé' };
+    }
+
+    if (job.status !== 'failed') {
+      return { success: false, error: 'Seuls les jobs en erreur peuvent être relancés' };
+    }
+
+    // Clear error and reset status
+    await supabase
+      .from('import_jobs')
+      .update({
+        status: 'queued',
+        error_message: null,
+      })
+      .eq('id', importJobId);
+
+    // Enqueue appropriate job
+    let messageId: string;
+    if (retryPhase === 'parse') {
+      messageId = await enqueueParseJob({ importJobId });
+    } else {
+      // Get existing config for commit retry
+      const { data: fullJob } = await supabase
+        .from('import_jobs')
+        .select('assignment_config, duplicate_config')
+        .eq('id', importJobId)
+        .single();
+
+      if (!fullJob?.assignment_config || !fullJob?.duplicate_config) {
+        return { success: false, error: 'Configuration de l\'import manquante' };
+      }
+
+      messageId = await enqueueCommitJob({
+        importJobId,
+        assignment: fullJob.assignment_config as AssignmentConfig,
+        duplicates: fullJob.duplicate_config as DuplicateConfig,
+      });
+    }
+
+    revalidatePath('/import');
+    return { success: true, data: { messageId } };
   } catch (error) {
     return {
       success: false,

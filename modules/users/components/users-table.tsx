@@ -6,6 +6,7 @@ import {
   getCoreRowModel,
   flexRender,
 } from '@tanstack/react-table';
+import { TableEmptyState } from '@/modules/shared';
 import { getUserColumns } from '../config/columns';
 import { ResetPasswordModal } from './reset-password-modal';
 import { EditUserModal } from './edit-user-modal';
@@ -85,14 +86,7 @@ export function UsersTable({ users, currentUserId }: UsersTableProps) {
           </thead>
           <tbody className="bg-white dark:bg-dark">
             {table.getRowModel().rows.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={columns.length}
-                  className="px-4 py-12 text-center text-darklink"
-                >
-                  Aucun utilisateur trouve
-                </td>
-              </tr>
+              <TableEmptyState colSpan={columns.length} message="Aucun utilisateur trouve" />
             ) : (
               table.getRowModel().rows.map((row) => (
                 <tr

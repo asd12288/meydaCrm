@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { getCurrentUser, requireAdmin } from '@/modules/auth';
 import { extractValidationError } from '@/lib/validation';
+import { FR_MESSAGES } from '@/lib/errors';
 import { LEAD_STATUS_LABELS } from '@/db/types';
 import type { LeadStatus } from '@/db/types';
 import type {
@@ -120,7 +121,7 @@ export async function updateLeadStatus(
   const user = await getCurrentUser();
 
   if (!user) {
-    return { error: 'Non authentifie' };
+    return { error: FR_MESSAGES.UNAUTHENTICATED };
   }
 
   // Get current lead data for history
@@ -131,7 +132,7 @@ export async function updateLeadStatus(
     .single();
 
   if (fetchError || !currentLead) {
-    return { error: 'Lead non trouve' };
+    return { error: FR_MESSAGES.LEAD_NOT_FOUND };
   }
 
   // Update lead with new status
@@ -146,7 +147,7 @@ export async function updateLeadStatus(
 
   if (updateError) {
     console.error('Error updating lead status:', updateError);
-    return { error: 'Erreur lors de la mise a jour du statut' };
+    return { error: FR_MESSAGES.ERROR_STATUS_UPDATE };
   }
 
   // Create history entry
@@ -178,7 +179,7 @@ export async function bulkAssignLeads(
   const supabase = await createClient();
 
   if (!leadIds.length) {
-    return { error: 'Aucun lead selectionne' };
+    return { error: FR_MESSAGES.NO_LEADS_SELECTED };
   }
 
   // Get current assignment data for history
@@ -198,7 +199,7 @@ export async function bulkAssignLeads(
 
   if (updateError) {
     console.error('Error bulk assigning leads:', updateError);
-    return { error: 'Erreur lors de l\'assignation' };
+    return { error: FR_MESSAGES.ERROR_ASSIGN };
   }
 
   // Create history entries for each lead
@@ -240,7 +241,7 @@ export async function getLeadById(
   const user = await getCurrentUser();
 
   if (!user) {
-    return { lead: null, error: 'Non authentifié' };
+    return { lead: null, error: FR_MESSAGES.UNAUTHENTICATED };
   }
 
   // Fetch lead with assignee
@@ -253,7 +254,7 @@ export async function getLeadById(
 
   if (leadError || !lead) {
     console.error('Error fetching lead:', leadError);
-    return { lead: null, error: 'Lead non trouvé' };
+    return { lead: null, error: FR_MESSAGES.LEAD_NOT_FOUND };
   }
 
   // Fetch comments with author (use author_id column for relation)
@@ -298,13 +299,13 @@ export async function updateLead(
   const user = await getCurrentUser();
 
   if (!user) {
-    return { error: 'Non authentifié' };
+    return { error: FR_MESSAGES.UNAUTHENTICATED };
   }
 
   // Validate input
   const validationResult = leadUpdateSchema.safeParse(data);
   if (!validationResult.success) {
-    return { error: 'Données invalides' };
+    return { error: FR_MESSAGES.INVALID_DATA };
   }
 
   // Get current lead data for history
@@ -315,7 +316,7 @@ export async function updateLead(
     .single();
 
   if (fetchError || !currentLead) {
-    return { error: 'Lead non trouvé' };
+    return { error: FR_MESSAGES.LEAD_NOT_FOUND };
   }
 
   // Calculate diff (only changed fields)
@@ -355,7 +356,7 @@ export async function updateLead(
 
   if (updateError) {
     console.error('Error updating lead:', updateError);
-    return { error: 'Erreur lors de la mise à jour' };
+    return { error: FR_MESSAGES.ERROR_UPDATE };
   }
 
   // Create history entry
@@ -394,7 +395,7 @@ export async function assignLead(
     .single();
 
   if (fetchError || !currentLead) {
-    return { error: 'Lead non trouvé' };
+    return { error: FR_MESSAGES.LEAD_NOT_FOUND };
   }
 
   // Don't update if same assignee
@@ -413,7 +414,7 @@ export async function assignLead(
 
   if (updateError) {
     console.error('Error assigning lead:', updateError);
-    return { error: 'Erreur lors de l\'assignation' };
+    return { error: FR_MESSAGES.ERROR_ASSIGN };
   }
 
   // Create history entry
@@ -445,13 +446,13 @@ export async function addComment(
   const user = await getCurrentUser();
 
   if (!user) {
-    return { error: 'Non authentifié' };
+    return { error: FR_MESSAGES.UNAUTHENTICATED };
   }
 
   // Validate input
   const validationResult = commentSchema.safeParse({ body });
   if (!validationResult.success) {
-    return { error: extractValidationError(validationResult, 'Commentaire invalide') };
+    return { error: extractValidationError(validationResult, FR_MESSAGES.INVALID_DATA) };
   }
 
   // Insert comment
@@ -467,7 +468,7 @@ export async function addComment(
 
   if (insertError) {
     console.error('Error adding comment:', insertError);
-    return { error: 'Erreur lors de l\'ajout du commentaire' };
+    return { error: FR_MESSAGES.ERROR_COMMENT_ADD };
   }
 
   // Create history entry
@@ -496,7 +497,7 @@ export async function deleteComment(
   const user = await getCurrentUser();
 
   if (!user) {
-    return { error: 'Non authentifié' };
+    return { error: FR_MESSAGES.UNAUTHENTICATED };
   }
 
   // Get comment to verify ownership and get lead_id
@@ -507,13 +508,13 @@ export async function deleteComment(
     .single();
 
   if (fetchError || !comment) {
-    return { error: 'Commentaire non trouvé' };
+    return { error: FR_MESSAGES.COMMENT_NOT_FOUND };
   }
 
   // Check permission: own comment or admin
   const isAdmin = user.profile?.role === 'admin';
   if (comment.author_id !== user.id && !isAdmin) {
-    return { error: 'Vous ne pouvez supprimer que vos propres commentaires' };
+    return { error: FR_MESSAGES.CANNOT_DELETE_OTHERS_COMMENTS };
   }
 
   // Delete comment (RLS will also enforce this)
@@ -524,7 +525,7 @@ export async function deleteComment(
 
   if (deleteError) {
     console.error('Error deleting comment:', deleteError);
-    return { error: 'Erreur lors de la suppression' };
+    return { error: FR_MESSAGES.ERROR_DELETE };
   }
 
   revalidatePath(`/leads/${comment.lead_id}`);

@@ -11,6 +11,7 @@ import {
   IconUser,
   IconCopy,
 } from '@tabler/icons-react';
+import { ErrorReportModal } from './error-report-modal';
 import type {
   ValidatedRow,
   AssignmentConfig,
@@ -37,6 +38,7 @@ interface ReviewStepProps {
   onUpdateDuplicates: (config: Partial<DuplicateConfig>) => void;
   salesUsers: SalesUser[];
   progress: ImportProgress | null;
+  importJobId?: string | null;
 }
 
 export function ReviewStep({
@@ -49,7 +51,9 @@ export function ReviewStep({
   onUpdateDuplicates,
   salesUsers,
   progress,
+  importJobId,
 }: ReviewStepProps) {
+  const [showErrorModal, setShowErrorModal] = useState(false);
   const [showInvalidRows, setShowInvalidRows] = useState(false);
 
   const activeSalesUsers = salesUsers.filter(
@@ -95,7 +99,7 @@ export function ReviewStep({
             <h3 className="text-xl font-medium text-ld mb-6">
               Import en cours...
             </h3>
-            <ImportProgressBar progress={progress} />
+            <ImportProgressBar progress={progress} showDetails={true} />
             <p className="text-darklink mt-4">
               <span className="font-medium text-ld">
                 {progress.processedRows.toLocaleString('fr-FR')}
@@ -126,9 +130,13 @@ export function ReviewStep({
         {hasIssues && (
           <div className="mt-4 pt-4 border-t border-success/20 flex gap-4 text-sm">
             {summary.invalid > 0 && (
-              <span className="text-error">
+              <button
+                onClick={() => setShowErrorModal(true)}
+                className="text-error hover:underline flex items-center gap-1"
+              >
+                <IconAlertTriangle className="w-4 h-4" />
                 {summary.invalid} invalide{summary.invalid > 1 ? 's' : ''}
-              </span>
+              </button>
             )}
             {summary.duplicates > 0 && (
               <span className="text-warning">
@@ -136,6 +144,16 @@ export function ReviewStep({
               </span>
             )}
           </div>
+        )}
+        
+        {/* Error Report Modal */}
+        {importJobId && summary.invalid > 0 && (
+          <ErrorReportModal
+            importJobId={importJobId}
+            isOpen={showErrorModal}
+            onClose={() => setShowErrorModal(false)}
+            invalidRowsCount={summary.invalid}
+          />
         )}
       </div>
 

@@ -1,27 +1,26 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useImportWizard } from '../hooks/use-import-wizard';
 import { WizardSteps } from '../ui/import-progress';
-import { IMPORT_WIZARD_STEPS, CLIENT_BATCH_SIZE } from '../config/constants';
+import { IMPORT_WIZARD_STEPS } from '../config/constants';
 import { UploadStep } from './upload-step';
 import { ReviewStep } from './review-step';
 import {
   uploadImportFile,
   updateImportJobMapping,
+  startImportParsing,
   startImportCommit,
-  getImportJob,
-  insertImportRowsBatch,
-  markImportJobReady,
+  pollImportJobStatus,
+  cancelImportJob,
 } from '../lib/actions';
-import { parseCSVContent, applyColumnMapping } from '../lib/parsers';
-import { validateRow, normalizeRowData } from '../lib/validators';
 import {
   IconChevronLeft,
   IconChevronRight,
   IconUpload,
   IconAlertCircle,
   IconLoader2,
+  IconX,
 } from '@tabler/icons-react';
 import type { SalesUser } from '@/modules/leads/types';
 
@@ -34,6 +33,8 @@ export function ImportWizard({ salesUsers, onImportComplete }: ImportWizardProps
   const wizard = useImportWizard();
   const [isProcessing, setIsProcessing] = useState(false);
   const [pollingJobId, setPollingJobId] = useState<string | null>(null);
+  const [pollingPhase, setPollingPhase] = useState<'parsing' | 'importing' | null>(null);
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const {
     state,
@@ -48,59 +49,131 @@ export function ImportWizard({ salesUsers, onImportComplete }: ImportWizardProps
     conversionProgress,
   } = wizard;
 
-  // Poll for job status when parsing Excel files server-side
-  const pollJobStatus = useCallback(async (jobId: string) => {
-    const result = await getImportJob(jobId);
+  // Poll for job status (parsing or importing)
+  const pollJobStatus = useCallback(async (jobId: string, phase: 'parsing' | 'importing') => {
+    const result = await pollImportJobStatus(jobId);
     if (!result.success || !result.data) {
       wizard.setError(result.error || 'Erreur lors de la recuperation du statut');
       setPollingJobId(null);
+      setPollingPhase(null);
       setIsProcessing(false);
       return;
     }
 
     const job = result.data;
 
-    // Check status
-    if (job.status === 'ready') {
-      // Parsing complete - update state with results
-      wizard.setValidationFromServer({
-        totalRows: job.total_rows || 0,
-        validRows: job.valid_rows || 0,
-        invalidRows: job.invalid_rows || 0,
-      });
-      setPollingJobId(null);
-      setIsProcessing(false);
-      goNext(); // Move to review step
-    } else if (job.status === 'failed') {
-      wizard.setError(job.error_message || 'Erreur lors de l\'analyse du fichier');
-      setPollingJobId(null);
-      setIsProcessing(false);
-    } else if (job.status === 'parsing') {
-      // Still parsing - update progress
-      wizard.setProgress({
-        phase: 'parsing',
-        totalRows: job.total_rows || 0,
-        processedRows: (job.current_chunk || 0) * 1000, // Approximate
-        validRows: job.valid_rows || 0,
-        invalidRows: job.invalid_rows || 0,
-        importedRows: 0,
-        skippedRows: 0,
-        currentChunk: job.current_chunk || 0,
-        totalChunks: job.total_chunks || 0,
-      });
+    if (phase === 'parsing') {
+      // Polling for parse completion
+      if (job.status === 'ready') {
+        // Parsing complete - update state with results
+        wizard.setValidationFromServer({
+          totalRows: job.totalRows,
+          validRows: job.validRows,
+          invalidRows: job.invalidRows,
+        });
+        wizard.setProgress(null);
+        setPollingJobId(null);
+        setPollingPhase(null);
+        setIsProcessing(false);
+        goNext(); // Move to review step
+      } else if (job.status === 'failed') {
+        wizard.setError(job.errorMessage || "Erreur lors de l'analyse du fichier");
+        wizard.setProgress(null);
+        setPollingJobId(null);
+        setPollingPhase(null);
+        setIsProcessing(false);
+      } else if (job.status === 'parsing' || job.status === 'queued') {
+        // Still parsing - update progress
+        wizard.setProgress({
+          phase: 'parsing',
+          totalRows: job.totalRows,
+          processedRows: job.importedRows || 0, // Use importedRows as rough progress during parse
+          validRows: job.validRows,
+          invalidRows: job.invalidRows,
+          importedRows: 0,
+          skippedRows: 0,
+          currentChunk: 0,
+          totalChunks: 0,
+        });
+      }
+    } else {
+      // Polling for import completion
+      if (job.status === 'completed') {
+        wizard.setProgress({
+          phase: 'completed',
+          totalRows: job.totalRows,
+          processedRows: job.totalRows,
+          validRows: job.validRows,
+          invalidRows: job.invalidRows,
+          importedRows: job.importedRows,
+          skippedRows: job.skippedRows,
+          currentChunk: 0,
+          totalChunks: 0,
+        });
+        setPollingJobId(null);
+        setPollingPhase(null);
+        setIsProcessing(false);
+        if (onImportComplete) {
+          onImportComplete(jobId);
+        }
+      } else if (job.status === 'failed' || job.status === 'cancelled') {
+        wizard.setProgress({
+          phase: 'failed',
+          totalRows: job.totalRows,
+          processedRows: job.importedRows,
+          validRows: job.validRows,
+          invalidRows: job.invalidRows,
+          importedRows: job.importedRows,
+          skippedRows: job.skippedRows,
+          currentChunk: 0,
+          totalChunks: 0,
+          errorMessage: job.errorMessage || "Erreur lors de l'import",
+        });
+        setPollingJobId(null);
+        setPollingPhase(null);
+        setIsProcessing(false);
+      } else if (job.status === 'importing' || job.status === 'queued') {
+        // Still importing - update progress
+        wizard.setProgress({
+          phase: 'importing',
+          totalRows: job.totalRows,
+          processedRows: job.importedRows,
+          validRows: job.validRows,
+          invalidRows: job.invalidRows,
+          importedRows: job.importedRows,
+          skippedRows: job.skippedRows,
+          currentChunk: 0,
+          totalChunks: 0,
+        });
+      }
     }
-  }, [wizard, goNext]);
+  }, [wizard, goNext, onImportComplete]);
 
   // Polling effect
   useEffect(() => {
-    if (!pollingJobId) return;
+    if (!pollingJobId || !pollingPhase) {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = null;
+      }
+      return;
+    }
 
-    const interval = setInterval(() => {
-      pollJobStatus(pollingJobId);
-    }, 1500); // Poll every 1.5 seconds
+    // Initial poll
+    pollJobStatus(pollingJobId, pollingPhase);
 
-    return () => clearInterval(interval);
-  }, [pollingJobId, pollJobStatus]);
+    // Set up interval
+    pollIntervalRef.current = setInterval(() => {
+      pollJobStatus(pollingJobId, pollingPhase);
+    }, 2000); // Poll every 2 seconds
+
+    return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = null;
+      }
+    };
+  }, [pollingJobId, pollingPhase, pollJobStatus]);
 
   const handleFileSelect = async (file: File) => {
     await wizard.handleFileSelect(file);
@@ -109,11 +182,34 @@ export function ImportWizard({ salesUsers, onImportComplete }: ImportWizardProps
   const handleClearFile = () => {
     wizard.clearFile();
     setPollingJobId(null);
+    setPollingPhase(null);
+  };
+
+  const handleCancelImport = async () => {
+    if (!state.importJobId) return;
+
+    const result = await cancelImportJob(state.importJobId);
+    if (result.success) {
+      wizard.setProgress({
+        phase: 'failed',
+        totalRows: state.validationSummary.total,
+        processedRows: 0,
+        validRows: state.validationSummary.valid,
+        invalidRows: state.validationSummary.invalid,
+        importedRows: 0,
+        skippedRows: 0,
+        currentChunk: 0,
+        totalChunks: 0,
+        errorMessage: 'Import annule',
+      });
+      setPollingJobId(null);
+      setPollingPhase(null);
+      setIsProcessing(false);
+    }
   };
 
   const handleNext = async () => {
-    // Step 0 -> Step 1: Upload file and start CLIENT-SIDE parsing
-    // fileToUpload is always CSV (converted from Excel if needed)
+    // Step 0 -> Step 1: Upload file and start SERVER-SIDE parsing via QStash
     if (state.currentStep === 0 && fileToUpload) {
       setIsProcessing(true);
       wizard.setError(null);
@@ -146,122 +242,39 @@ export function ImportWizard({ salesUsers, onImportComplete }: ImportWizardProps
         }
 
         // =====================================================================
-        // CLIENT-SIDE PARSING (bypasses Edge Function to avoid memory limits)
+        // SERVER-SIDE PARSING via QStash
         // =====================================================================
 
-        // Read the entire file content
-        const fileContent = await fileToUpload.text();
-
-        // Parse ALL rows (not just preview)
-        const { headers, rows: allRawRows } = parseCSVContent(fileContent, {
-          hasHeader: true,
-          // No maxRows limit - parse everything
-        });
-
-        const totalRows = allRawRows.length;
-        console.log(`Client-side parsing: ${totalRows} rows, ${headers.length} columns`);
-
-        // Apply column mapping to get normalized data
-        const mappedRows = applyColumnMapping(allRawRows, state.mapping!.mappings);
-
-        // Validate and prepare rows for batch insert
-        let validCount = 0;
-        let invalidCount = 0;
-        const totalChunks = Math.ceil(totalRows / CLIENT_BATCH_SIZE);
-
-        for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
-          const startIdx = chunkIndex * CLIENT_BATCH_SIZE;
-          const endIdx = Math.min(startIdx + CLIENT_BATCH_SIZE, totalRows);
-          const chunkRows = mappedRows.slice(startIdx, endIdx);
-
-          // Validate and normalize each row in the chunk
-          const batchRows = chunkRows.map((row) => {
-            const normalized = normalizeRowData(row.data);
-            const validation = validateRow(row.rowNumber, row.data);
-
-            if (validation.isValid) {
-              validCount++;
-            } else {
-              invalidCount++;
-            }
-
-            return {
-              row_number: row.rowNumber,
-              raw_data: Object.fromEntries(
-                state.mapping!.mappings.map((m, idx) => [
-                  m.sourceColumn,
-                  allRawRows[row.rowNumber - 2]?.values[idx] || '',
-                ])
-              ),
-              normalized_data: normalized as Record<string, string | null>,
-              validation_errors: validation.isValid
-                ? null
-                : Object.fromEntries(validation.errors.map((e) => [e.field, e.message])),
-              status: validation.isValid ? 'valid' as const : 'invalid' as const,
-            };
-          });
-
-          // Send batch to server
-          const batchResult = await insertImportRowsBatch(jobId, batchRows, {
-            currentChunk: chunkIndex,
-            totalChunks,
-            totalRows,
-            validRows: validCount,
-            invalidRows: invalidCount,
-          });
-
-          if (!batchResult.success) {
-            wizard.setError(batchResult.error || 'Erreur lors de l\'envoi des donnees');
-            setIsProcessing(false);
-            return;
-          }
-
-          // Update progress
-          wizard.setProgress({
-            phase: 'parsing',
-            totalRows,
-            processedRows: endIdx,
-            validRows: validCount,
-            invalidRows: invalidCount,
-            importedRows: 0,
-            skippedRows: 0,
-            currentChunk: chunkIndex + 1,
-            totalChunks,
-          });
-
-          console.log(`Chunk ${chunkIndex + 1}/${totalChunks}: ${validCount} valid, ${invalidCount} invalid`);
-        }
-
-        // Mark job as ready
-        const readyResult = await markImportJobReady(jobId, {
-          totalRows,
-          validRows: validCount,
-          invalidRows: invalidCount,
-        });
-
-        if (!readyResult.success) {
-          wizard.setError(readyResult.error || 'Erreur lors de la finalisation');
+        // Start parsing via QStash worker
+        const parseResult = await startImportParsing(jobId);
+        if (!parseResult.success) {
+          wizard.setError(parseResult.error || "Erreur lors du demarrage de l'analyse");
           setIsProcessing(false);
           return;
         }
 
-        // Update validation summary from actual parsed data
-        wizard.setValidationFromServer({
-          totalRows,
-          validRows: validCount,
-          invalidRows: invalidCount,
+        // Show initial parsing progress
+        wizard.setProgress({
+          phase: 'parsing',
+          totalRows: 0,
+          processedRows: 0,
+          validRows: 0,
+          invalidRows: 0,
+          importedRows: 0,
+          skippedRows: 0,
+          currentChunk: 0,
+          totalChunks: 0,
         });
 
-        // NOTE: Don't call runValidation() here - it only validates 100 preview rows
-        // and would overwrite the correct counts from setValidationFromServer()
+        // Start polling for parse completion
+        setPollingJobId(jobId);
+        setPollingPhase('parsing');
 
-        // Clear progress and move to review step
-        wizard.setProgress(null);
-        setIsProcessing(false);
-        goNext();
+        // Note: The polling effect will handle moving to the next step
+        // when parsing is complete
         return;
       } catch (error) {
-        console.error('Client-side parsing error:', error);
+        console.error('Server-side parsing error:', error);
         wizard.setError(error instanceof Error ? error.message : 'Erreur lors du traitement');
         setIsProcessing(false);
         return;
@@ -297,8 +310,7 @@ export function ImportWizard({ salesUsers, onImportComplete }: ImportWizardProps
         totalChunks: 0,
       });
 
-      // Start the import commit via Edge Function
-      // The Edge Function now handles all the batch processing
+      // Start the import commit via QStash
       const result = await startImportCommit(state.importJobId, {
         assignment: state.assignment,
         duplicates: state.duplicates,
@@ -307,81 +319,12 @@ export function ImportWizard({ salesUsers, onImportComplete }: ImportWizardProps
       });
 
       if (!result.success) {
-        throw new Error(result.error || 'Erreur lors de l\'import');
+        throw new Error(result.error || "Erreur lors de l'import");
       }
 
-      // Poll for completion
-      const pollForCompletion = async () => {
-        const jobResult = await getImportJob(state.importJobId!);
-        if (!jobResult.success || !jobResult.data) {
-          throw new Error(jobResult.error || 'Erreur lors de la recuperation du statut');
-        }
-
-        const job = jobResult.data;
-
-        if (job.status === 'completed') {
-          wizard.setProgress({
-            phase: 'completed',
-            totalRows: job.total_rows || 0,
-            processedRows: job.total_rows || 0,
-            validRows: job.valid_rows || 0,
-            invalidRows: job.invalid_rows || 0,
-            importedRows: job.imported_rows || 0,
-            skippedRows: job.skipped_rows || 0,
-            currentChunk: 0,
-            totalChunks: 0,
-          });
-
-          if (onImportComplete) {
-            onImportComplete(state.importJobId!);
-          }
-          setIsProcessing(false);
-          return true;
-        } else if (job.status === 'failed') {
-          throw new Error(job.error_message || 'Erreur lors de l\'import');
-        } else if (job.status === 'importing') {
-          // Update progress
-          wizard.setProgress({
-            phase: 'importing',
-            totalRows: job.total_rows || 0,
-            processedRows: job.imported_rows || 0,
-            validRows: job.valid_rows || 0,
-            invalidRows: job.invalid_rows || 0,
-            importedRows: job.imported_rows || 0,
-            skippedRows: job.skipped_rows || 0,
-            currentChunk: job.current_chunk || 0,
-            totalChunks: job.total_chunks || 0,
-          });
-          return false;
-        }
-        return false;
-      };
-
-      // Start polling
-      const pollInterval = setInterval(async () => {
-        try {
-          const done = await pollForCompletion();
-          if (done) {
-            clearInterval(pollInterval);
-          }
-        } catch (error) {
-          clearInterval(pollInterval);
-          wizard.setProgress({
-            phase: 'failed',
-            totalRows: state.validationSummary.total,
-            processedRows: 0,
-            validRows: state.validationSummary.valid,
-            invalidRows: state.validationSummary.invalid,
-            importedRows: 0,
-            skippedRows: 0,
-            currentChunk: 0,
-            totalChunks: 0,
-            errorMessage: error instanceof Error ? error.message : 'Erreur inconnue',
-          });
-          setIsProcessing(false);
-        }
-      }, 2000); // Poll every 2 seconds
-
+      // Start polling for import completion
+      setPollingJobId(state.importJobId);
+      setPollingPhase('importing');
     } catch (error) {
       wizard.setProgress({
         phase: 'failed',
@@ -426,6 +369,7 @@ export function ImportWizard({ salesUsers, onImportComplete }: ImportWizardProps
             onUpdateDuplicates={wizard.updateDuplicates}
             salesUsers={salesUsers}
             progress={state.progress}
+            importJobId={state.importJobId}
           />
         );
       default:
@@ -465,6 +409,20 @@ export function ImportWizard({ salesUsers, onImportComplete }: ImportWizardProps
 
       {/* Step content */}
       <div className="min-h-[350px]">{renderStep()}</div>
+
+      {/* Cancel button during import */}
+      {isImportInProgress && (
+        <div className="flex justify-center pt-4 border-t border-border">
+          <button
+            type="button"
+            onClick={handleCancelImport}
+            className="flex items-center gap-2 px-4 py-2 rounded-md font-medium text-error hover:bg-lighterror/30 transition-colors"
+          >
+            <IconX className="w-4 h-4" />
+            Annuler l&apos;import
+          </button>
+        </div>
+      )}
 
       {/* Navigation buttons */}
       {!isImportInProgress && (

@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { IconKey } from '@tabler/icons-react';
 import {
-  PasswordInput,
+  FormPasswordField,
   FormErrorAlert,
   FormSuccessAlert,
   FormActions,
@@ -27,7 +27,7 @@ export function ResetPasswordForm({
   onSuccess,
   onCancel,
 }: ResetPasswordFormProps) {
-  const { isPending, startTransition, error, setError, success, setSuccess, resetAll } =
+  const { isPending, startTransition, error, setError, success, handleFormSuccess, resetAll } =
     useFormState();
 
   const {
@@ -52,11 +52,8 @@ export function ResetPasswordForm({
       if (result.error) {
         setError(result.error);
       } else {
-        setSuccess(true);
         reset();
-        if (onSuccess) {
-          setTimeout(() => onSuccess(), 1500);
-        }
+        handleFormSuccess({ onSuccess, onSuccessDelay: 1500 });
       }
     });
   };
@@ -67,27 +64,17 @@ export function ResetPasswordForm({
         Réinitialiser le mot de passe de <strong>{userName}</strong>
       </p>
 
-      <div>
-        <label className="form-label">{USER_FIELD_LABELS.newPassword}</label>
-        <PasswordInput
-          {...register('newPassword')}
-          error={!!errors.newPassword}
-        />
-        {errors.newPassword?.message && (
-          <p className="form-error">{errors.newPassword.message}</p>
-        )}
-      </div>
+      <FormPasswordField
+        label={USER_FIELD_LABELS.newPassword}
+        error={errors.newPassword?.message}
+        {...register('newPassword')}
+      />
 
-      <div>
-        <label className="form-label">{USER_FIELD_LABELS.confirmPassword}</label>
-        <PasswordInput
-          {...register('confirmPassword')}
-          error={!!errors.confirmPassword}
-        />
-        {errors.confirmPassword?.message && (
-          <p className="form-error">{errors.confirmPassword.message}</p>
-        )}
-      </div>
+      <FormPasswordField
+        label={USER_FIELD_LABELS.confirmPassword}
+        error={errors.confirmPassword?.message}
+        {...register('confirmPassword')}
+      />
 
       <FormErrorAlert error={error} />
       <FormSuccessAlert show={success} message="Mot de passe réinitialisé avec succès" />

@@ -24,7 +24,7 @@ interface EditUserFormProps {
 }
 
 export function EditUserForm({ user, isSelf = false, onSuccess, onCancel }: EditUserFormProps) {
-  const { isPending, startTransition, error, setError, success, setSuccess, resetAll } =
+  const { isPending, startTransition, error, setError, success, handleFormSuccess, resetAll } =
     useFormState();
 
   const {
@@ -48,10 +48,7 @@ export function EditUserForm({ user, isSelf = false, onSuccess, onCancel }: Edit
       if (result.error) {
         setError(result.error);
       } else {
-        setSuccess(true);
-        if (onSuccess) {
-          setTimeout(() => onSuccess(), 1000);
-        }
+        handleFormSuccess({ onSuccess, onSuccessDelay: 1000 });
       }
     });
   };

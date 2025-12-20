@@ -69,6 +69,7 @@ export const FR_MESSAGES = {
   NOT_FOUND: 'Ressource non trouvée',
   LEAD_NOT_FOUND: 'Lead non trouvé',
   USER_NOT_FOUND: 'Utilisateur non trouvé',
+  COMMENT_NOT_FOUND: 'Commentaire non trouvé',
 
   // Operations
   ERROR_GENERIC: 'Une erreur est survenue',
@@ -76,6 +77,13 @@ export const FR_MESSAGES = {
   ERROR_CREATE: 'Erreur lors de la création',
   ERROR_UPDATE: 'Erreur lors de la mise à jour',
   ERROR_DELETE: 'Erreur lors de la suppression',
+  ERROR_STATUS_UPDATE: 'Erreur lors de la mise à jour du statut',
+  ERROR_ASSIGN: "Erreur lors de l'assignation",
+  ERROR_COMMENT_ADD: "Erreur lors de l'ajout du commentaire",
+
+  // Leads specific
+  NO_LEADS_SELECTED: 'Aucun lead sélectionné',
+  CANNOT_DELETE_OTHERS_COMMENTS: 'Vous ne pouvez supprimer que vos propres commentaires',
 
   // Success
   SUCCESS_CREATE: 'Créé avec succès',

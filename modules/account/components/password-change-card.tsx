@@ -1,33 +1,46 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { IconLock } from '@tabler/icons-react';
 import {
   CardBox,
-  PasswordInput,
+  FormPasswordField,
   FormErrorAlert,
   FormSuccessAlert,
+  FormActions,
   SectionHeader,
+  useFormState,
 } from '@/modules/shared';
-import { IconLock } from '@tabler/icons-react';
+import { changePasswordSchema } from '../types';
+import type { ChangePasswordInput } from '../types';
 import { changePassword } from '../lib/actions';
 
 export function PasswordChangeCard() {
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
-  const [isPending, startTransition] = useTransition();
+  const { isPending, startTransition, error, setError, success, setSuccess, resetAll } =
+    useFormState();
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setSuccess(false);
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isDirty },
+  } = useForm<ChangePasswordInput>({
+    resolver: zodResolver(changePasswordSchema),
+    defaultValues: {
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: '',
+    },
+  });
+
+  const onSubmit = (data: ChangePasswordInput) => {
+    resetAll();
 
     const formData = new FormData();
-    formData.set('currentPassword', currentPassword);
-    formData.set('newPassword', newPassword);
-    formData.set('confirmPassword', confirmPassword);
+    formData.set('currentPassword', data.currentPassword);
+    formData.set('newPassword', data.newPassword);
+    formData.set('confirmPassword', data.confirmPassword);
 
     startTransition(async () => {
       const result = await changePassword(formData);
@@ -35,17 +48,10 @@ export function PasswordChangeCard() {
         setError(result.error);
       } else {
         setSuccess(true);
-        setCurrentPassword('');
-        setNewPassword('');
-        setConfirmPassword('');
+        reset();
       }
     });
   };
-
-  const isValid =
-    currentPassword.length > 0 &&
-    newPassword.length >= 6 &&
-    confirmPassword === newPassword;
 
   return (
     <CardBox>
@@ -54,51 +60,41 @@ export function PasswordChangeCard() {
         icon={<IconLock size={20} />}
       />
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="form-label">Mot de passe actuel</label>
-          <PasswordInput
-            value={currentPassword}
-            onChange={(e) => setCurrentPassword(e.target.value)}
-            placeholder="••••••••"
-          />
-        </div>
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <FormPasswordField
+          label="Mot de passe actuel"
+          error={errors.currentPassword?.message}
+          placeholder="••••••••"
+          {...register('currentPassword')}
+        />
 
-        <div>
-          <label className="form-label">Nouveau mot de passe</label>
-          <PasswordInput
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            placeholder="••••••••"
-          />
-          {newPassword.length > 0 && newPassword.length < 6 && (
-            <p className="form-warning">Minimum 6 caractères</p>
-          )}
-        </div>
+        <FormPasswordField
+          label="Nouveau mot de passe"
+          error={errors.newPassword?.message}
+          placeholder="••••••••"
+          {...register('newPassword')}
+        />
 
-        <div>
-          <label className="form-label">Confirmer le mot de passe</label>
-          <PasswordInput
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            placeholder="••••••••"
-            error={confirmPassword.length > 0 && confirmPassword !== newPassword}
-          />
-          {confirmPassword.length > 0 && confirmPassword !== newPassword && (
-            <p className="form-error">Les mots de passe ne correspondent pas</p>
-          )}
-        </div>
+        <FormPasswordField
+          label="Confirmer le mot de passe"
+          error={errors.confirmPassword?.message}
+          placeholder="••••••••"
+          {...register('confirmPassword')}
+        />
 
         <FormErrorAlert error={error} />
         <FormSuccessAlert show={success} message="Mot de passe modifié avec succès" />
 
-        <button
-          type="submit"
-          disabled={!isValid || isPending}
-          className="ui-button w-full disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isPending ? 'Modification...' : 'Modifier le mot de passe'}
-        </button>
+        <FormActions
+          isPending={isPending}
+          isDirty={isDirty}
+          submitLabel="Modifier le mot de passe"
+          submitLabelPending="Modification..."
+          submitIcon={<IconLock size={18} />}
+          showCancel={false}
+          withBorder={false}
+          className="justify-center"
+        />
       </form>
     </CardBox>
   );

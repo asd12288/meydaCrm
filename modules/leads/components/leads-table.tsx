@@ -6,6 +6,7 @@ import {
   getCoreRowModel,
   flexRender,
 } from '@tanstack/react-table';
+import { TableEmptyState } from '@/modules/shared';
 import { getLeadColumns } from '../config/columns';
 import { BulkActionsBar } from './bulk-actions-bar';
 import type { LeadWithAssignee, SalesUser } from '../types';
@@ -75,14 +76,11 @@ export function LeadsTable({ leads, isAdmin, salesUsers }: LeadsTableProps) {
           </thead>
           <tbody className="bg-white dark:bg-dark">
             {table.getRowModel().rows.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={columns.length}
-                  className="px-3 py-12 text-center text-darklink"
-                >
-                  Aucun lead trouve
-                </td>
-              </tr>
+              <TableEmptyState
+                colSpan={columns.length}
+                message="Aucun lead trouve"
+                className="px-3"
+              />
             ) : (
               table.getRowModel().rows.map((row) => (
                 <tr

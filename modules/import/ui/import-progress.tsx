@@ -1,6 +1,7 @@
 'use client';
 
-import { IconCheck, IconX, IconLoader2, IconFile, IconClipboardCheck, IconUpload } from '@tabler/icons-react';
+import { useState, useEffect } from 'react';
+import { IconCheck, IconX, IconLoader2, IconFile, IconClipboardCheck, IconUpload, IconClock, IconBolt } from '@tabler/icons-react';
 import type { ImportProgress as ImportProgressType } from '../types';
 
 interface ImportProgressProps {
@@ -10,6 +11,21 @@ interface ImportProgressProps {
 
 export function ImportProgressBar({ progress, showDetails = false }: ImportProgressProps) {
   const { phase, totalRows, processedRows } = progress;
+  const [startTime] = useState(Date.now());
+  const [speed, setSpeed] = useState(0);
+  const [eta, setETA] = useState(0);
+
+  useEffect(() => {
+    if (processedRows > 0 && totalRows > processedRows) {
+      const elapsedSeconds = (Date.now() - startTime) / 1000;
+      const currentSpeed = processedRows / elapsedSeconds;
+      const remainingRows = totalRows - processedRows;
+      const estimatedSeconds = currentSpeed > 0 ? remainingRows / currentSpeed : 0;
+
+      setSpeed(Math.round(currentSpeed));
+      setETA(Math.round(estimatedSeconds));
+    }
+  }, [processedRows, totalRows, startTime]);
 
   const percentage =
     totalRows > 0 ? Math.round((processedRows / totalRows) * 100) : 0;
@@ -25,8 +41,15 @@ export function ImportProgressBar({ progress, showDetails = false }: ImportProgr
     }
   };
 
+  const formatETA = (seconds: number) => {
+    if (seconds < 60) return `${seconds}s`;
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}m ${secs}s`;
+  };
+
   return (
-    <div className="w-full max-w-md mx-auto">
+    <div className="w-full max-w-md mx-auto space-y-3">
       {/* Progress bar */}
       <div className="h-3 bg-border rounded-full overflow-hidden">
         <div
@@ -34,7 +57,32 @@ export function ImportProgressBar({ progress, showDetails = false }: ImportProgr
           style={{ width: `${percentage}%` }}
         />
       </div>
-      <p className="text-center text-sm text-darklink mt-2">{percentage}%</p>
+      
+      <div className="flex items-center justify-between text-sm">
+        <div className="text-center flex-1">
+          <p className="text-2xl font-semibold text-ld">{percentage}%</p>
+        </div>
+        
+        {showDetails && speed > 0 && (
+          <>
+            <div className="text-center flex-1">
+              <div className="flex items-center justify-center gap-1 text-primary">
+                <IconBolt className="w-4 h-4" />
+                <p className="font-medium">{speed}</p>
+              </div>
+              <p className="text-xs text-darklink">lignes/sec</p>
+            </div>
+            
+            <div className="text-center flex-1">
+              <div className="flex items-center justify-center gap-1 text-primary">
+                <IconClock className="w-4 h-4" />
+                <p className="font-medium">{formatETA(eta)}</p>
+              </div>
+              <p className="text-xs text-darklink">restant</p>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }

@@ -21,6 +21,12 @@ export interface UseFormStateReturn {
   resetSuccess: () => void;
   /** Reset all states */
   resetAll: () => void;
+  /** Helper to handle form success with optional callback and auto-reset */
+  handleFormSuccess: (options?: {
+    onSuccess?: () => void;
+    onSuccessDelay?: number;
+    autoResetDelay?: number;
+  }) => void;
 }
 
 /**
@@ -39,6 +45,27 @@ export function useFormState(): UseFormStateReturn {
     setSuccess(false);
   }, []);
 
+  const handleFormSuccess = useCallback(
+    (options?: {
+      onSuccess?: () => void;
+      onSuccessDelay?: number;
+      autoResetDelay?: number;
+    }) => {
+      setSuccess(true);
+
+      if (options?.onSuccess) {
+        setTimeout(() => {
+          options.onSuccess?.();
+        }, options.onSuccessDelay ?? 1000);
+      } else if (options?.autoResetDelay) {
+        setTimeout(() => {
+          setSuccess(false);
+        }, options.autoResetDelay);
+      }
+    },
+    []
+  );
+
   return {
     isPending,
     startTransition,
@@ -49,5 +76,6 @@ export function useFormState(): UseFormStateReturn {
     resetError,
     resetSuccess,
     resetAll,
+    handleFormSuccess,
   };
 }

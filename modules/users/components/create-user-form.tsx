@@ -4,8 +4,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { IconUserPlus } from '@tabler/icons-react';
 import {
-  PasswordInput,
   FormField,
+  FormPasswordField,
   FormSelect,
   FormErrorAlert,
   FormSuccessAlert,
@@ -23,7 +23,7 @@ interface CreateUserFormProps {
 }
 
 export function CreateUserForm({ onSuccess, onCancel }: CreateUserFormProps) {
-  const { isPending, startTransition, error, setError, success, setSuccess, resetAll } =
+  const { isPending, startTransition, error, setError, success, handleFormSuccess, resetAll } =
     useFormState();
 
   const {
@@ -51,11 +51,8 @@ export function CreateUserForm({ onSuccess, onCancel }: CreateUserFormProps) {
       if (result.error) {
         setError(result.error);
       } else {
-        setSuccess(true);
         reset();
-        if (onSuccess) {
-          setTimeout(() => onSuccess(), 1000);
-        }
+        handleFormSuccess({ onSuccess, onSuccessDelay: 1000 });
       }
     });
   };
@@ -83,24 +80,17 @@ export function CreateUserForm({ onSuccess, onCancel }: CreateUserFormProps) {
         {...register('role')}
       />
 
-      <div>
-        <label className="form-label">{USER_FIELD_LABELS.password}</label>
-        <PasswordInput {...register('password')} error={!!errors.password} />
-        {errors.password?.message && (
-          <p className="form-error">{errors.password.message}</p>
-        )}
-      </div>
+      <FormPasswordField
+        label={USER_FIELD_LABELS.password}
+        error={errors.password?.message}
+        {...register('password')}
+      />
 
-      <div>
-        <label className="form-label">{USER_FIELD_LABELS.confirmPassword}</label>
-        <PasswordInput
-          {...register('confirmPassword')}
-          error={!!errors.confirmPassword}
-        />
-        {errors.confirmPassword?.message && (
-          <p className="form-error">{errors.confirmPassword.message}</p>
-        )}
-      </div>
+      <FormPasswordField
+        label={USER_FIELD_LABELS.confirmPassword}
+        error={errors.confirmPassword?.message}
+        {...register('confirmPassword')}
+      />
 
       <FormErrorAlert error={error} />
       <FormSuccessAlert show={success} message="Utilisateur créé avec succès" />

@@ -88,6 +88,9 @@ export async function createTestUser(
     throw new Error(`Failed to update test user profile: ${profileError.message}`)
   }
 
+  // Small delay to avoid rate limiting
+  await new Promise((resolve) => setTimeout(resolve, 200))
+
   return {
     id: data.user.id,
     email,
@@ -112,6 +115,7 @@ export async function deleteTestUser(
 
 /**
  * Sign in and return authenticated client
+ * Adds a small delay to avoid rate limiting in tests
  */
 export async function signInAsUser(
   email: string,
@@ -121,9 +125,21 @@ export async function signInAsUser(
   const { error } = await client.auth.signInWithPassword({ email, password })
 
   if (error) {
+    // If rate limited, wait a bit and retry once
+    if (error.message.includes('rate limit')) {
+      await new Promise((resolve) => setTimeout(resolve, 2000))
+      const retryClient = createAnonClient()
+      const { error: retryError } = await retryClient.auth.signInWithPassword({ email, password })
+      if (retryError) {
+        throw new Error(`Failed to sign in as ${email}: ${retryError.message}`)
+      }
+      return retryClient
+    }
     throw new Error(`Failed to sign in as ${email}: ${error.message}`)
   }
 
+  // Small delay to avoid rate limiting
+  await new Promise((resolve) => setTimeout(resolve, 100))
   return client
 }
 

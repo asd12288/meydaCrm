@@ -81,8 +81,8 @@ export type UserRole = z.infer<typeof roleEnum>;
  * Helper to create a password confirmation refine
  */
 export function createPasswordConfirmRefine(
-  passwordField: string,
-  confirmField: string
+  passwordField: string = 'newPassword',
+  confirmField: string = 'confirmPassword'
 ) {
   return {
     validator: (data: Record<string, unknown>) =>
@@ -91,3 +91,94 @@ export function createPasswordConfirmRefine(
     path: [confirmField],
   };
 }
+
+// ============================================
+// Username Schema
+// ============================================
+
+/**
+ * Username schema with French error messages
+ * Used in: users module (create user)
+ */
+export const usernameSchema = z
+  .string()
+  .min(3, 'Minimum 3 caractères')
+  .max(50, 'Maximum 50 caractères')
+  .regex(/^[a-zA-Z0-9._-]+$/, 'Caractères autorisés: lettres, chiffres, . _ -');
+
+// ============================================
+// Composite Schemas (DRY)
+// ============================================
+
+/**
+ * Change password schema - for users changing their own password
+ * Used in: account module
+ */
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, 'Le mot de passe actuel est requis'),
+    newPassword: passwordSchema,
+    confirmPassword: z.string().min(1, 'Veuillez confirmer le mot de passe'),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: 'Les mots de passe ne correspondent pas',
+    path: ['confirmPassword'],
+  });
+
+export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
+
+/**
+ * Reset password schema - for admin resetting user passwords
+ * Used in: users module
+ */
+export const resetPasswordSchema = z
+  .object({
+    newPassword: passwordSchema,
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: 'Les mots de passe ne correspondent pas',
+    path: ['confirmPassword'],
+  });
+
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
+
+/**
+ * Create user schema - for admin creating new users
+ * Used in: users module
+ */
+export const createUserSchema = z
+  .object({
+    username: usernameSchema,
+    displayName: displayNameSchema,
+    password: passwordSchema,
+    confirmPassword: z.string(),
+    role: roleEnum,
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: 'Les mots de passe ne correspondent pas',
+    path: ['confirmPassword'],
+  });
+
+export type CreateUserInput = z.infer<typeof createUserSchema>;
+
+/**
+ * Edit user schema - for admin editing user profile
+ * Used in: users module
+ */
+export const editUserSchema = z.object({
+  displayName: displayNameSchema,
+  role: roleEnum,
+});
+
+export type EditUserInput = z.infer<typeof editUserSchema>;
+
+/**
+ * Update profile schema - for users editing their own profile
+ * Used in: account module
+ */
+export const updateProfileSchema = z.object({
+  displayName: displayNameSchema,
+});
+
+export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;

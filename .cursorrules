@@ -1,0 +1,264 @@
+# Cursor Rules for Meyda CRM
+
+## Mission & Scope
+We are replacing an old CRM with a simpler, more reliable CRM built with Next.js 16 + Supabase + Vercel.
+
+### MVP Modules (Must Ship)
+- Auth (Supabase Auth): email-like login + password (no real emails required)
+- Roles: `admin` and `sales`
+- Admin: create sales users, reset passwords, upload leads (CSV + XLSX), assign leads (bulk + single), view/edit all leads
+- Sales: view only assigned leads, edit all lead fields/status/comments, change own password
+- Leads: table list with filters + search + pagination (20k+ records), lead detail page with comments + history
+- Import system: end-to-end upload + parsing + validation + safe commit, resumable and non-corrupting
+- App language: French UI everywhere
+
+### Explicit Non-Goals (Do NOT Build Unless Asked)
+- Self registration / email reset flows
+- Gmail sync, workflows, automations
+- Complex multi-tenant teams (only admin/sales, per-lead assignment)
+
+## Tech Stack
+- Next.js 16.x (App Router)
+- Route Handlers for server endpoints
+- Tailwind + MaterialM template (from `/design/MaterialM-nextjs-admin-template-main/`)
+- Supabase Postgres (RLS enabled) + Auth + Storage + Edge Functions
+- Drizzle ORM for typed queries
+- Vercel deployment
+
+## Security Constraints (NEVER VIOLATE)
+- Do NOT store Supabase service role key in Next.js/Vercel environment
+- All privileged actions happen in Supabase Edge Functions
+- All access control must be enforced by RLS, not only UI logic
+- Never implement authorization only in client - assume any client can call any endpoint
+
+## Product Rules (Invariants)
+- No public signup UI - only admins create users
+- Admin can read/write everything
+- Sales can only read/write leads where `assigned_to = auth.uid()`
+- All lead edits must be reflected in `lead_history` (audit timeline)
+- Leads are soft-deleted (use `deleted_at`) unless explicitly required otherwise
+- UI, status labels, validation messages in French
+- Keep internal keys in English when helpful (`status_key`) but display strings in French
+
+## Repository Structure (Module-Oriented)
+**IMPORTANT: Next.js 16 does NOT use a `/src` folder. All code lives at the project root.**
+
+- `/modules/<domain>/...` for domain features
+- `/lib/...` for cross-cutting utilities
+- `/db/...` for database schema, types, and connection (Drizzle)
+
+Each module follows this convention:
+- `config/` - constants, route config, feature flags
+- `hooks/` - React hooks (client-only), data hooks, UI hooks
+- `lib/` - domain logic, server actions, queries, helpers
+- `types/` - domain types, zod schemas, DTOs
+- `ui/` - presentational UI primitives used by this module
+- `components/` - composite components
+- `layouts/` - layouts specific to this module
+- `views/` - page-level view components rendered by app routes
+- `index.ts` - barrel exports for the module
+
+App Router (`/app`) should stay thin:
+- route file renders a View from a module
+- minimal glue (auth guard, metadata, etc.)
+- Example: `app/(protected)/leads/page.tsx` -> `return <LeadsListView />`
+
+## RLS Helper Function
+**IMPORTANT**: All admin-checking RLS policies use the `public.get_user_role()` function:
+```sql
+CREATE FUNCTION public.get_user_role()
+RETURNS text
+LANGUAGE sql
+SECURITY DEFINER
+STABLE
+SET search_path = public
+AS $$
+  SELECT role::text FROM public.profiles WHERE id = auth.uid()
+$$;
+```
+This function uses `SECURITY DEFINER` to bypass RLS and prevent infinite recursion. All policies that need to check admin role MUST use `public.get_user_role() = 'admin'` instead of querying the profiles table directly.
+
+## Supabase Edge Functions (Required)
+Privileged functions (service role):
+1. `admin-create-user` - creates auth user + profiles row
+2. `admin-reset-password` - resets user password
+3. `import-parse` - reads file from Storage, parses CSV/XLSX, writes `import_rows` with validation errors
+4. `import-commit` - chunked upserts into `leads`, writes `lead_history` events
+
+Important: Edge Functions must validate the caller is admin. Never trust client role checks—always verify server-side using profiles + auth.
+
+## Next.js 16 Patterns
+- Default to Server Components
+- Use `"use client"` only for interactive UI (tables, forms, toasts)
+- Prefer server actions / server-side queries for initial page loads
+- Keep client fetching for live refresh or infinite scrolling if needed
+- Prefer Next route handlers for internal endpoints only when useful
+- Prefer Edge Functions for privileged and heavy tasks (imports, admin user mgmt)
+
+## Design System (MaterialM Template - MANDATORY)
+All UI components MUST be copied/inspired from the MaterialM Next.js Admin Template.
+
+### Design Source Location
+- Template Path: `/design/MaterialM-nextjs-admin-template-main/`
+- Main Package: `packages/main/` (use this as primary reference)
+- Components: `packages/main/src/app/components/`
+
+### Required UI Libraries
+- Flowbite React - Primary component library
+- shadcn/ui (Radix UI) - Advanced components (Dialog, Dropdown, Tabs)
+- Tailwind CSS - Styling
+- Tabler Icons - Icon set (`@tabler/icons-react`)
+- TanStack React Table - Data tables
+- React Hook Form + Zod - Form handling
+- ApexCharts - Charts and visualizations
+
+### Design Rules (MUST follow)
+1. **Never create custom UI** - Always copy/adapt from template first
+2. **Use CardBox wrapper** - All page sections use `CardBox` component
+3. **Follow Tailwind classes** - Use template's class patterns exactly
+4. **Match color palette** - Use CSS variables from template (primary, secondary, success, warning, error)
+5. **Use Tabler Icons** - Import from `@tabler/icons-react`
+6. **Table component** - Use TanStack React Table with template patterns
+7. **Form validation** - Use React Hook Form + Zod (template pattern)
+
+### Pre-built CSS Classes (globals.css) - USE THESE FIRST
+The `app/globals.css` contains pre-built utility classes. **Always use these before writing inline Tailwind.**
+
+#### Text & Colors
+- `.text-ld` - Dark/light adaptive text color
+- `.text-primary-ld` - Text that turns primary on hover
+- `.border-ld` - Dark/light adaptive border
+- `.bg-hover` - Background highlight on hover
+
+#### Cards & Titles
+- `.card-title` - Card heading (18px, semibold)
+- `.card-subtitle` - Card subheading (14px, medium)
+
+#### Form Controls
+- `.form-control` - Wrapper for input with border
+- `.form-control-input` - Standalone styled input
+- `.form-control-rounded` - Pill-shaped input
+- `.select-md` - Styled select dropdown
+- `.checkbox` - Styled checkbox
+
+#### Buttons
+- `.ui-button` - Primary action button (rounded pill)
+- `.ui-button-small` - Smaller action button
+- `.btn-circle` - Round icon button (32px)
+- `.btn-circle-hover` - Round icon button with hover effect
+- `.btn-primary`, `.btn-success`, etc. - Colored buttons with hover states
+
+#### Badges (Status indicators)
+- `.badge-primary`, `.badge-secondary` - Light background badges
+- `.badge-success`, `.badge-warning`, `.badge-error`, `.badge-info` - Status badges
+- `.badge-solid-*` - Solid background variants
+
+### DRY Principle - Add Reusable Classes to globals.css
+**When you find yourself repeating the same Tailwind pattern 3+ times, ADD IT TO globals.css.**
+
+Rules for adding new classes:
+1. Must be used in 3+ places
+2. Use CSS variables for colors (not hardcoded)
+3. Support dark mode with `.dark` prefix
+4. Add comment describing purpose
+5. Follow existing naming patterns (`.ui-*`, `.form-*`, `.badge-*`)
+
+## Shared Utilities & DRY Components
+The codebase follows strict DRY (Don't Repeat Yourself) principles. Always use these shared utilities instead of duplicating code.
+
+### Shared UI Components (`modules/shared/`)
+Import from `@/modules/shared`:
+- `FormField` - Input with label + error message
+- `FormSelect` - Select dropdown with label + error
+- `FormAlert` - Alert box (error/success/warning/info)
+- `FormErrorAlert` - Conditional error alert
+- `FormSuccessAlert` - Conditional success alert
+- `FormActions` - Submit/cancel button row
+- `Modal` - Reusable modal with escape/scroll lock
+- `PasswordInput` - Password input with show/hide toggle
+
+### Shared Hooks (`modules/shared/hooks/`)
+- `useFormState` - Form state management (`{ isPending, startTransition, error, setError, success, setSuccess, resetAll }`)
+- `useModal` - Modal open/close state (`{ isOpen, data, open, close }`)
+
+### Utility Libraries (`lib/`)
+- `lib/validation.ts` - `extractValidationError`, `validateWithSchema`, `passwordSchema`, `displayNameSchema`, `emailSchema`, `roleEnum`
+- `lib/errors.ts` - `getErrorMessage`, `logActionError`, `actionSuccess`, `actionError`, `FR_MESSAGES`
+- `lib/constants/` - `ROLES`, `ROLE_LABELS`, `ROLE_OPTIONS`, `LEAD_FIELD_LABELS`, `LEAD_STATUSES`, `LEAD_STATUS_COLORS`, `HISTORY_EVENT_LABELS`
+
+### Lead History Helpers (`modules/leads/lib/history-helpers.ts`)
+- `createHistoryEntry` - Create any history entry
+- `createStatusChangeHistory` - Convenience helper for status changes
+- `createAssignmentHistory` - Convenience helper for assignments
+- `createUpdateHistory` - Convenience helper for updates
+- `createCommentHistory` - Convenience helper for comments
+
+### DRY Rules (MUST follow)
+1. **Never duplicate form state** - Use `useFormState()` hook
+2. **Never duplicate alerts** - Use `FormErrorAlert` / `FormSuccessAlert`
+3. **Never duplicate modal boilerplate** - Use `Modal` component
+4. **Never duplicate form buttons** - Use `FormActions` component
+5. **Never hardcode French messages** - Use `FR_MESSAGES` from `lib/errors.ts`
+6. **Never duplicate constants** - Import from `lib/constants/`
+7. **Never duplicate history creation** - Use history helpers
+
+## Coding Standards
+### TypeScript
+- Strict types, no `any` unless unavoidable (document why)
+- Validate external input with Zod (especially import rows and function inputs)
+
+### Database & Security
+- Never implement authorization only in client
+- Assume any client can call any endpoint
+- RLS is the final guardrail
+
+### Naming
+- Code identifiers in English
+- UI strings in French
+- Keep statuses as stable keys + display labels: e.g. `status_key = "no_answer"`, `status_label = "Pas de réponse"`
+
+### Formatting
+- Use Prettier defaults
+- Keep functions small. Prefer pure helpers in `lib/`
+
+## Working Agreement
+When working in this repo:
+
+### Always do this first
+1. Restate the task in 1–3 bullets
+2. Propose a short plan (steps)
+3. Identify what files/modules will be touched
+4. Confirm any missing product decisions only if truly blocking
+
+### Work style
+- Make small, reviewable changes
+- Prefer incremental commits (or clearly separated edits)
+- After changes, run checks (lint/typecheck/tests) or at least describe what to run
+
+### Never do these
+- Don't add self-signup flows
+- Don't store service-role keys in the app
+- Don't bypass RLS by using admin privileges in the frontend
+- Don't introduce new patterns that fight the module structure
+
+### Definition of done for a feature
+- Works end-to-end in UI
+- Respects role rules (admin vs sales)
+- Writes history events when updating leads
+- Handles errors with French messages
+- Doesn't break build or typecheck
+
+## Environment Variables
+### Next.js (public)
+- `NEXT_PUBLIC_SUPABASE_URL` - Supabase project URL
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anonymous key
+
+### Server-only (set in deployment dashboard)
+- `SUPABASE_SERVICE_ROLE_KEY` - Supabase service role key (for admin operations)
+- `QSTASH_TOKEN` - QStash API token
+- `QSTASH_CURRENT_SIGNING_KEY` - For webhook signature verification
+- `QSTASH_NEXT_SIGNING_KEY` - For key rotation
+- `APP_URL` - Full application URL (auto-detected from `VERCEL_URL` if not set)
+
+Never put service role key in client-side code.
+

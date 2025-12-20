@@ -1,4 +1,4 @@
-# CLAUDE.md — Meyda - CRM Solution (Next.js 16 + Supabase + Netlify)
+# CLAUDE.md — Meyda - CRM Solution (Next.js 16 + Supabase + Vercel)
 
 This file provides persistent context for Claude Code while developing this repository.
 It defines the product scope, architecture, folder conventions, coding standards, and safe workflows.
@@ -63,12 +63,12 @@ We are replacing an old CRM with a simpler, more reliable CRM.
 
 ### Deployment
 
-- Netlify for Next.js frontend
+- Vercel for Next.js frontend
 - Supabase hosts DB/Auth/Storage/Functions
 
 ### Security constraints (never violate)
 
-- Do NOT store Supabase service role key in Next.js/Netlify environment.
+- Do NOT store Supabase service role key in Next.js/Vercel environment.
 - All privileged actions happen in Supabase Edge Functions.
 - All access control must be enforced by RLS, not only UI logic.
 
@@ -336,17 +336,31 @@ When working in this repo:
 
 ## 10) Environment Variables (expected)
 
-### Next.js / Netlify (public + anon key)
+### Next.js / Vercel (public)
 
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `NEXT_PUBLIC_SUPABASE_URL` - Supabase project URL
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anonymous key
+
+### Vercel (server-only, set in Vercel dashboard)
+
+- `SUPABASE_SERVICE_ROLE_KEY` - Supabase service role key (for admin operations)
+
+### Upstash QStash (for import job queue)
+
+- `QSTASH_TOKEN` - QStash API token (from https://console.upstash.com/qstash)
+- `QSTASH_CURRENT_SIGNING_KEY` - For webhook signature verification
+- `QSTASH_NEXT_SIGNING_KEY` - For key rotation
+
+### Application URL
+
+- `APP_URL` - Full application URL (e.g., https://your-app.vercel.app)
+- Auto-detected from `VERCEL_URL` if not set
 
 ### Supabase Edge Functions (server-only)
 
 - `SUPABASE_SERVICE_ROLE_KEY` (in Supabase secrets)
-- Any extra parsing secrets if needed
 
-Never put service role key in Netlify.
+Never put service role key in client-side code.
 
 ---
 
@@ -365,9 +379,9 @@ Supabase local (if used):
 - `supabase migration new <name>`
 - `supabase functions serve <function-name>`
 
-Netlify local (optional):
+Vercel local (optional):
 
-- `netlify dev`
+- `vercel dev`
 
 If commands differ, update this section.
 

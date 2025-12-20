@@ -54,32 +54,31 @@ export const importRows = pgTable(
     index('import_rows_job_chunk_idx').on(table.importJobId, table.chunkNumber),
 
     // RLS Policies - Only admin can access import rows
+    // NOTE: These use public.get_user_role() to avoid infinite recursion
 
     pgPolicy('admin_read_import_rows', {
       for: 'select',
       to: authenticatedRole,
-      using: sql`(
-        SELECT role FROM profiles WHERE id = (select auth.uid())
-      ) = 'admin'`,
+      using: sql`public.get_user_role() = 'admin'`,
     }),
 
     pgPolicy('admin_insert_import_rows', {
       for: 'insert',
       to: authenticatedRole,
-      withCheck: sql`(
-        SELECT role FROM profiles WHERE id = (select auth.uid())
-      ) = 'admin'`,
+      withCheck: sql`public.get_user_role() = 'admin'`,
     }),
 
     pgPolicy('admin_update_import_rows', {
       for: 'update',
       to: authenticatedRole,
-      using: sql`(
-        SELECT role FROM profiles WHERE id = (select auth.uid())
-      ) = 'admin'`,
-      withCheck: sql`(
-        SELECT role FROM profiles WHERE id = (select auth.uid())
-      ) = 'admin'`,
+      using: sql`public.get_user_role() = 'admin'`,
+      withCheck: sql`public.get_user_role() = 'admin'`,
+    }),
+
+    pgPolicy('admin_delete_import_rows', {
+      for: 'delete',
+      to: authenticatedRole,
+      using: sql`public.get_user_role() = 'admin'`,
     }),
   ]
 );
