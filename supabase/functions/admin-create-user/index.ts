@@ -14,6 +14,14 @@ interface CreateUserRequest {
   role: "admin" | "sales" | "developer";
 }
 
+// Available avatar IDs (1-54)
+const AVATAR_COUNT = 54;
+
+function getRandomAvatarId(): string {
+  const randomIndex = Math.floor(Math.random() * AVATAR_COUNT) + 1;
+  return `avatar-${randomIndex.toString().padStart(2, "0")}`;
+}
+
 Deno.serve(async (req: Request) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
@@ -118,12 +126,15 @@ Deno.serve(async (req: Request) => {
     }
 
     // Profile is created automatically by trigger, but let's update it with correct values
+    // Also assign a random avatar to the new user
+    const avatar = getRandomAvatarId();
     if (authData.user) {
       await supabaseAdmin
         .from("profiles")
         .update({
           role,
           display_name: displayName,
+          avatar,
         })
         .eq("id", authData.user.id);
     }
@@ -137,6 +148,7 @@ Deno.serve(async (req: Request) => {
           username,
           displayName,
           role,
+          avatar,
         },
       }),
       {

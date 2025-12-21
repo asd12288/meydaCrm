@@ -81,7 +81,11 @@
       "Bash(xargs ls:*)",
       "Bash(tree:*)",
       "Bash(git worktree:*)",
-      "Bash(git pull:*)"
+      "Bash(git pull:*)",
+      "Bash(git merge:*)",
+      "Bash(cmd /c \"dir c:\\Users\\ilanc\\Desktop\\crm\\public\\avatars\")",
+      "Bash(cmd /c \"dir \"\"C:\\Users\\ilanc\\Downloads\\png-file_NjhmM2FiODQ4NTU4M2UwMDM4OWRmY2I4\\PNG File\\Profession Character\\10 - Programmer\"\"\")",
+      "Bash(set NODE_ENV=production)"
     ]
   },
   "enableAllProjectMcpServers": true,
