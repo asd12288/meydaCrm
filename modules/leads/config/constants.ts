@@ -1,25 +1,42 @@
 import type { LeadStatus } from '@/db/types';
+import {
+  IconCalendarEvent,
+  IconPhoneOff,
+  IconPhoneX,
+  IconBan,
+  IconThumbDown,
+  IconCash,
+  IconPhoneCall,
+  IconRefresh,
+  IconMail,
+  IconSparkles,
+} from '@tabler/icons-react';
 
-// Status icon names (from @tabler/icons-react)
-export const STATUS_ICONS: Record<LeadStatus, string> = {
-  rdv: 'IconCalendarEvent',
-  no_answer_1: 'IconPhoneOff',
-  no_answer_2: 'IconPhoneX',
-  wrong_number: 'IconBan',
-  not_interested: 'IconThumbDown',
-  deposit: 'IconCash',
-  callback: 'IconPhoneCall',
-  relance: 'IconRefresh',
-  mail: 'IconMail',
-  // Legacy statuses (keep for compatibility)
-  new: 'IconSparkles',
-  contacted: 'IconPhone',
-  qualified: 'IconCheck',
-  proposal: 'IconFileText',
-  negotiation: 'IconMessages',
-  won: 'IconTrophy',
-  lost: 'IconX',
-  no_answer: 'IconPhoneOff',
+// Map status to icon component
+export const STATUS_ICON_MAP: Record<
+  string,
+  React.ComponentType<{ size?: number; className?: string; style?: React.CSSProperties }>
+> = {
+  new: IconSparkles,
+  rdv: IconCalendarEvent,
+  no_answer_1: IconPhoneOff,
+  no_answer_2: IconPhoneX,
+  wrong_number: IconBan,
+  not_interested: IconThumbDown,
+  deposit: IconCash,
+  callback: IconPhoneCall,
+  relance: IconRefresh,
+  mail: IconMail,
+};
+
+// Map badge classes to CSS color values for inline styles
+export const BADGE_TO_COLOR: Record<string, string> = {
+  'badge-success': 'var(--color-success)',
+  'badge-warning': 'var(--color-warning)',
+  'badge-error': 'var(--color-error)',
+  'badge-info': 'var(--color-info)',
+  'badge-primary': 'var(--color-primary)',
+  'badge-secondary': 'var(--color-secondary)',
 };
 
 // Status colors mapping to globals.css badge classes
@@ -44,8 +61,9 @@ export const STATUS_COLORS: Record<LeadStatus, string> = {
   no_answer: 'badge-error',
 };
 
-// Status options for dropdowns (French labels) - NEW STATUSES ONLY
+// Status options for dropdowns (French labels) - ALL ACTIVE STATUSES
 export const LEAD_STATUS_OPTIONS: { value: LeadStatus; label: string }[] = [
+  { value: 'new', label: 'Nouveau' },
   { value: 'rdv', label: 'RDV' },
   { value: 'no_answer_1', label: 'Pas de réponse 1' },
   { value: 'no_answer_2', label: 'Pas de réponse 2' },
@@ -66,6 +84,7 @@ export const KANBAN_COLUMNS: {
   label: string;
   color: KanbanBoardCircleColor;
 }[] = [
+  { status: 'new', label: 'Nouveau', color: 'primary' },
   { status: 'callback', label: 'Rappeler', color: 'cyan' },
   { status: 'relance', label: 'Relance', color: 'blue' },
   { status: 'no_answer_1', label: 'Pas de réponse 1', color: 'yellow' },
@@ -95,10 +114,10 @@ export const COLUMN_LABELS = {
   selection: '',
   name: 'Nom',
   email: 'Email',
-  phone: 'Telephone',
+  phone: 'Téléphone',
   company: 'Entreprise',
   status: 'Statut',
   assignee: 'Commercial',
-  updatedAt: 'Mis a jour',
+  updatedAt: 'Mis à jour',
   actions: '',
 };

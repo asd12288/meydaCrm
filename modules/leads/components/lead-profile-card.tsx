@@ -25,6 +25,7 @@ import {
 } from '@/modules/shared';
 import { LeadStatusBadge } from '../ui/lead-status-badge';
 import { ContactInfoItem } from '../ui/contact-info-item';
+import { AddressMapCard } from './address-map-card';
 import { assignLead } from '../lib/actions';
 import type { LeadWithFullDetails, SalesUser } from '../types';
 
@@ -220,6 +221,13 @@ export function LeadProfileCard({
           icon={IconMapPin}
           label="Adresse"
           value={formattedAddress}
+        />
+        {/* Address Map */}
+        <AddressMapCard
+          address={lead.address}
+          city={lead.city}
+          postalCode={lead.postal_code}
+          country={lead.country}
         />
       </div>
 

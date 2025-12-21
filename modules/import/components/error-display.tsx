@@ -1,6 +1,7 @@
 'use client';
 
 import { IconAlertCircle, IconRefresh, IconTrash, IconFileText } from '@tabler/icons-react';
+import { Button } from '@/components/ui/button';
 
 interface ErrorDisplayProps {
   error: string;
@@ -58,33 +59,24 @@ export function ErrorDisplay({
             {/* Actions */}
             <div className="flex flex-wrap items-center gap-3">
               {onRetry && (
-                <button
-                  onClick={onRetry}
-                  className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primaryemphasis font-medium transition-colors"
-                >
+                <Button variant="primary" onClick={onRetry}>
                   <IconRefresh className="w-4 h-4" />
                   Réessayer
-                </button>
+                </Button>
               )}
 
               {onViewLogs && (
-                <button
-                  onClick={onViewLogs}
-                  className="flex items-center gap-2 px-4 py-2 border border-ld hover:bg-muted rounded-lg font-medium transition-colors"
-                >
+                <Button variant="outline" onClick={onViewLogs}>
                   <IconFileText className="w-4 h-4" />
                   Voir les logs
-                </button>
+                </Button>
               )}
 
               {onCancel && (
-                <button
-                  onClick={onCancel}
-                  className="flex items-center gap-2 px-4 py-2 text-error hover:bg-error/10 rounded-lg font-medium transition-colors"
-                >
+                <Button variant="ghostDanger" onClick={onCancel}>
                   <IconTrash className="w-4 h-4" />
                   Annuler et supprimer
-                </button>
+                </Button>
               )}
             </div>
           </div>

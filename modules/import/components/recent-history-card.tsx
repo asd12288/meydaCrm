@@ -10,24 +10,61 @@ import {
   IconLoader2,
   IconRefresh,
   IconTrash,
-  IconDownload,
   IconChevronRight,
   IconFileSpreadsheet,
 } from '@tabler/icons-react';
 import { CardBox, ConfirmDialog, FormErrorAlert } from '@/modules/shared';
-import { getErrorReportUrl, retryImportJob, deleteImportJob, getRecentImportJobs } from '../lib/actions';
+import { Button } from '@/components/ui/button';
+import { retryImportJob, deleteImportJob, getRecentImportJobs } from '../lib/actions';
 import type { ImportJobWithStats } from '../types';
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof IconCheck }> = {
   pending: { label: 'En attente', color: 'text-darklink', icon: IconClock },
   queued: { label: 'En file', color: 'text-primary', icon: IconClock },
-  parsing: { label: 'Analyse', color: 'text-primary', icon: IconLoader2 },
+  parsing: { label: 'Validation', color: 'text-primary', icon: IconLoader2 },
   ready: { label: 'Prêt', color: 'text-primary', icon: IconCheck },
   importing: { label: 'Import', color: 'text-primary', icon: IconLoader2 },
   completed: { label: 'Terminé', color: 'text-success', icon: IconCheck },
   failed: { label: 'Échoué', color: 'text-error', icon: IconX },
   cancelled: { label: 'Annulé', color: 'text-darklink', icon: IconX },
 };
+
+/**
+ * Calculate import progress percentage
+ * - Parsing phase (0-50%): based on chunks
+ * - Importing phase (50-100%): based on imported rows
+ */
+function calculateProgress(job: ImportJobWithStats): { percentage: number; isIndeterminate: boolean } {
+  if (job.status === 'completed') {
+    return { percentage: 100, isIndeterminate: false };
+  }
+
+  if (job.status === 'parsing') {
+    const totalChunks = job.total_chunks || 0;
+    const currentChunk = job.current_chunk || 0;
+    if (totalChunks > 0) {
+      return {
+        percentage: Math.round((currentChunk / totalChunks) * 50),
+        isIndeterminate: false,
+      };
+    }
+    return { percentage: 0, isIndeterminate: true };
+  }
+
+  if (job.status === 'importing') {
+    const validRows = job.valid_rows || 0;
+    const importedRows = job.imported_rows || 0;
+    if (validRows > 0) {
+      return {
+        percentage: 50 + Math.round((importedRows / validRows) * 50),
+        isIndeterminate: false,
+      };
+    }
+    return { percentage: 50, isIndeterminate: true };
+  }
+
+  return { percentage: 0, isIndeterminate: false };
+}
 
 interface RecentHistoryCardProps {
   initialJobs: ImportJobWithStats[];
@@ -54,25 +91,6 @@ export function RecentHistoryCard({
     if (result.success && result.data) {
       setJobs(result.data.jobs);
       setTotal(result.data.total);
-    }
-  };
-
-  const handleDownloadErrors = async (jobId: string) => {
-    setActionError(null);
-    try {
-      const result = await getErrorReportUrl(jobId);
-      if (result.success && result.data?.url) {
-        const link = document.createElement('a');
-        link.href = result.data.url;
-        link.download = `erreurs-import-${jobId}.csv`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      } else {
-        setActionError(result.error || 'Erreur lors du téléchargement');
-      }
-    } catch {
-      setActionError('Erreur lors du téléchargement');
     }
   };
 
@@ -170,13 +188,10 @@ export function RecentHistoryCard({
           <h3 className="text-lg font-semibold text-ld">Historique des imports</h3>
           <span className="text-sm text-darklink">({total})</span>
         </div>
-        <button
-          onClick={onNewImport}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primaryemphasis transition-colors"
-        >
+        <Button variant="primary" onClick={onNewImport}>
           <IconPlus className="w-4 h-4" />
           Nouvel import
-        </button>
+        </Button>
       </div>
 
       {/* Error alert */}
@@ -188,13 +203,10 @@ export function RecentHistoryCard({
           <IconFileSpreadsheet className="w-12 h-12 text-darklink mx-auto mb-4" />
           <h4 className="text-lg font-medium text-ld mb-2">Aucun import</h4>
           <p className="text-darklink mb-4">Commencez par importer un fichier de leads</p>
-          <button
-            onClick={onNewImport}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primaryemphasis transition-colors"
-          >
+          <Button variant="primary" onClick={onNewImport}>
             <IconPlus className="w-4 h-4" />
             Premier import
-          </button>
+          </Button>
         </div>
       ) : (
         <>
@@ -215,7 +227,6 @@ export function RecentHistoryCard({
                   const StatusIcon = statusConfig.icon;
                   const canRetry = job.status === 'failed';
                   const canDelete = !['parsing', 'importing'].includes(job.status);
-                  const hasErrors = (job.invalid_rows || 0) > 0;
                   const isActive = ['parsing', 'importing'].includes(job.status);
 
                   return (
@@ -229,11 +240,43 @@ export function RecentHistoryCard({
                         </div>
                       </td>
                       <td className="px-4 py-2.5">
-                        <div className={`flex items-center gap-1.5 ${statusConfig.color}`}>
-                          <StatusIcon
-                            className={`w-4 h-4 ${isActive ? 'animate-spin' : ''}`}
-                          />
-                          <span className="text-sm">{statusConfig.label}</span>
+                        <div className="space-y-1">
+                          <div className={`flex items-center gap-1.5 ${statusConfig.color}`}>
+                            <StatusIcon
+                              className={`w-4 h-4 ${isActive ? 'animate-spin' : ''}`}
+                            />
+                            <span className="text-sm">{statusConfig.label}</span>
+                            {isActive && (() => {
+                              const { percentage, isIndeterminate } = calculateProgress(job);
+                              if (!isIndeterminate) {
+                                return (
+                                  <span className="text-xs font-medium ml-1">
+                                    {percentage}%
+                                  </span>
+                                );
+                              }
+                              return null;
+                            })()}
+                          </div>
+                          {/* Progress bar for active imports */}
+                          {isActive && (
+                            <div className="w-24 h-1.5 bg-muted rounded-full overflow-hidden">
+                              {(() => {
+                                const { percentage, isIndeterminate } = calculateProgress(job);
+                                if (isIndeterminate) {
+                                  return (
+                                    <div className="h-full bg-primary/50 w-1/3 animate-indeterminate" />
+                                  );
+                                }
+                                return (
+                                  <div
+                                    className="h-full bg-primary transition-all duration-300"
+                                    style={{ width: `${percentage}%` }}
+                                  />
+                                );
+                              })()}
+                            </div>
+                          )}
                         </div>
                       </td>
                       <td className="px-4 py-2.5 text-right">
@@ -247,34 +290,28 @@ export function RecentHistoryCard({
                       </td>
                       <td className="px-4 py-2.5">
                         <div className="flex items-center justify-end gap-1">
-                          {hasErrors && (
-                            <button
-                              onClick={() => handleDownloadErrors(job.id)}
-                              className="p-1.5 text-darklink hover:text-error hover:bg-error/10 rounded transition-colors"
-                              title="Télécharger les erreurs"
-                            >
-                              <IconDownload className="w-4 h-4" />
-                            </button>
-                          )}
                           {canRetry && (
-                            <button
+                            <Button
+                              variant="circleHover"
+                              size="iconSm"
                               onClick={() => handleRetryClick(job.id)}
                               disabled={actionInProgress === job.id}
-                              className="p-1.5 text-darklink hover:text-primary hover:bg-primary/10 rounded transition-colors disabled:opacity-50"
                               title="Relancer"
                             >
                               <IconRefresh className="w-4 h-4" />
-                            </button>
+                            </Button>
                           )}
                           {canDelete && (
-                            <button
+                            <Button
+                              variant="circleHover"
+                              size="iconSm"
                               onClick={() => handleDeleteClick(job.id)}
                               disabled={actionInProgress === job.id}
-                              className="p-1.5 text-darklink hover:text-error hover:bg-error/10 rounded transition-colors disabled:opacity-50"
+                              className="text-error hover:bg-error/10"
                               title="Supprimer"
                             >
                               <IconTrash className="w-4 h-4" />
-                            </button>
+                            </Button>
                           )}
                         </div>
                       </td>

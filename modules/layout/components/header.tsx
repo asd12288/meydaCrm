@@ -1,6 +1,7 @@
 'use client';
 
 import { IconLogout, IconUser, IconChevronDown, IconShield } from '@tabler/icons-react';
+import { Button } from '@/components/ui/button';
 import { logout } from '@/modules/auth/lib/actions';
 import {
   ThemeSwitcher,
@@ -21,7 +22,11 @@ interface HeaderProps {
 
 export function Header({ displayName, role, avatar }: HeaderProps) {
   const isAdmin = role === 'admin';
-  const roleLabel = isAdmin ? 'Administrateur' : 'Commercial';
+  const roleLabel = role === 'admin'
+    ? 'Administrateur'
+    : role === 'developer'
+      ? 'Développeur'
+      : 'Commercial';
 
   return (
     <header className="sticky top-0 z-30 h-16 bg-white/95 dark:bg-darkgray/95 backdrop-blur-sm border-b border-border shadow-sm">
@@ -49,8 +54,9 @@ export function Header({ displayName, role, avatar }: HeaderProps) {
           <DropdownMenu
             position="bottom-right"
             trigger={(isOpen) => (
-              <button
-                className="flex items-center gap-3 py-1.5 px-3 rounded-lg hover:bg-lightgray dark:hover:bg-darkgray transition-colors"
+              <Button
+                variant="ghost"
+                className="flex items-center gap-3 py-1.5 px-3 h-auto"
               >
                 <UserAvatar name={displayName} avatar={avatar} size="md" />
                 <div className="text-left hidden sm:block">
@@ -66,7 +72,7 @@ export function Header({ displayName, role, avatar }: HeaderProps) {
                     isOpen ? 'rotate-180' : ''
                   }`}
                 />
-              </button>
+              </Button>
             )}
           >
             {/* User info header */}

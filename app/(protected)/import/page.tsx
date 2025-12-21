@@ -9,15 +9,8 @@ export const metadata: Metadata = {
   title: 'Import - Pulse CRM',
 };
 
-interface ImportPageProps {
-  searchParams: Promise<{ resume?: string }>;
-}
-
-export default async function ImportPage({ searchParams }: ImportPageProps) {
+export default async function ImportPage() {
   await requireAdmin();
-
-  // Get resume job ID from query params
-  const { resume: resumeJobId } = await searchParams;
 
   // Fetch data in parallel
   const [salesUsers, recentJobsResult] = await Promise.all([
@@ -40,7 +33,6 @@ export default async function ImportPage({ searchParams }: ImportPageProps) {
         salesUsers={salesUsers}
         initialJobs={initialJobs}
         initialTotal={initialTotal}
-        resumeJobId={resumeJobId}
       />
     </div>
   );

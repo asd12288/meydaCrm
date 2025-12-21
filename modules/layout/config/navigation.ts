@@ -6,6 +6,7 @@ import {
   IconUser,
   IconHeadset,
   IconCreditCard,
+  IconNote,
 } from '@tabler/icons-react';
 import type { ComponentType } from 'react';
 
@@ -45,6 +46,13 @@ export const navigationItems: NavItem[] = [
     title: 'Leads',
     href: '/leads',
     icon: IconAddressBook,
+    group: 'main',
+  },
+  {
+    id: 'notes',
+    title: 'Mes notes',
+    href: '/notes',
+    icon: IconNote,
     group: 'main',
   },
   // Admin group

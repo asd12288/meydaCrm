@@ -6,6 +6,7 @@ import {
   KanbanBoardCard,
   KanbanBoardCardTitle,
   KanbanBoardCardDescription,
+  KanbanBoardCardButton,
 } from '@/components/kanban';
 import { UserAvatar } from '@/modules/shared';
 import type { LeadForKanban } from '../../types';
@@ -87,13 +88,13 @@ export function KanbanCard({ lead }: KanbanCardProps) {
       </div>
 
       {/* View details button (bottom right, visible on hover) */}
-      <button
+      <KanbanBoardCardButton
         onClick={handleViewDetails}
-        title="Voir les détails"
-        className="absolute bottom-2.5 right-2.5 z-40 flex h-7 w-7 items-center justify-center rounded-md border bg-white dark:bg-darkgray border-border dark:border-darkborder text-darklink hover:bg-lightgray dark:hover:bg-darkmuted cursor-pointer transition-all duration-150 opacity-0 group-hover:opacity-100"
+        tooltip="Voir les détails"
+        className="absolute bottom-2.5 right-2.5 opacity-0 group-hover:opacity-100"
       >
         <IconDotsVertical size={14} />
-      </button>
+      </KanbanBoardCardButton>
     </KanbanBoardCard>
   );
 }

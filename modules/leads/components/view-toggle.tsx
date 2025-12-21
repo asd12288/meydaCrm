@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { IconTable, IconLayoutKanban } from '@tabler/icons-react';
+import { Button } from '@/components/ui/button';
 
 export type ViewMode = 'table' | 'kanban';
 
@@ -36,38 +37,40 @@ export function ViewToggle({ currentView }: ViewToggleProps) {
         }`}
       />
       
-      <button
-        type="button"
+      <Button
+        variant="ghost"
+        size="sm"
         onClick={() => handleViewChange('table')}
-        className={`relative z-10 inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md transition-colors duration-200 ${
+        className={`relative z-10 gap-1.5 rounded-md transition-colors duration-200 ${
           currentView === 'table'
             ? 'text-ld'
-            : 'text-darklink hover:text-ld'
+            : 'text-darklink hover:text-ld hover:bg-transparent'
         }`}
         aria-pressed={currentView === 'table'}
       >
-        <IconTable 
-          size={16} 
+        <IconTable
+          size={16}
           className={`transition-transform duration-200 ${currentView === 'table' ? 'scale-110' : ''}`}
         />
         Tableau
-      </button>
-      <button
-        type="button"
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
         onClick={() => handleViewChange('kanban')}
-        className={`relative z-10 inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md transition-colors duration-200 ${
+        className={`relative z-10 gap-1.5 rounded-md transition-colors duration-200 ${
           currentView === 'kanban'
             ? 'text-ld'
-            : 'text-darklink hover:text-ld'
+            : 'text-darklink hover:text-ld hover:bg-transparent'
         }`}
         aria-pressed={currentView === 'kanban'}
       >
-        <IconLayoutKanban 
+        <IconLayoutKanban
           size={16}
           className={`transition-transform duration-200 ${currentView === 'kanban' ? 'scale-110' : ''}`}
         />
         Kanban
-      </button>
+      </Button>
     </div>
   );
 }

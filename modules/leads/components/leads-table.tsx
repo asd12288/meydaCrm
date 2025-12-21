@@ -96,7 +96,7 @@ export const LeadsTable = memo(function LeadsTable({
 
   return (
     <>
-      <div className="border rounded-md border-ld overflow-auto max-h-[calc(100vh-320px)]">
+      <div className="border rounded-md border-ld overflow-auto min-h-100 max-h-[calc(100vh-320px)]">
         <table className="w-full">
           <thead className="bg-lightgray dark:bg-darkgray sticky top-0 z-10">
             {table.getHeaderGroups().map((headerGroup) => (

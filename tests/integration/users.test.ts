@@ -442,24 +442,15 @@ describe('User Management - Get Users', () => {
     expect(user).toHaveProperty('display_name')
   })
 
-  it('sales user cannot access get_users_with_auth RPC (if restricted)', async () => {
+  it('sales user cannot access get_users_with_auth RPC', async () => {
     const client = await signInAsUser(sales.email, sales.password)
 
-    // RPC function get_users_with_auth likely has RLS that only allows admins
-    // Testing that sales user doesn't get unauthorized access
+    // The RPC function has a WHERE clause that only returns data for admin users
+    // Non-admin users should get an empty array
     const { data, error } = await client.rpc('get_users_with_auth')
 
-    // Either error (RLS blocks) or empty data (function returns empty for non-admins)
-    // The exact behavior depends on RLS on the RPC function
-    // If it errors, that's expected. If it returns data, it should be empty or restricted
-    if (error) {
-      // RLS blocked the call - this is expected
-      expect(error).toBeDefined()
-    } else {
-      // If no error, data should be empty or restricted to sales user's own data only
-      // (depending on RLS implementation)
-      expect(Array.isArray(data)).toBe(true)
-    }
+    expect(error).toBeNull()
+    expect(data).toEqual([])
   })
 })
 

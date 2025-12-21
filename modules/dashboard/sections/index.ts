@@ -13,3 +13,4 @@ export { SalesQuickStatsSection } from './sales-quick-stats-section';
 export { SalesStatusChartSection } from './status-chart-section';
 export { SalesActivitySection } from './activity-section';
 export { SalesTrendSection } from './trend-section';
+export { SalesNotesSection } from './notes-section';

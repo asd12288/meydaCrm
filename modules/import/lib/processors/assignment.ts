@@ -32,6 +32,34 @@ export interface AssignmentContext {
 }
 
 // ============================================================================
+// NORMALIZATION UTILITIES
+// ============================================================================
+
+/**
+ * Normalize a string for comparison
+ * - Lowercase
+ * - Remove accents (é → e, ç → c, etc.)
+ * - Trim whitespace
+ * - Remove extra spaces
+ */
+function normalizeForComparison(str: string): string {
+  return str
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // Remove accent marks
+    .trim()
+    .replace(/\s+/g, ' '); // Collapse multiple spaces
+}
+
+/**
+ * Extract first name from full name
+ */
+function extractFirstName(fullName: string): string {
+  const parts = normalizeForComparison(fullName).split(' ');
+  return parts[0] || '';
+}
+
+// ============================================================================
 // CONTEXT BUILDER
 // ============================================================================
 
@@ -39,6 +67,10 @@ export interface AssignmentContext {
  * Build assignment context with pre-loaded data
  *
  * For by_column mode, pre-loads all users for fast lookup.
+ * Creates multiple lookup keys for flexible matching:
+ * - Full display name (normalized)
+ * - First name only
+ * - User ID (for direct ID references)
  */
 export async function buildAssignmentContext(
   supabase: SupabaseClient,
@@ -55,13 +87,35 @@ export async function buildAssignmentContext(
       .select('id, display_name, role');
 
     if (users) {
+      // First pass: add full names (highest priority)
       for (const user of users) {
-        // Map by lowercase display name
         if (user.display_name) {
-          userMap.set(user.display_name.toLowerCase().trim(), user.id);
+          const normalized = normalizeForComparison(user.display_name);
+          userMap.set(normalized, user.id);
+          console.log(`[Assignment] Mapped: "${normalized}" → ${user.id}`);
         }
         // Also map by ID for direct ID references
         userMap.set(user.id.toLowerCase(), user.id);
+      }
+
+      // Second pass: add first names (only if unique, lower priority)
+      const firstNameCounts = new Map<string, number>();
+      for (const user of users) {
+        if (user.display_name) {
+          const firstName = extractFirstName(user.display_name);
+          firstNameCounts.set(firstName, (firstNameCounts.get(firstName) || 0) + 1);
+        }
+      }
+
+      for (const user of users) {
+        if (user.display_name) {
+          const firstName = extractFirstName(user.display_name);
+          // Only add first name mapping if it's unique (no ambiguity)
+          if (firstNameCounts.get(firstName) === 1 && !userMap.has(firstName)) {
+            userMap.set(firstName, user.id);
+            console.log(`[Assignment] Mapped (first name): "${firstName}" → ${user.id}`);
+          }
+        }
       }
     }
 
@@ -113,11 +167,17 @@ export function getAssignment(
       if (!config.assignmentColumn) {
         return null;
       }
-      const columnValue = rawData[config.assignmentColumn]?.toLowerCase?.().trim();
-      if (!columnValue) {
-        return null;
+      const rawValue = rawData[config.assignmentColumn];
+      if (!rawValue || typeof rawValue !== 'string' || rawValue.trim() === '') {
+        return null; // Empty value - leave unassigned
       }
-      return userMap.get(columnValue) || null;
+      const normalizedValue = normalizeForComparison(rawValue);
+      const userId = userMap.get(normalizedValue);
+      if (!userId) {
+        // Log unmatched values for debugging (will appear in server logs)
+        console.log(`[Assignment] Unmatched value: "${rawValue}" (normalized: "${normalizedValue}")`);
+      }
+      return userId || null;
     }
 
     default:

@@ -93,8 +93,10 @@ export {
   getImportJobs,
   getRecentImportJobs,
   updateImportJobMapping,
+  updateImportJobOptions,
   startImportParsing,
   startImportCommit,
+  cancelImportJob,
   getImportRows,
   deleteImportJob,
 } from './lib/actions';
@@ -102,9 +104,6 @@ export {
 // Hooks
 export { useImportWizard, type UseImportWizardReturn } from './hooks/use-import-wizard';
 export { useImportSSE, useImportProgress } from './hooks/use-import-sse';
-export { useActiveImports } from './hooks/use-active-imports';
-export { useImportResume } from './hooks/use-import-resume';
-export { useImportStatus } from './hooks/use-import-status';
 
 // Views
 export { ImportWizardView } from './views/import-wizard-view';
@@ -120,8 +119,6 @@ export { PreviewStep } from './components/preview-step';
 export { ProgressStep } from './components/progress-step';
 export { ResultsStep } from './components/results-step';
 export { WizardStepper } from './components/wizard-stepper';
-export { ActiveImportsPanel } from './components/active-imports-panel';
-export { ErrorReportModal } from './components/error-report-modal';
 export { RecentHistoryCard } from './components/recent-history-card';
 export { ImportWizardCard } from './components/import-wizard-card';
 

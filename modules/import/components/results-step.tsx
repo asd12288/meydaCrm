@@ -9,6 +9,7 @@ import {
   IconFileSpreadsheet,
   IconClock,
 } from '@tabler/icons-react';
+import { Button } from '@/components/ui/button';
 import type { ImportJobProgress } from '../types';
 
 interface ResultsStepProps {
@@ -145,24 +146,18 @@ export function ResultsStep({
       <div className="flex flex-wrap gap-3">
         {/* View leads button */}
         {isSuccess && importedCount > 0 && onViewLeads && (
-          <button
-            onClick={onViewLeads}
-            className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium"
-          >
+          <Button variant="primary" size="sm" onClick={onViewLeads}>
             <IconExternalLink size={16} />
             Voir les leads
-          </button>
+          </Button>
         )}
 
         {/* New import button */}
         {onNewImport && (
-          <button
-            onClick={onNewImport}
-            className="flex items-center gap-2 px-4 py-2 bg-muted text-ld border border-border rounded-lg hover:bg-muted/80 transition-colors text-sm font-medium"
-          >
+          <Button variant="outline" size="sm" onClick={onNewImport}>
             <IconRefresh size={16} />
             Nouvel import
-          </button>
+          </Button>
         )}
       </div>
     </div>

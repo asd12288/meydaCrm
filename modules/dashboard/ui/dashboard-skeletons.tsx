@@ -12,7 +12,7 @@ export function WelcomeCardSkeleton() {
         <div className="flex-1 z-10 pb-2">
           <div className="skeleton bg-white/20 w-16 h-4 rounded mb-2" />
           <div className="skeleton bg-white/30 w-40 h-7 rounded mb-5" />
-          
+
           {/* Stats pills */}
           <div className="flex items-center gap-3">
             <div className="bg-white/15 backdrop-blur-sm rounded-full px-5 py-3">
@@ -25,13 +25,13 @@ export function WelcomeCardSkeleton() {
             </div>
           </div>
         </div>
-        
+
         {/* Right: Avatar placeholder */}
         <div className="relative z-10 hidden sm:block self-end -mb-6 -mr-2">
           <div className="skeleton bg-white/10 w-44 h-44 lg:w-52 lg:h-52 rounded-full" />
         </div>
       </div>
-      
+
       {/* Decorative circles */}
       <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/5 rounded-full" />
       <div className="absolute -bottom-20 -right-20 w-72 h-72 bg-white/5 rounded-full" />
@@ -251,6 +251,44 @@ export function TrendChartSkeleton() {
 }
 
 /**
+ * Skeleton for notes widget (2x2 grid of mini note cards)
+ */
+export function NotesWidgetSkeleton() {
+  // Alternating colors to mimic note cards
+  const noteColors = [
+    'bg-amber-100 dark:bg-amber-900/30 border-amber-300 dark:border-amber-700',
+    'bg-pink-100 dark:bg-pink-900/30 border-pink-300 dark:border-pink-700',
+    'bg-sky-100 dark:bg-sky-900/30 border-sky-300 dark:border-sky-700',
+    'bg-emerald-100 dark:bg-emerald-900/30 border-emerald-300 dark:border-emerald-700',
+  ];
+
+  return (
+    <CardBox>
+      <div className="flex items-center justify-between mb-4">
+        <div className="skeleton skeleton-text w-24 h-5" />
+        <div className="skeleton skeleton-text w-20 h-4" />
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        {noteColors.map((colorClass, i) => (
+          <div
+            key={i}
+            className={`rounded-lg border-2 p-3 animate-pulse ${colorClass}`}
+          >
+            <div className="skeleton bg-white/50 dark:bg-dark/30 w-full h-4 rounded mb-2" />
+            <div className="skeleton bg-white/50 dark:bg-dark/30 w-3/4 h-4 rounded mb-3" />
+            <div className="flex items-center justify-between">
+              <div className="skeleton bg-white/50 dark:bg-dark/30 w-16 h-3 rounded" />
+              <div className="skeleton bg-white/50 dark:bg-dark/30 w-12 h-3 rounded" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </CardBox>
+  );
+}
+
+/**
  * Skeleton for activity timeline
  */
 export function ActivityTimelineSkeleton() {
@@ -356,8 +394,8 @@ export function SalesDashboardSkeleton() {
         </div>
       </div>
 
-      {/* Leads Trend Chart */}
-      <TrendChartSkeleton />
+      {/* Notes Widget */}
+      <NotesWidgetSkeleton />
     </div>
   );
 }

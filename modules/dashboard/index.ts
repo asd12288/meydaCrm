@@ -1,6 +1,3 @@
-// Actions - Legacy monolithic functions
-export { getSalesDashboardData, getAdminDashboardData } from './lib/actions';
-
 // Actions - Section-specific functions for Suspense streaming
 export {
   // Admin section data
@@ -82,10 +79,6 @@ export {
   SalesActivitySection,
   SalesTrendSection,
 } from './sections';
-
-// Views - Legacy (full data passed as props)
-export { SalesDashboardView } from './views/sales-dashboard-view';
-export { AdminDashboardView } from './views/admin-dashboard-view';
 
 // Views - Streaming (with Suspense boundaries)
 export { AdminDashboardStreaming } from './views/admin-dashboard-streaming';

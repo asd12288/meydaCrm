@@ -13,7 +13,8 @@ import {
   IconTrash,
 } from '@tabler/icons-react';
 import { ConfirmDialog, FormErrorAlert, ErrorBoundary, SectionErrorFallback } from '@/modules/shared';
-import { getImportJobs, getErrorReportUrl, retryImportJob, deleteImportJob } from '../lib/actions';
+import { Button } from '@/components/ui/button';
+import { getImportJobs, retryImportJob, deleteImportJob } from '../lib/actions';
 import type { ImportJobWithStats } from '../types';
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof IconCheck }> = {
@@ -57,26 +58,6 @@ export function ImportHistoryView() {
       console.error(err);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleDownloadErrors = async (jobId: string) => {
-    setActionError(null);
-    try {
-      const result = await getErrorReportUrl(jobId);
-      if (result.success && result.data?.url) {
-        const link = document.createElement('a');
-        link.href = result.data.url;
-        link.download = `erreurs-import-${jobId}.csv`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      } else {
-        setActionError(result.error || 'Erreur lors du téléchargement');
-      }
-    } catch (err) {
-      setActionError('Erreur lors du téléchargement');
-      console.error(err);
     }
   };
 
@@ -170,12 +151,9 @@ export function ImportHistoryView() {
         <div className="text-center">
           <IconAlertCircle className="w-12 h-12 text-error mx-auto mb-4" />
           <p className="text-error">{error}</p>
-          <button
-            onClick={loadJobs}
-            className="mt-4 px-4 py-2 bg-primary text-white rounded-md hover:bg-primaryemphasis"
-          >
+          <Button variant="primary" onClick={loadJobs} className="mt-4">
             Réessayer
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -253,7 +231,6 @@ export function ImportHistoryView() {
                   const StatusIcon = statusConfig.icon;
                   const canRetry = job.status === 'failed';
                   const canDelete = !['parsing', 'importing'].includes(job.status);
-                  const hasErrors = (job.invalid_rows || 0) > 0;
 
                   return (
                     <tr key={job.id} className="hover:bg-muted/50">
@@ -280,16 +257,9 @@ export function ImportHistoryView() {
                         {job.imported_rows?.toLocaleString('fr-FR') || '-'}
                       </td>
                       <td className="px-4 py-3 text-right">
-                        {hasErrors ? (
-                          <button
-                            onClick={() => handleDownloadErrors(job.id)}
-                            className="text-error hover:underline font-medium"
-                          >
-                            {job.invalid_rows}
-                          </button>
-                        ) : (
-                          <span className="text-darklink">-</span>
-                        )}
+                        <span className={job.invalid_rows ? 'text-error font-medium' : 'text-darklink'}>
+                          {job.invalid_rows?.toLocaleString('fr-FR') || '-'}
+                        </span>
                       </td>
                       <td className="px-4 py-3 text-right text-darklink">
                         {formatDuration(job.started_at, job.completed_at)}
@@ -297,24 +267,27 @@ export function ImportHistoryView() {
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-end gap-2">
                           {canRetry && (
-                            <button
+                            <Button
+                              variant="circleHover"
+                              size="iconSm"
                               onClick={() => handleRetryClick(job.id)}
                               disabled={actionInProgress === job.id}
-                              className="p-1 text-primary hover:bg-primary/10 rounded disabled:opacity-50"
                               title="Relancer"
                             >
                               <IconRefresh className="w-4 h-4" />
-                            </button>
+                            </Button>
                           )}
                           {canDelete && (
-                            <button
+                            <Button
+                              variant="circleHover"
+                              size="iconSm"
                               onClick={() => handleDeleteClick(job.id)}
                               disabled={actionInProgress === job.id}
-                              className="p-1 text-error hover:bg-error/10 rounded disabled:opacity-50"
+                              className="text-error hover:bg-error/10"
                               title="Supprimer"
                             >
                               <IconTrash className="w-4 h-4" />
-                            </button>
+                            </Button>
                           )}
                         </div>
                       </td>

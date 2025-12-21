@@ -3,12 +3,12 @@
 import { useEffect, useRef } from 'react';
 import { IconX, IconUpload } from '@tabler/icons-react';
 import { CardBox } from '@/modules/shared';
+import { Button } from '@/components/ui/button';
 import { ImportWizardV2 } from './import-wizard-v2';
 import type { SalesUser } from '@/modules/leads/types';
 
 interface ImportWizardCardProps {
   salesUsers: SalesUser[];
-  resumeJobId?: string;
   onClose: () => void;
   onComplete?: (importJobId: string) => void;
 }
@@ -20,7 +20,6 @@ interface ImportWizardCardProps {
  */
 export function ImportWizardCard({
   salesUsers,
-  resumeJobId,
   onClose,
   onComplete,
 }: ImportWizardCardProps) {
@@ -51,29 +50,25 @@ export function ImportWizardCard({
               <IconUpload className="w-5 h-5 text-primary" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-ld">
-                {resumeJobId ? "Reprendre l'import" : 'Nouvel import'}
-              </h3>
+              <h3 className="text-lg font-semibold text-ld">Nouvel import</h3>
               <p className="text-sm text-darklink">
-                {resumeJobId
-                  ? 'Continuez votre import en cours'
-                  : 'Importez des leads depuis un fichier CSV ou Excel'}
+                Importez des leads depuis un fichier CSV ou Excel
               </p>
             </div>
           </div>
-          <button
+          <Button
+            variant="circleHover"
+            size="icon"
             onClick={onClose}
-            className="p-2 text-darklink hover:text-ld hover:bg-muted rounded-lg transition-colors"
             title="Fermer"
           >
             <IconX className="w-5 h-5" />
-          </button>
+          </Button>
         </div>
 
         {/* Wizard content */}
         <ImportWizardV2
           salesUsers={salesUsers}
-          resumeJobId={resumeJobId}
           onImportComplete={handleComplete}
         />
       </CardBox>

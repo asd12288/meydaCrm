@@ -5,14 +5,14 @@ import {
   SalesQuickStatsSection,
   SalesStatusChartSection,
   SalesActivitySection,
-  SalesTrendSection,
+  SalesNotesSection,
 } from '../sections';
 import {
   WelcomeCardSkeleton,
   QuickStatsSkeleton,
   StatusChartSkeleton,
   ActivityTimelineSkeleton,
-  TrendChartSkeleton,
+  NotesWidgetSkeleton,
 } from '../ui/dashboard-skeletons';
 
 interface SalesDashboardStreamingProps {
@@ -63,10 +63,10 @@ export function SalesDashboardStreaming({ userName, userAvatar }: SalesDashboard
         </div>
       </div>
 
-      {/* Leads Trend Chart */}
+      {/* Notes Widget */}
       <ErrorBoundary FallbackComponent={SectionErrorFallback}>
-        <Suspense fallback={<TrendChartSkeleton />}>
-          <SalesTrendSection />
+        <Suspense fallback={<NotesWidgetSkeleton />}>
+          <SalesNotesSection />
         </Suspense>
       </ErrorBoundary>
     </div>

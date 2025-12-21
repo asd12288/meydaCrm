@@ -13,6 +13,7 @@ export * from './payments';
 export * from './support-tickets';
 export * from './support-ticket-comments';
 export * from './notifications';
+export * from './notes';
 
 // Re-export Supabase helpers for convenience
 export {

@@ -28,8 +28,16 @@ describe('Lead Zod Schemas', () => {
     });
 
     it('should reject pageSize outside valid range', () => {
-      expect(() => leadFiltersSchema.parse({ pageSize: '5' })).toThrow();
-      expect(() => leadFiltersSchema.parse({ pageSize: '200' })).toThrow();
+      expect(() => leadFiltersSchema.parse({ pageSize: '5' })).toThrow(); // min is 10
+      expect(() => leadFiltersSchema.parse({ pageSize: '501' })).toThrow(); // max is 500
+    });
+
+    it('should accept pageSize up to 500 for kanban view', () => {
+      const result = leadFiltersSchema.parse({ pageSize: '200' });
+      expect(result.pageSize).toBe(200);
+
+      const result2 = leadFiltersSchema.parse({ pageSize: '500' });
+      expect(result2.pageSize).toBe(500);
     });
 
     it('should accept valid search string', () => {
@@ -71,18 +79,18 @@ describe('Lead Zod Schemas', () => {
     it('should parse valid status update', () => {
       const result = updateStatusSchema.parse({
         leadId: '550e8400-e29b-41d4-a716-446655440000',
-        status: 'contacted',
+        status: 'rdv',
       });
 
       expect(result.leadId).toBe('550e8400-e29b-41d4-a716-446655440000');
-      expect(result.status).toBe('contacted');
+      expect(result.status).toBe('rdv');
     });
 
     it('should reject invalid UUID', () => {
       expect(() =>
         updateStatusSchema.parse({
           leadId: 'not-a-uuid',
-          status: 'contacted',
+          status: 'rdv',
         })
       ).toThrow();
     });
@@ -98,14 +106,16 @@ describe('Lead Zod Schemas', () => {
 
     it('should accept all valid statuses', () => {
       const validStatuses = [
-        'new',
-        'contacted',
-        'qualified',
-        'proposal',
-        'negotiation',
-        'won',
-        'lost',
-        'no_answer',
+        'new', // Legacy - still valid for existing leads
+        'rdv',
+        'no_answer_1',
+        'no_answer_2',
+        'wrong_number',
+        'not_interested',
+        'deposit',
+        'callback',
+        'relance',
+        'mail',
       ];
 
       validStatuses.forEach((status) => {

@@ -1,4 +1,4 @@
-import { getTickets, getTicketCounts } from '../lib/actions';
+import { getTickets } from '../lib/actions';
 import { ticketFiltersSchema } from '../types';
 import { SupportEmailView } from './support-email-view';
 
@@ -21,16 +21,12 @@ export async function TicketsListView({ searchParams }: TicketsListViewProps) {
     sortOrder: params.sortOrder,
   });
 
-  // Fetch tickets and counts in parallel
-  const [ticketsData, counts] = await Promise.all([
-    getTickets(filters),
-    getTicketCounts(),
-  ]);
+  // Fetch tickets
+  const ticketsData = await getTickets(filters);
 
   return (
     <SupportEmailView
       initialTickets={ticketsData.tickets}
-      initialCounts={counts}
     />
   );
 }

@@ -10,6 +10,7 @@ import {
   IconX,
 } from '@tabler/icons-react';
 import { ErrorBoundary, SectionErrorFallback } from '@/modules/shared';
+import { Button } from '@/components/ui/button';
 
 // Step components
 import { WizardStepper } from './wizard-stepper';
@@ -28,6 +29,12 @@ import { useImportSSE } from '../hooks/use-import-sse';
 // Actions
 import { uploadFileWithProgress } from '../lib/client-upload';
 import type { UploadProgress } from '../lib/client-upload';
+import {
+  updateImportJobMapping,
+  updateImportJobOptions,
+  startImportParsing,
+  cancelImportJob,
+} from '../lib/actions';
 
 // Types
 import type { SalesUser } from '@/modules/leads/types';
@@ -52,101 +59,6 @@ export function ImportWizardV2({ salesUsers, onImportComplete }: ImportWizardV2P
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [isLoadingResume, setIsLoadingResume] = useState(!!resumeJobId);
-
-  // Load resume state
-  useEffect(() => {
-    if (!resumeJobId) return;
-
-    const loadResumeState = async () => {
-      try {
-        setIsLoadingResume(true);
-        setError(null);
-
-        const response = await fetch(`/api/import/${resumeJobId}`);
-        if (!response.ok) {
-          const data = await response.json();
-          throw new Error(data.error || 'Impossible de charger l\'import');
-        }
-
-        const { job } = await response.json();
-
-        // Set the job ID in wizard state
-        wizard.setImportJobId(job.id);
-
-        // Restore mapping if available
-        if (job.columnMapping) {
-          // The wizard will need to restore mapping from the job
-          // For now, we mark upload step as completed
-        }
-
-        // Restore assignment/duplicate config
-        if (job.assignmentConfig) {
-          wizard.updateAssignment(job.assignmentConfig);
-        }
-        if (job.duplicateConfig) {
-          wizard.updateDuplicates(job.duplicateConfig);
-        }
-
-        // Determine which step to resume at based on ui_state
-        const uiState = job.uiState;
-        let resumeStep: ImportWizardStep = 'upload';
-        const completedStepsToSet: ImportWizardStep[] = [];
-
-        if (uiState) {
-          // Map numeric step to step ID
-          const stepMap: Record<number, ImportWizardStep> = {
-            1: 'upload',
-            2: 'mapping',
-            3: 'options',
-            4: 'preview',
-            5: 'progress',
-            6: 'results',
-          };
-
-          if (uiState.currentStep && uiState.currentStep > 1) {
-            // Resume at the saved step
-            resumeStep = stepMap[uiState.currentStep] || 'upload';
-
-            // Mark previous steps as completed
-            for (let i = 1; i < uiState.currentStep; i++) {
-              completedStepsToSet.push(stepMap[i]);
-            }
-          }
-
-          // If mapping/options are confirmed, mark those as completed
-          if (uiState.mappingConfirmed) {
-            if (!completedStepsToSet.includes('upload')) completedStepsToSet.push('upload');
-            if (!completedStepsToSet.includes('mapping')) completedStepsToSet.push('mapping');
-          }
-          if (uiState.optionsConfirmed) {
-            if (!completedStepsToSet.includes('options')) completedStepsToSet.push('options');
-          }
-        }
-
-        // Check job status to determine appropriate step
-        if (['queued', 'parsing', 'importing'].includes(job.status)) {
-          resumeStep = 'progress';
-        } else if (job.status === 'completed') {
-          resumeStep = 'results';
-        } else if (job.status === 'ready' || job.status === 'validating') {
-          resumeStep = 'preview';
-        }
-
-        setCurrentStep(resumeStep);
-        setCompletedSteps(completedStepsToSet);
-
-        console.log(`[Resume] Loaded job ${job.id}, resuming at step: ${resumeStep}`);
-      } catch (err) {
-        console.error('Failed to load resume state:', err);
-        setError(err instanceof Error ? err.message : 'Erreur lors du chargement');
-      } finally {
-        setIsLoadingResume(false);
-      }
-    };
-
-    loadResumeState();
-  }, [resumeJobId]);
 
   // SSE for real-time progress
   const {
@@ -196,6 +108,7 @@ export function ImportWizardV2({ salesUsers, onImportComplete }: ImportWizardV2P
         if (state.assignment.mode === 'round_robin') {
           if (!state.assignment.roundRobinUserIds || state.assignment.roundRobinUserIds.length < 2) return false;
         }
+        if (state.assignment.mode === 'by_column' && !state.assignment.assignmentColumn) return false;
         return true;
       case 'preview':
         return state.validationSummary.valid > 0;
@@ -233,14 +146,11 @@ export function ImportWizardV2({ salesUsers, onImportComplete }: ImportWizardV2P
     // 2. File is loaded
     // 3. Mapping is ready (auto-detection complete)
     // 4. Not already processing
-    // 5. Not resuming from a previous job
     if (
       currentStep === 'upload' &&
       state.file &&
       state.mapping &&
-      !isProcessing &&
-      !isLoadingResume &&
-      !resumeJobId
+      !isProcessing
     ) {
       // Small delay to show the user the file was detected
       const timer = setTimeout(() => {
@@ -248,7 +158,8 @@ export function ImportWizardV2({ salesUsers, onImportComplete }: ImportWizardV2P
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [currentStep, state.file, state.mapping, isProcessing, isLoadingResume, resumeJobId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Auto-advance runs once when conditions are met
+  }, [currentStep, state.file, state.mapping, isProcessing]);
 
   // Handle file selection
   const handleFileSelect = async (file: File) => {
@@ -304,15 +215,10 @@ export function ImportWizardV2({ salesUsers, onImportComplete }: ImportWizardV2P
     setError(null);
 
     try {
-      const response = await fetch(`/api/import/${state.importJobId}/mapping`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ columnMapping: state.mapping }),
-      });
+      const result = await updateImportJobMapping(state.importJobId, state.mapping);
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Erreur lors de la sauvegarde du mapping');
+      if (!result.success) {
+        throw new Error(result.error || 'Erreur lors de la sauvegarde du mapping');
       }
 
       goNext();
@@ -331,18 +237,13 @@ export function ImportWizardV2({ salesUsers, onImportComplete }: ImportWizardV2P
     setError(null);
 
     try {
-      const response = await fetch(`/api/import/${state.importJobId}/options`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          assignmentConfig: state.assignment,
-          duplicateConfig: state.duplicates,
-        }),
+      const result = await updateImportJobOptions(state.importJobId, {
+        assignmentConfig: state.assignment,
+        duplicateConfig: state.duplicates,
       });
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Erreur lors de la sauvegarde des options');
+      if (!result.success) {
+        throw new Error(result.error || 'Erreur lors de la sauvegarde des options');
       }
 
       // Trigger validation/preview
@@ -370,13 +271,10 @@ export function ImportWizardV2({ salesUsers, onImportComplete }: ImportWizardV2P
     setError(null);
 
     try {
-      const response = await fetch(`/api/import/${state.importJobId}/start`, {
-        method: 'POST',
-      });
+      const result = await startImportParsing(state.importJobId);
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Erreur lors du demarrage de l\'import');
+      if (!result.success) {
+        throw new Error(result.error || 'Erreur lors du demarrage de l\'import');
       }
 
       goNext(); // Move to progress step - SSE will take over
@@ -391,31 +289,9 @@ export function ImportWizardV2({ salesUsers, onImportComplete }: ImportWizardV2P
     if (!state.importJobId) return;
 
     try {
-      await fetch(`/api/import/${state.importJobId}/cancel`, {
-        method: 'POST',
-      });
+      await cancelImportJob(state.importJobId);
     } catch (err) {
       console.error('Cancel error:', err);
-    }
-  };
-
-  // Handle download error report
-  const handleDownloadErrorReport = async () => {
-    if (!state.importJobId) return;
-
-    try {
-      const response = await fetch(`/api/import/${state.importJobId}/error-report`);
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `erreurs_import_${state.importJobId.slice(0, 8)}.csv`;
-        a.click();
-        URL.revokeObjectURL(url);
-      }
-    } catch (err) {
-      console.error('Download error:', err);
     }
   };
 
@@ -439,11 +315,8 @@ export function ImportWizardV2({ salesUsers, onImportComplete }: ImportWizardV2P
         return (
           <UploadStep
             file={state.file}
-            mapping={state.mapping}
             onFileSelect={handleFileSelect}
             onClear={handleClearFile}
-            onUpdateMapping={wizard.updateColumnMapping}
-            onResetMapping={wizard.resetMapping}
             error={error}
             isProcessing={isProcessing}
             conversionProgress={conversionProgress}
@@ -466,11 +339,14 @@ export function ImportWizardV2({ salesUsers, onImportComplete }: ImportWizardV2P
         );
 
       case 'options':
+        // Get all source columns from the file for by_column assignment
+        const availableColumns = state.mapping?.mappings.map(m => m.sourceColumn) || [];
         return (
           <OptionsStep
             assignment={state.assignment}
             duplicateConfig={state.duplicates}
             salesUsers={salesUsers}
+            availableColumns={availableColumns}
             onUpdateAssignment={wizard.updateAssignment}
             onUpdateDuplicates={wizard.updateDuplicates}
           />
@@ -482,7 +358,6 @@ export function ImportWizardV2({ salesUsers, onImportComplete }: ImportWizardV2P
             file={state.file!}
             summary={state.validationSummary}
             importJobId={state.importJobId}
-            onDownloadErrorReport={handleDownloadErrorReport}
           />
         );
 
@@ -528,7 +403,6 @@ export function ImportWizardV2({ salesUsers, onImportComplete }: ImportWizardV2P
             progress={sseProgress}
             fileName={state.file?.name || 'import.csv'}
             importJobId={state.importJobId || ''}
-            onDownloadErrorReport={handleDownloadErrorReport}
             onViewLeads={handleViewLeads}
             onNewImport={handleNewImport}
           />
@@ -573,19 +447,11 @@ export function ImportWizardV2({ salesUsers, onImportComplete }: ImportWizardV2P
     const config = buttonConfigs[currentStep];
 
     return (
-      <button
+      <Button
         type="button"
+        variant={currentStep === 'preview' ? 'success' : 'primary'}
         onClick={config.onClick}
         disabled={!canGoNext || isProcessing}
-        className={`
-          flex items-center gap-2 px-6 py-2.5 rounded-lg font-medium transition-colors
-          ${canGoNext && !isProcessing
-            ? currentStep === 'preview'
-              ? 'bg-success text-white hover:bg-success/90'
-              : 'bg-primary text-white hover:bg-primary/90'
-            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-          }
-        `}
       >
         {isProcessing ? (
           <>
@@ -598,22 +464,9 @@ export function ImportWizardV2({ salesUsers, onImportComplete }: ImportWizardV2P
             {config.icon}
           </>
         )}
-      </button>
+      </Button>
     );
   };
-
-  // Show loading state when resuming
-  if (isLoadingResume) {
-    return (
-      <div className="flex flex-col items-center justify-center py-16 space-y-4">
-        <IconLoader2 className="w-12 h-12 text-primary animate-spin" />
-        <div className="text-center">
-          <h3 className="text-lg font-medium text-ld">Chargement de l&apos;import...</h3>
-          <p className="text-sm text-darklink mt-1">Veuillez patienter</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
@@ -644,12 +497,14 @@ export function ImportWizardV2({ salesUsers, onImportComplete }: ImportWizardV2P
         <div className="flex items-center gap-2 p-3 bg-warning/10 border border-warning/30 rounded-lg text-sm">
           <IconAlertCircle size={16} className="text-warning" />
           <span className="text-warning">Connexion perdue</span>
-          <button
+          <Button
+            variant="link"
+            size="sm"
             onClick={reconnect}
-            className="ml-auto text-primary hover:underline"
+            className="ml-auto"
           >
             Reconnecter
-          </button>
+          </Button>
         </div>
       )}
 
@@ -665,15 +520,15 @@ export function ImportWizardV2({ salesUsers, onImportComplete }: ImportWizardV2P
         <div className="flex items-center justify-between pt-4 border-t border-border">
           <div>
             {canGoBack && (
-              <button
+              <Button
                 type="button"
+                variant="ghost"
                 onClick={goPrevious}
                 disabled={isProcessing}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-darklink hover:text-ld hover:bg-muted transition-colors"
               >
                 <IconChevronLeft size={18} />
                 Precedent
-              </button>
+              </Button>
             )}
           </div>
 
@@ -684,14 +539,14 @@ export function ImportWizardV2({ salesUsers, onImportComplete }: ImportWizardV2P
       {/* Cancel button during progress */}
       {currentStep === 'progress' && sseProgress?.status !== 'completed' && sseProgress?.status !== 'failed' && (
         <div className="flex justify-center pt-4 border-t border-border">
-          <button
+          <Button
             type="button"
+            variant="ghostDanger"
             onClick={handleCancelImport}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-error hover:bg-lighterror/30 transition-colors"
           >
             <IconX size={18} />
             Annuler l&apos;import
-          </button>
+          </Button>
         </div>
       )}
     </div>

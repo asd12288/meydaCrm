@@ -1,45 +1,16 @@
 'use client';
 
 import { useOptimistic, startTransition } from 'react';
-import {
-  IconChevronDown,
-  IconCalendarEvent,
-  IconPhoneOff,
-  IconPhoneX,
-  IconBan,
-  IconThumbDown,
-  IconCash,
-  IconPhoneCall,
-  IconRefresh,
-  IconMail,
-} from '@tabler/icons-react';
+import { IconChevronDown } from '@tabler/icons-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem } from '@/modules/shared';
-import { STATUS_COLORS, LEAD_STATUS_OPTIONS } from '../config/constants';
+import {
+  STATUS_COLORS,
+  LEAD_STATUS_OPTIONS,
+  STATUS_ICON_MAP,
+  BADGE_TO_COLOR,
+} from '../config/constants';
 import { updateLeadStatus } from '../lib/actions';
 import type { LeadStatus } from '@/db/types';
-
-// Map status to icon component
-const STATUS_ICON_MAP: Record<string, React.ComponentType<{ size?: number; className?: string; style?: React.CSSProperties }>> = {
-  rdv: IconCalendarEvent,
-  no_answer_1: IconPhoneOff,
-  no_answer_2: IconPhoneX,
-  wrong_number: IconBan,
-  not_interested: IconThumbDown,
-  deposit: IconCash,
-  callback: IconPhoneCall,
-  relance: IconRefresh,
-  mail: IconMail,
-};
-
-// Map badge classes to actual CSS color values for inline styles
-const BADGE_TO_COLOR: Record<string, string> = {
-  'badge-success': 'var(--color-success)',
-  'badge-warning': 'var(--color-warning)',
-  'badge-error': 'var(--color-error)',
-  'badge-info': 'var(--color-info)',
-  'badge-primary': 'var(--color-primary)',
-  'badge-secondary': 'var(--color-secondary)',
-};
 
 interface LeadStatusBadgeProps {
   leadId: string;

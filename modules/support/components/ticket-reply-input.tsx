@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { IconSend, IconLoader2 } from '@tabler/icons-react';
+import { Button } from '@/components/ui/button';
 
 interface TicketReplyInputProps {
   onSubmit: (body: string) => void;
@@ -63,10 +64,11 @@ export function TicketReplyInput({
           className="ticket-reply-input"
           disabled={isPending || disabled}
         />
-        <button
+        <Button
           type="submit"
+          variant="primary"
+          size="iconLg"
           disabled={isPending || disabled || !body.trim()}
-          className="ticket-send-btn"
           title="Envoyer (Ctrl+Entrée)"
         >
           {isPending ? (
@@ -74,7 +76,7 @@ export function TicketReplyInput({
           ) : (
             <IconSend size={18} />
           )}
-        </button>
+        </Button>
       </form>
     </div>
   );

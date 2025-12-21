@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { IconSend, IconMessageCircle } from '@tabler/icons-react';
-import { useToast } from '@/modules/shared';
+import { useToast, Spinner } from '@/modules/shared';
 import {
   Popover,
   PopoverContent,
@@ -125,7 +125,7 @@ export function QuickCommentPopover({
             >
               {isPending ? (
                 <>
-                  <span className="animate-spin">⏳</span>
+                  <Spinner size="sm" />
                   Envoi...
                 </>
               ) : (

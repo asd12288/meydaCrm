@@ -65,11 +65,14 @@ export function ExpiryWarningBanner({
 
   // Check localStorage on mount (client-side only)
   useEffect(() => {
-    setIsHydrated(true);
-    if (!isGrace) {
-      // Only check dismissal for non-grace period (grace is too important to dismiss)
-      setIsDismissed(wasDismissedToday());
-    }
+    // Use requestAnimationFrame to avoid synchronous setState in effect
+    requestAnimationFrame(() => {
+      setIsHydrated(true);
+      if (!isGrace) {
+        // Only check dismissal for non-grace period (grace is too important to dismiss)
+        setIsDismissed(wasDismissedToday());
+      }
+    });
   }, [isGrace]);
 
   // Handle dismissal

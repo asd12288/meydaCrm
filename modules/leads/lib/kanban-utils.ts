@@ -30,13 +30,6 @@ export function groupLeadsByStatus(
 }
 
 /**
- * Get the column configuration for a status
- */
-export function getColumnConfig(status: LeadStatus) {
-  return KANBAN_COLUMNS.find((col) => col.status === status);
-}
-
-/**
  * Format lead name for display on kanban card
  */
 export function formatLeadName(lead: LeadForKanban): string {
@@ -44,23 +37,4 @@ export function formatLeadName(lead: LeadForKanban): string {
   const lastName = lead.last_name || '';
   const fullName = `${firstName} ${lastName}`.trim();
   return fullName || 'Sans nom';
-}
-
-/**
- * Format relative time for kanban card (e.g., "il y a 2h")
- */
-export function formatRelativeTime(date: string): string {
-  const now = new Date();
-  const then = new Date(date);
-  const diffMs = now.getTime() - then.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMins / 60);
-  const diffDays = Math.floor(diffHours / 24);
-
-  if (diffMins < 1) return "à l'instant";
-  if (diffMins < 60) return `il y a ${diffMins}min`;
-  if (diffHours < 24) return `il y a ${diffHours}h`;
-  if (diffDays < 7) return `il y a ${diffDays}j`;
-  if (diffDays < 30) return `il y a ${Math.floor(diffDays / 7)}sem`;
-  return `il y a ${Math.floor(diffDays / 30)}mois`;
 }

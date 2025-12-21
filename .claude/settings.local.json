@@ -42,7 +42,14 @@
       "Bash(powershell -Command:*)",
       "Bash(cmd /c \"for %d in (mapping options start cancel resume error-report) do rmdir /s /q %d 2>nul\")",
       "Bash(cmd /c \"del route.ts 2>nul\")",
-      "Bash(node -e:*)"
+      "Bash(node -e:*)",
+      "Bash(cmd /c \"rmdir /s /q .next 2>nul\")",
+      "Bash(npm run build:*)",
+      "Bash(if not exist \"c:\\Users\\ilanc\\Desktop\\crm\\app\\api\\leads\\export\" mkdir \"c:\\Users\\ilanc\\Desktop\\crm\\app\\api\\leads\\export\")",
+      "Bash(wc:*)",
+      "Bash(done)",
+      "Bash(npx tsx:*)",
+      "Bash(pkill:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

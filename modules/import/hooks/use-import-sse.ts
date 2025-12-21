@@ -220,15 +220,83 @@ export function useImportProgress(jobId: string | null, enabled = true) {
     enabled,
   });
 
-  // Calculate percentage
-  const percentage = progress
-    ? progress.totalRows && progress.totalRows > 0
-      ? Math.round(((progress.processedRows || 0) / progress.totalRows) * 100)
-      : 0
-    : 0;
+  // Phase-aware percentage calculation
+  // - Parsing: 0-50% (based on chunks processed)
+  // - Importing: 50-100% (based on rows imported)
+  const { percentage, isIndeterminate } = (() => {
+    if (!progress) return { percentage: 0, isIndeterminate: true };
 
-  // Determine phase
-  const phase = progress?.status || 'pending';
+    const status = progress.status;
+
+    // Terminal states
+    if (status === 'completed') return { percentage: 100, isIndeterminate: false };
+    if (status === 'failed' || status === 'cancelled') return { percentage: 0, isIndeterminate: false };
+
+    // Parsing phase: 0-50%
+    if (status === 'parsing') {
+      const totalChunks = progress.totalChunks || 0;
+      const currentChunk = progress.currentChunk || 0;
+
+      // If we have chunk estimate, calculate 0-50%
+      if (totalChunks > 0) {
+        const parsingProgress = Math.min(currentChunk / totalChunks, 1);
+        return {
+          percentage: Math.round(parsingProgress * 50),
+          isIndeterminate: false,
+        };
+      }
+
+      // No chunk estimate - use processed rows if available
+      if (progress.processedRows && progress.processedRows > 0) {
+        // Show indeterminate but with some activity indication
+        return { percentage: Math.min(25, progress.processedRows / 100), isIndeterminate: true };
+      }
+
+      // Truly indeterminate
+      return { percentage: 0, isIndeterminate: true };
+    }
+
+    // Importing phase: 50-100%
+    if (status === 'importing') {
+      const validRows = progress.validRows || 0;
+      const importedRows = progress.importedRows || 0;
+
+      if (validRows > 0) {
+        const importingProgress = Math.min(importedRows / validRows, 1);
+        return {
+          percentage: 50 + Math.round(importingProgress * 50),
+          isIndeterminate: false,
+        };
+      }
+
+      // No valid rows count yet, show 50% (parsing done)
+      return { percentage: 50, isIndeterminate: true };
+    }
+
+    // Pending or other states
+    return { percentage: 0, isIndeterminate: true };
+  })();
+
+  // Determine phase label for display
+  const phaseLabel = (() => {
+    if (!progress) return 'En attente...';
+    switch (progress.status) {
+      case 'pending':
+        return 'En attente...';
+      case 'parsing':
+        return 'Validation des données...';
+      case 'importing':
+        return 'Création des leads...';
+      case 'completed':
+        return 'Import terminé';
+      case 'failed':
+        return 'Échec de l\'import';
+      case 'cancelled':
+        return 'Import annulé';
+      default:
+        return 'Traitement...';
+    }
+  })();
 
   // Is terminal state
   const isComplete = progress?.status === 'completed';
@@ -239,7 +307,9 @@ export function useImportProgress(jobId: string | null, enabled = true) {
   return {
     progress,
     percentage,
-    phase,
+    isIndeterminate,
+    phaseLabel,
+    phase: progress?.status || 'pending',
     isConnected,
     error,
     isComplete,

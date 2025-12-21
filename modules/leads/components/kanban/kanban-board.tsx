@@ -7,6 +7,7 @@ import {
   KanbanBoardProvider,
   KanbanBoardExtraMargin,
 } from '@/components/kanban';
+import { useToast } from '@/modules/shared';
 import type { LeadForKanban } from '../../types';
 import type { LeadStatus } from '@/db/types';
 import { KANBAN_COLUMNS } from '../../config/constants';
@@ -47,6 +48,8 @@ Appuyez à nouveau sur Espace pour déposer, ou Échap pour annuler.
 `;
 
 export function LeadsKanbanBoard({ leads }: KanbanBoardProps) {
+  const { toast } = useToast();
+
   // Optimistic state for leads - allows instant UI updates
   const [optimisticLeads, setOptimisticLeads] = useOptimistic(
     leads,
@@ -76,7 +79,7 @@ export function LeadsKanbanBoard({ leads }: KanbanBoardProps) {
       const result = await updateLeadStatus(leadId, newStatus);
       if (result.error) {
         console.error('Failed to update lead status:', result.error);
-        // The optimistic update will be reverted on next server response
+        toast.error(result.error);
       }
     });
   };

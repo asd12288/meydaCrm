@@ -51,7 +51,6 @@ export { LeadsKanbanBoard } from './components/kanban';
 export {
   groupLeadsByStatus,
   formatLeadName,
-  formatRelativeTime,
 } from './lib/kanban-utils';
 
 // Views

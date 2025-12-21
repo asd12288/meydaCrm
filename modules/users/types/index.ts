@@ -14,7 +14,7 @@ export {
 // User filter schema for URL params validation
 export const userFiltersSchema = z.object({
   page: z.coerce.number().min(1).default(1),
-  pageSize: z.coerce.number().min(10).max(10).default(10),
+  pageSize: z.coerce.number().min(10).max(50).default(10),
   search: z.string().optional(),
   role: z.string().optional(),
   sortBy: z

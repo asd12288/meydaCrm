@@ -4,6 +4,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
 import SimpleBar from 'simplebar-react';
 import { IconSearch, IconTicket, IconLoader2 } from '@tabler/icons-react';
+import { Button } from '@/components/ui/button';
 import { TicketListItem } from './ticket-list-item';
 import type { SupportTicketWithDetails } from '../types';
 
@@ -127,12 +128,12 @@ export function TicketListPanel({
                     <span>Chargement des tickets...</span>
                   </div>
                 ) : (
-                  <button
+                  <Button
+                    variant="link"
                     onClick={onLoadMore}
-                    className="text-sm text-primary hover:text-primaryemphasis transition-colors font-medium"
                   >
                     Charger plus de tickets
-                  </button>
+                  </Button>
                 )}
               </div>
             )}

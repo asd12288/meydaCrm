@@ -17,7 +17,7 @@ export { UserFilters } from './ui/user-filters';
 export { UsersPagination } from './ui/users-pagination';
 
 // Actions
-export { getUsers, createUser, resetPassword, updateUser } from './lib/actions';
+export { getUsers, createUser, resetPassword, updateUser, deleteUser } from './lib/actions';
 
 // Types
 export * from './types';

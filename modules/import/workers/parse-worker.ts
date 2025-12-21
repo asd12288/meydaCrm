@@ -16,6 +16,10 @@ import { enqueueCommitJob } from '../lib/queue';
 
 const INSERT_BATCH_SIZE = 500;
 
+// Estimated average row size in bytes for chunk estimation
+// Conservative estimate: typical CSV row is 200-500 bytes
+const ESTIMATED_AVG_ROW_SIZE_BYTES = 300;
+
 /**
  * Create admin Supabase client
  */
@@ -103,6 +107,38 @@ export async function handleParseDirectly(importJobId: string): Promise<{
 
     console.log('✅ [ParseWorker] Signed URL obtained');
     console.log(`🔗 [ParseWorker] URL: ${urlData.signedUrl.substring(0, 80)}...`);
+
+    // Get file metadata for size estimation
+    console.log('📏 [ParseWorker] Getting file metadata for progress estimation...');
+    let estimatedTotalChunks: number | null = null;
+
+    // Try to get file size from storage metadata
+    const { data: fileList } = await supabase.storage
+      .from('imports')
+      .list(job.storage_path.split('/').slice(0, -1).join('/'), {
+        search: job.storage_path.split('/').pop() || '',
+      });
+
+    const fileMetadata = fileList?.find(f => job.storage_path.endsWith(f.name));
+    if (fileMetadata?.metadata?.size) {
+      const fileSize = fileMetadata.metadata.size as number;
+      // Estimate rows: fileSize / avgRowSize, then chunks: rows / batchSize
+      const estimatedRows = Math.ceil(fileSize / ESTIMATED_AVG_ROW_SIZE_BYTES);
+      estimatedTotalChunks = Math.max(1, Math.ceil(estimatedRows / INSERT_BATCH_SIZE));
+      console.log(`📊 [ParseWorker] File size: ${(fileSize / 1024).toFixed(1)} KB`);
+      console.log(`📊 [ParseWorker] Estimated rows: ~${estimatedRows.toLocaleString()}`);
+      console.log(`📊 [ParseWorker] Estimated chunks: ~${estimatedTotalChunks}`);
+
+      // Set estimated total_chunks early for progress tracking
+      await supabase
+        .from('import_jobs')
+        .update({
+          total_chunks: estimatedTotalChunks,
+        })
+        .eq('id', importJobId);
+    } else {
+      console.log('⚠️ [ParseWorker] Could not get file size, progress will be indeterminate during parsing');
+    }
 
     // Get column mappings
     console.log('🗺️ [ParseWorker] Checking column mappings...');

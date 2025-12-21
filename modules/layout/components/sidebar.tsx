@@ -38,7 +38,7 @@ export function Sidebar({ userRole }: SidebarProps) {
   return (
     <aside
       className={`fixed left-0 top-0 z-40 h-screen bg-white dark:bg-darkgray border-r border-border shadow-sm transition-all duration-300 flex flex-col ${
-        isCollapsed ? "w-[72px]" : "w-64"
+        isCollapsed ? "w-18" : "w-64"
       }`}
     >
       {/* Logo and toggle */}

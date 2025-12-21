@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { IconChevronDown, IconCheck } from '@tabler/icons-react';
 import { useClickOutside } from '../hooks/use-click-outside';
 
@@ -59,22 +59,8 @@ export function FormSelectDropdown({
   const value = controlledValue !== undefined ? controlledValue : internalValue;
   const selectedOption = options.find((opt) => opt.value === value);
 
-  // Close dropdown when clicking outside
+  // Close dropdown when clicking outside or pressing Escape
   useClickOutside(dropdownRef, () => setIsOpen(false), isOpen);
-
-  // Handle keyboard navigation
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setIsOpen(false);
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen]);
 
   const handleSelect = (optionValue: string) => {
     if (controlledValue === undefined) {

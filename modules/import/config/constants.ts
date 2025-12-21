@@ -65,11 +65,11 @@ export const IMPORT_STATUS_LABELS: Record<ImportStatus, string> = {
   pending: 'En attente',
   parsing: 'Analyse en cours',
   validating: 'Validation en cours',
-  ready: 'Pret a importer',
+  ready: 'Prêt à importer',
   importing: 'Import en cours',
-  completed: 'Termine',
-  failed: 'Echec',
-  cancelled: 'Annule',
+  completed: 'Terminé',
+  failed: 'Échec',
+  cancelled: 'Annulé',
 };
 
 export const IMPORT_STATUS_COLORS: Record<ImportStatus, string> = {
@@ -88,8 +88,8 @@ export const IMPORT_ROW_STATUS_LABELS: Record<ImportRowStatus, string> = {
   pending: 'En attente',
   valid: 'Valide',
   invalid: 'Invalide',
-  imported: 'Importe',
-  skipped: 'Ignore',
+  imported: 'Importé',
+  skipped: 'Ignoré',
 };
 
 export const IMPORT_ROW_STATUS_COLORS: Record<ImportRowStatus, string> = {

@@ -62,7 +62,7 @@ export { FormSection, type FormSectionProps } from './ui/form-section';
 export { Modal, useModal, type ModalProps, type ModalSize } from './ui/modal';
 export { ConfirmDialog, type ConfirmDialogProps } from './ui/confirm-dialog';
 export { SectionHeader } from './ui/section-header';
-export { TableSkeleton, LegacyTableSkeleton, type TableSkeletonProps, type TableSkeletonColumn } from './ui/table-skeleton';
+export { TableSkeleton, type TableSkeletonProps, type TableSkeletonColumn } from './ui/table-skeleton';
 export { TableEmptyState, type TableEmptyStateProps } from './ui/table-empty-state';
 export { SimpleTable, type SimpleTableProps, type SimpleTableColumn } from './ui/simple-table';
 
@@ -71,7 +71,8 @@ export { useFormState, type UseFormStateReturn } from './hooks/use-form-state';
 export { useClickOutside } from './hooks/use-click-outside';
 
 // Toast system
-export { ToastProvider, useToast, type Toast, type ToastType, type ToastContextValue } from './ui/toast';
+export { ToastProvider, type Toast, type ToastType, type ToastContextValue } from './ui/toast';
+export { useToast } from './hooks/use-toast';
 
 // Error Boundaries (react-error-boundary)
 export { ErrorBoundary, useErrorBoundary } from 'react-error-boundary';

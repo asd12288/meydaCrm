@@ -59,7 +59,7 @@ export function AvatarPickerModal({
   return (
     <Modal isOpen={isOpen} onClose={handleClose} title="Choisir un avatar">
       <div className="space-y-4">
-        <div className="grid grid-cols-5 sm:grid-cols-6 gap-2 max-h-[400px] overflow-y-auto p-1">
+        <div className="grid grid-cols-5 sm:grid-cols-6 gap-2 max-h-100 overflow-y-auto p-1">
           {AVATARS.map((avatar) => {
             const isSelected = selectedAvatar === avatar.id;
             return (

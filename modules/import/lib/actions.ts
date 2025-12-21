@@ -255,6 +255,42 @@ export async function updateImportJobMapping(
   }
 }
 
+/**
+ * Update import job with assignment and duplicate options
+ */
+export async function updateImportJobOptions(
+  importJobId: string,
+  options: {
+    assignmentConfig: AssignmentConfig;
+    duplicateConfig: DuplicateConfig;
+  }
+): Promise<ImportActionResult<void>> {
+  try {
+    await requireAdmin();
+    const supabase = await createClient();
+
+    const { error } = await supabase
+      .from('import_jobs')
+      .update({
+        assignment_config: options.assignmentConfig as unknown as Record<string, unknown>,
+        duplicate_config: options.duplicateConfig as unknown as Record<string, unknown>,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', importJobId);
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Erreur inconnue',
+    };
+  }
+}
+
 // =============================================================================
 // QSTASH JOB QUEUE
 // =============================================================================

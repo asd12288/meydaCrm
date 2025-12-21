@@ -79,7 +79,7 @@ export function Modal({
             {title}
           </DialogTitle>
         </DialogHeader>
-        <div className="flex flex-col flex-1 min-h-0">{children}</div>
+        <div className="flex flex-col flex-1 min-h-0 overflow-y-auto">{children}</div>
       </DialogContent>
     </Dialog>
   );

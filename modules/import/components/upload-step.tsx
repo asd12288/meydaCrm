@@ -4,21 +4,16 @@ import {
   IconFileSpreadsheet,
   IconFile,
   IconX,
-  IconCheck,
   IconLoader2,
 } from '@tabler/icons-react';
 import { Button } from '@/components/ui/button';
 import { FileDropzone } from '../ui/file-dropzone';
-import type { UploadedFile, ColumnMappingConfig, LeadFieldKey } from '../types';
-import { checkRequiredMappings, getMappingSummary } from '../lib/auto-mapper';
+import type { UploadedFile } from '../types';
 
 interface UploadStepProps {
   file: UploadedFile | null;
-  mapping: ColumnMappingConfig | null;
   onFileSelect: (file: File) => void;
   onClear: () => void;
-  onUpdateMapping: (sourceIndex: number, targetField: LeadFieldKey | null) => void;
-  onResetMapping: () => void;
   error: string | null;
   isProcessing?: boolean;
   conversionProgress?: number;
@@ -26,7 +21,6 @@ interface UploadStepProps {
 
 export function UploadStep({
   file,
-  mapping,
   onFileSelect,
   onClear,
   isProcessing = false,
@@ -34,10 +28,6 @@ export function UploadStep({
 }: UploadStepProps) {
   // Show loading during file processing or when conversion is in progress
   const showFileProcessing = isProcessing || (conversionProgress > 0 && conversionProgress < 100);
-
-  // Get mapping summary for display
-  const summary = mapping ? getMappingSummary(mapping.mappings) : null;
-  const mappingCheck = mapping ? checkRequiredMappings(mapping.mappings) : null;
 
   return (
     <div className="space-y-6">
@@ -112,41 +102,6 @@ export function UploadStep({
             </Button>
           </div>
 
-          {/* Excel file message */}
-          {file.type !== 'csv' && !mapping && (
-            <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
-              <p className="text-sm text-ld">
-                <span className="font-medium">Fichier Excel detecte.</span>{' '}
-                Cliquez sur &quot;Suivant&quot; pour telecharger et analyser le fichier.
-              </p>
-            </div>
-          )}
-
-          {/* Auto-mapping status (brief summary, no full table) */}
-          {mapping && summary && (
-            <div className={`flex items-center gap-3 p-4 rounded-lg ${
-              mappingCheck?.isComplete
-                ? 'bg-lightsuccess/20 border border-success/30'
-                : 'bg-lightwarning/20 border border-warning/30'
-            }`}>
-              {mappingCheck?.isComplete ? (
-                <IconCheck className="w-5 h-5 text-success flex-shrink-0" />
-              ) : (
-                <IconLoader2 className="w-5 h-5 text-warning flex-shrink-0" />
-              )}
-              <div>
-                <p className={`font-medium ${mappingCheck?.isComplete ? 'text-success' : 'text-warning'}`}>
-                  {summary.mappedColumns}/{summary.totalColumns} colonnes auto-detectees
-                </p>
-                <p className={`text-sm ${mappingCheck?.isComplete ? 'text-success/80' : 'text-warning/80'}`}>
-                  {mappingCheck?.isComplete
-                    ? 'Cliquez sur "Suivant" pour verifier le mapping'
-                    : 'Cliquez sur "Suivant" pour configurer le mapping manuellement'
-                  }
-                </p>
-              </div>
-            </div>
-          )}
         </div>
       )}
     </div>

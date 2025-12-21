@@ -58,7 +58,14 @@ export function getAppUrl(): string {
 
   // Development mode: use ngrok domain for webhook callbacks
   if (process.env.NODE_ENV === 'development') {
-    return 'https://sheep-wanted-squirrel.ngrok-free.app';
+    const ngrokUrl = process.env.NGROK_URL;
+    if (!ngrokUrl) {
+      throw new Error(
+        'NGROK_URL environment variable is not set. ' +
+          'For local QStash testing, start ngrok and set NGROK_URL in .env.local'
+      );
+    }
+    return ngrokUrl;
   }
 
   // Local development fallback

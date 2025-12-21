@@ -1,6 +1,6 @@
 'use client';
 
-import { forwardRef, type InputHTMLAttributes } from 'react';
+import { forwardRef, useId, type InputHTMLAttributes } from 'react';
 
 export type CheckboxSize = 'sm' | 'md' | 'lg';
 
@@ -40,7 +40,8 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Che
   },
   ref
 ) {
-  const inputId = id || `checkbox-${Math.random().toString(36).substr(2, 9)}`;
+  const generatedId = useId();
+  const inputId = id || generatedId;
 
   const checkbox = (
     <input
@@ -104,7 +105,8 @@ export const CheckboxCard = forwardRef<HTMLInputElement, CheckboxCardProps>(func
   { label, description, fullWidth = true, className = '', ...props },
   ref
 ) {
-  const inputId = props.id || `checkbox-card-${Math.random().toString(36).substr(2, 9)}`;
+  const generatedId = useId();
+  const inputId = props.id || generatedId;
 
   return (
     <label

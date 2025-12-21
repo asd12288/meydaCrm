@@ -14,7 +14,6 @@ export {
 export {
   enqueueParseJob,
   enqueueCommitJob,
-  enqueueParseJobsInBatches,
   type ParseJobPayload,
   type CommitJobPayload,
 } from './jobs';

@@ -52,7 +52,7 @@ export function DashboardLayout({ children, profile, subscription }: DashboardLa
 
           {/* Scrollable main content */}
           <main className="p-4 lg:p-5 xl:p-6">
-            <div className="max-w-[1600px] mx-auto">
+            <div className="max-w-400 mx-auto">
               {children}
             </div>
           </main>

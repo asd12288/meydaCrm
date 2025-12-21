@@ -75,6 +75,8 @@ export const importRowDataSchema = z.object({
   source: z.string().max(100).optional().nullable(),
   notes: z.string().max(5000).optional().nullable(),
   assigned_to: z.string().optional().nullable(),
+  created_at: z.string().optional().nullable(),
+  updated_at: z.string().optional().nullable(),
 });
 
 export type ImportRowData = z.infer<typeof importRowDataSchema>;

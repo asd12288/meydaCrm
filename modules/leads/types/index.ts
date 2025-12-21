@@ -78,14 +78,16 @@ export interface PaginatedLeadsResponse {
 export const updateStatusSchema = z.object({
   leadId: z.string().uuid(),
   status: z.enum([
-    'new',
-    'contacted',
-    'qualified',
-    'proposal',
-    'negotiation',
-    'won',
-    'lost',
-    'no_answer',
+    'new', // Legacy - still valid for existing leads
+    'rdv',
+    'no_answer_1',
+    'no_answer_2',
+    'wrong_number',
+    'not_interested',
+    'deposit',
+    'callback',
+    'relance',
+    'mail',
   ]),
 });
 

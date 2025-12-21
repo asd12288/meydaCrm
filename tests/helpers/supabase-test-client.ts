@@ -43,7 +43,7 @@ export function createAnonClient(): SupabaseClient {
 export async function createTestUser(
   adminClient: SupabaseClient,
   options: {
-    role: 'admin' | 'sales'
+    role: 'admin' | 'sales' | 'developer'
     prefix?: string
   }
 ): Promise<{
@@ -51,7 +51,7 @@ export async function createTestUser(
   email: string
   username: string
   password: string
-  role: 'admin' | 'sales'
+  role: 'admin' | 'sales' | 'developer'
 }> {
   const uniqueId = crypto.randomUUID()
   const username = `test_${options.prefix || options.role}_${uniqueId.slice(0, 8)}`

@@ -107,3 +107,13 @@ export const supportTicketStatusEnum = pgEnum('support_ticket_status', [
   'resolved',
   'closed',
 ]);
+
+// Note colors (post-it style)
+export const noteColorEnum = pgEnum('note_color', [
+  'yellow',
+  'pink',
+  'blue',
+  'green',
+  'purple',
+  'orange',
+]);

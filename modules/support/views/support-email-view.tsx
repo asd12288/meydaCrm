@@ -15,22 +15,12 @@ import type { SupportTicketWithDetails, SupportTicketStatus } from '../types';
 
 const PAGE_SIZE = 20;
 
-interface TicketCounts {
-  total: number;
-  open: number;
-  in_progress: number;
-  resolved: number;
-  closed: number;
-}
-
 interface SupportEmailViewProps {
   initialTickets: SupportTicketWithDetails[];
-  initialCounts: TicketCounts;
 }
 
 export function SupportEmailView({
   initialTickets,
-  initialCounts,
 }: SupportEmailViewProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -42,13 +32,10 @@ export function SupportEmailView({
   // Tickets state with pagination
   const [tickets, setTickets] = useState<SupportTicketWithDetails[]>(initialTickets);
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(Math.ceil(initialCounts.total / PAGE_SIZE));
+  const [, setTotalPages] = useState(1);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(initialTickets.length >= PAGE_SIZE);
-  
-  // counts is used to track ticket counts but may not be rendered yet
-  const [, setCounts] = useState<TicketCounts>(initialCounts);
-  const [statusFilter, setStatusFilter] = useState<SupportTicketStatus | null>(
+  const [statusFilter] = useState<SupportTicketStatus | null>(
     (searchParams.get('status') as SupportTicketStatus) || null
   );
   const [searchValue, setSearchValue] = useState(searchParams.get('search') || '');
@@ -116,7 +103,6 @@ export function SupportEmailView({
   }, [isLoadingMore, hasMore, currentPage, statusFilter, searchValue]);
 
   // Load selected ticket details when ID changes
-  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     let isMounted = true;
 
@@ -143,7 +129,6 @@ export function SupportEmailView({
       isMounted = false;
     };
   }, [selectedTicketId]);
-  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Update URL when selection changes
   const updateUrl = useCallback((ticketId: string | null, status: SupportTicketStatus | null, search: string) => {
@@ -161,31 +146,6 @@ export function SupportEmailView({
     setSelectedTicketId(ticket.id);
     setIsMobileListOpen(false);
     updateUrl(ticket.id, statusFilter, searchValue);
-  };
-
-  // Handle status filter change - reset pagination
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handleStatusFilterChange = async (status: SupportTicketStatus | null) => {
-    setStatusFilter(status);
-    updateUrl(selectedTicketId, status, searchValue);
-
-    // Reset pagination and refetch tickets with new filter
-    try {
-      const result = await getTickets({
-        page: 1,
-        pageSize: PAGE_SIZE,
-        status: status || undefined,
-        search: searchValue || undefined,
-        sortBy: 'created_at',
-        sortOrder: 'desc',
-      });
-      setTickets(result.tickets);
-      setCurrentPage(1);
-      setTotalPages(result.totalPages);
-      setHasMore(result.tickets.length >= PAGE_SIZE && result.totalPages > 1);
-    } catch (error) {
-      console.error('Error fetching tickets:', error);
-    }
   };
 
   // Handle search change - reset pagination
@@ -232,16 +192,6 @@ export function SupportEmailView({
     setTickets(result.tickets);
     setTotalPages(result.totalPages);
     setHasMore(result.tickets.length < result.total);
-
-    // Update counts
-    const newCounts: TicketCounts = {
-      total: result.total,
-      open: result.tickets.filter(t => t.status === 'open').length,
-      in_progress: result.tickets.filter(t => t.status === 'in_progress').length,
-      resolved: result.tickets.filter(t => t.status === 'resolved').length,
-      closed: result.tickets.filter(t => t.status === 'closed').length,
-    };
-    setCounts(newCounts);
   };
 
   // Handle create success

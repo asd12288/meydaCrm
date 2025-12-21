@@ -71,7 +71,10 @@ function ToastContainer({ toasts, onDismiss }: ToastContainerProps) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
+    // Use requestAnimationFrame to avoid synchronous setState in effect
+    requestAnimationFrame(() => {
+      setMounted(true);
+    });
   }, []);
 
   if (!mounted) return null;
@@ -107,5 +110,4 @@ export function ToastProvider({ children }: ToastProviderProps) {
   );
 }
 
-export { useToast } from '../hooks/use-toast';
 export type { Toast, ToastType, ToastContextValue } from '../hooks/use-toast';

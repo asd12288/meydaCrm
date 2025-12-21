@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, type ReactNode } from 'react';
-import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 import { useClickOutside } from '../hooks/use-click-outside';
 
 export interface DropdownMenuProps {
@@ -152,8 +152,6 @@ export function DropdownMenuItem({
   `;
 
   if (href && !disabled) {
-    // Use dynamic import to avoid server/client mismatch
-    const Link = require('next/link').default;
     return (
       <Link href={href} className={baseClasses}>
         {icon && <span className="text-darklink">{icon}</span>}

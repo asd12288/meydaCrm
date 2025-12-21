@@ -6,6 +6,7 @@ import {
   leadHistory,
   importJobs,
   importRows,
+  notes,
 } from './schema';
 
 export const profilesRelations = relations(profiles, ({ many }) => ({
@@ -13,6 +14,7 @@ export const profilesRelations = relations(profiles, ({ many }) => ({
   comments: many(leadComments),
   historyEvents: many(leadHistory),
   importJobs: many(importJobs),
+  notes: many(notes),
 }));
 
 export const leadsRelations = relations(leads, ({ one, many }) => ({
@@ -22,6 +24,7 @@ export const leadsRelations = relations(leads, ({ one, many }) => ({
   }),
   comments: many(leadComments),
   history: many(leadHistory),
+  notes: many(notes),
 }));
 
 export const leadCommentsRelations = relations(leadComments, ({ one }) => ({
@@ -58,5 +61,16 @@ export const importRowsRelations = relations(importRows, ({ one }) => ({
   job: one(importJobs, {
     fields: [importRows.importJobId],
     references: [importJobs.id],
+  }),
+}));
+
+export const notesRelations = relations(notes, ({ one }) => ({
+  creator: one(profiles, {
+    fields: [notes.createdBy],
+    references: [profiles.id],
+  }),
+  lead: one(leads, {
+    fields: [notes.leadId],
+    references: [leads.id],
   }),
 }));

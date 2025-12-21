@@ -2,17 +2,6 @@
 
 import { useRef, useEffect, useState } from 'react';
 import {
-  IconCalendarEvent,
-  IconPhoneOff,
-  IconPhoneX,
-  IconBan,
-  IconThumbDown,
-  IconCash,
-  IconPhoneCall,
-  IconRefresh,
-  IconMail,
-} from '@tabler/icons-react';
-import {
   KanbanBoardColumn,
   KanbanBoardColumnHeader,
   KanbanBoardColumnTitle,
@@ -21,31 +10,8 @@ import {
 } from '@/components/kanban';
 import type { LeadForKanban } from '../../types';
 import type { LeadStatus } from '@/db/types';
-import { STATUS_COLORS } from '../../config/constants';
+import { STATUS_COLORS, STATUS_ICON_MAP, BADGE_TO_COLOR } from '../../config/constants';
 import { KanbanCard } from './kanban-card';
-
-// Map status to icon component
-const STATUS_ICON_MAP: Record<string, React.ComponentType<{ size?: number; className?: string; style?: React.CSSProperties }>> = {
-  rdv: IconCalendarEvent,
-  no_answer_1: IconPhoneOff,
-  no_answer_2: IconPhoneX,
-  wrong_number: IconBan,
-  not_interested: IconThumbDown,
-  deposit: IconCash,
-  callback: IconPhoneCall,
-  relance: IconRefresh,
-  mail: IconMail,
-};
-
-// Map badge classes to actual CSS color values
-const BADGE_TO_COLOR: Record<string, string> = {
-  'badge-success': 'var(--color-success)',
-  'badge-warning': 'var(--color-warning)',
-  'badge-error': 'var(--color-error)',
-  'badge-info': 'var(--color-info)',
-  'badge-primary': 'var(--color-primary)',
-  'badge-secondary': 'var(--color-secondary)',
-};
 
 interface KanbanColumnProps {
   status: LeadStatus;
@@ -66,7 +32,10 @@ export function KanbanColumn({
 
   useEffect(() => {
     if (leads.length !== prevCountRef.current) {
-      setShouldPulse(true);
+      // Use requestAnimationFrame to avoid synchronous setState in effect
+      requestAnimationFrame(() => {
+        setShouldPulse(true);
+      });
       prevCountRef.current = leads.length;
       // Remove pulse animation after it completes
       const timer = setTimeout(() => setShouldPulse(false), 300);

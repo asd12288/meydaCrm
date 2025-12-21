@@ -29,7 +29,18 @@ export async function GET(
     return new Response('Unauthorized', { status: 401 });
   }
 
-  // Check if user has access to this import job (admin only)
+  // Verify admin role
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single();
+
+  if (profile?.role !== 'admin') {
+    return new Response('Acces non autorise', { status: 403 });
+  }
+
+  // Check if import job exists
   const { data: job, error: jobError } = await supabase
     .from('import_jobs')
     .select('id, status, created_by')

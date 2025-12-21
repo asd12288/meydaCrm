@@ -96,11 +96,11 @@ describe('Lead Constants', () => {
     it('should have French labels for all columns', () => {
       expect(COLUMN_LABELS.name).toBe('Nom');
       expect(COLUMN_LABELS.email).toBe('Email');
-      expect(COLUMN_LABELS.phone).toBe('Telephone');
+      expect(COLUMN_LABELS.phone).toBe('Téléphone');
       expect(COLUMN_LABELS.company).toBe('Entreprise');
       expect(COLUMN_LABELS.status).toBe('Statut');
       expect(COLUMN_LABELS.assignee).toBe('Commercial');
-      expect(COLUMN_LABELS.updatedAt).toBe('Mis a jour');
+      expect(COLUMN_LABELS.updatedAt).toBe('Mis à jour');
     });
 
     it('should have empty labels for selection and actions', () => {

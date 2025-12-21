@@ -2,6 +2,7 @@
 
 import { useOptimistic, useTransition } from 'react';
 import { IconArrowLeft, IconMessageCircle } from '@tabler/icons-react';
+import { Button } from '@/components/ui/button';
 import { FilterDropdown, type FilterOption, useToast } from '@/modules/shared';
 import { TicketConversation } from './ticket-conversation';
 import { TicketReplyInput } from './ticket-reply-input';
@@ -88,7 +89,6 @@ export function TicketDetailPanel({
   const ticketData = ticket as { createdAt?: Date | string; created_at?: string };
   const createdAt = ticketData.createdAt || ticketData.created_at || new Date();
   const categoryLabel = TICKET_CATEGORY_LABELS[ticket.category] || ticket.category;
-  const statusLabel = TICKET_STATUS_LABELS[ticket.status] || ticket.status;
 
   const handleStatusChange = (newStatus: string) => {
     startTransition(async () => {
@@ -158,12 +158,14 @@ export function TicketDetailPanel({
         <div className="flex items-start gap-3">
           {/* Mobile back button */}
           {showMobileBack && (
-            <button
+            <Button
+              variant="circleHover"
+              size="icon"
               onClick={onMobileBack}
-              className="btn-circle-hover shrink-0 lg:hidden -ml-2"
+              className="shrink-0 lg:hidden -ml-2"
             >
               <IconArrowLeft size={20} />
-            </button>
+            </Button>
           )}
 
           {/* Title and meta */}

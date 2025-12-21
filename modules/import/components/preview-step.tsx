@@ -4,7 +4,6 @@ import {
   IconCheck,
   IconAlertTriangle,
   IconX,
-  IconDownload,
 } from '@tabler/icons-react';
 import type { UploadedFile } from '../types';
 
@@ -18,10 +17,8 @@ interface PreviewStepProps {
     invalid: number;
     duplicates: number;
   };
-  /** Import job ID for error report download */
+  /** Import job ID */
   importJobId: string | null;
-  /** Callback to download error report */
-  onDownloadErrorReport?: () => void;
 }
 
 /**
@@ -31,7 +28,6 @@ interface PreviewStepProps {
 export function PreviewStep({
   file,
   summary,
-  onDownloadErrorReport,
 }: PreviewStepProps) {
   const hasIssues = summary.invalid > 0 || summary.duplicates > 0;
 
@@ -111,17 +107,6 @@ export function PreviewStep({
           </div>
         </div>
       </div>
-
-      {/* Download error report button - only show if there are issues */}
-      {hasIssues && onDownloadErrorReport && (
-        <button
-          onClick={onDownloadErrorReport}
-          className="flex items-center justify-center gap-2 w-full px-4 py-3 text-sm bg-muted dark:bg-darkmuted text-darklink hover:text-ld hover:bg-border rounded-lg transition-colors"
-        >
-          <IconDownload size={18} />
-          Telecharger le rapport d&apos;erreurs
-        </button>
-      )}
 
       {/* File info */}
       <div className="text-center text-sm text-darklink">
