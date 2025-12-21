@@ -117,3 +117,17 @@ export const noteColorEnum = pgEnum('note_color', [
   'purple',
   'orange',
 ]);
+
+// System banner types
+export const bannerTypeEnum = pgEnum('banner_type', [
+  'info',
+  'warning',
+  'success',
+  'announcement',
+]);
+
+// Banner target audience
+export const bannerTargetEnum = pgEnum('banner_target', [
+  'all', // All users
+  'admin', // Admin users only
+]);

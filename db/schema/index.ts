@@ -14,6 +14,7 @@ export * from './support-tickets';
 export * from './support-ticket-comments';
 export * from './notifications';
 export * from './notes';
+export * from './system-banners';
 
 // Re-export Supabase helpers for convenience
 export {

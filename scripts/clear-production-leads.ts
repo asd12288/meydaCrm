@@ -44,7 +44,8 @@ function prompt(question: string): Promise<string> {
   });
 }
 
-async function getCount(supabase: ReturnType<typeof createClient>, table: string): Promise<number> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function getCount(supabase: any, table: string): Promise<number> {
   const { count, error } = await supabase
     .from(table)
     .select('*', { count: 'exact', head: true });

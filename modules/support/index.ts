@@ -11,6 +11,11 @@ export { TicketReplyInput } from './components/ticket-reply-input';
 export { TicketCommentBubble } from './components/ticket-comment-bubble';
 export { CreateTicketModal } from './components/create-ticket-modal';
 
+// Banner Management (Developer only)
+export { BannerManagement } from './components/banner-management';
+export { CreateBannerModal } from './components/create-banner-modal';
+export { EditBannerModal } from './components/edit-banner-modal';
+
 // UI
 export { TicketCategoryBadge } from './ui/ticket-category-badge';
 export { TicketStatusBadge } from './ui/ticket-status-badge';
@@ -26,6 +31,21 @@ export {
   updateTicketStatus,
   addComment,
 } from './lib/actions';
+
+// Banner Actions
+export {
+  createBanner,
+  updateBanner,
+  toggleBannerActive,
+  deleteBanner,
+  getAllBanners,
+  getActiveBanners,
+  getDismissedBannerIds,
+  dismissBanner,
+  type SystemBanner,
+  type BannerType,
+  type BannerTarget,
+} from './lib/banner-actions';
 
 // Types
 export * from './types';
