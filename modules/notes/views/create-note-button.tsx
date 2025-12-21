@@ -23,7 +23,7 @@ export function CreateNoteButton() {
         onClose={handleClose}
         title="Nouvelle note"
         icon={<IconNote size={20} />}
-        size="md"
+        size="lg"
       >
         <NoteForm onSuccess={handleClose} onCancel={handleClose} />
       </Modal>

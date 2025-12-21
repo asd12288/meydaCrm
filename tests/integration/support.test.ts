@@ -232,7 +232,7 @@ describe('RLS Policies - Support Tickets', () => {
         .single()
 
       const client = await signInAsUser(developer.email, developer.password)
-      const { error } = await client
+      await client
         .from('support_tickets')
         .delete()
         .eq('id', newTicket!.id)

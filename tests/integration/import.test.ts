@@ -131,18 +131,13 @@ describe('Import System - Upload Import File', () => {
   })
 
   it('rejects invalid file types', async () => {
-    const client = await signInAsUser(admin.email, admin.password)
+    await signInAsUser(admin.email, admin.password)
 
     // Try to upload invalid file type
     const invalidBlob = new Blob(['invalid content'], { type: 'text/plain' })
     const invalidFile = new File([invalidBlob], `test_${testPrefix}.txt`, { type: 'text/plain' })
 
-    const timestamp = Date.now()
-    const sanitizedName = invalidFile.name.replace(/[^a-zA-Z0-9._-]/g, '_')
-    const storagePath = `imports/${admin.id}/${timestamp}_${sanitizedName}`
-
     // In server action, validation would reject this before upload
-    // For this test, we verify the storage path format, but actual validation happens in server action
     // Here we test that non-csv/xlsx files would be rejected by business logic
     const ext = invalidFile.name.toLowerCase().split('.').pop()
     expect(['csv', 'xlsx', 'xls'].includes(ext || '')).toBe(false)
@@ -263,7 +258,7 @@ describe('Import System - Get Import Job', () => {
   it('sales user cannot fetch import job (RLS blocks access)', async () => {
     const client = await signInAsUser(sales.email, sales.password)
 
-    const { data, error } = await client
+    const { data } = await client
       .from('import_jobs')
       .select('*')
       .eq('id', importJobId)
@@ -348,7 +343,7 @@ describe('Import System - Get Import Jobs', () => {
   it('sales user cannot fetch import jobs (RLS blocks access)', async () => {
     const client = await signInAsUser(sales.email, sales.password)
 
-    const { data, error } = await client.from('import_jobs').select('*').limit(50)
+    const { data } = await client.from('import_jobs').select('*').limit(50)
 
     // RLS prevents access - should return empty array
     expect(data).toBeDefined()
@@ -577,7 +572,7 @@ describe('Import System - Get Import Rows', () => {
   it('sales user cannot fetch import rows (RLS blocks access)', async () => {
     const client = await signInAsUser(sales.email, sales.password)
 
-    const { data, error } = await client
+    const { data } = await client
       .from('import_rows')
       .select('*')
       .eq('import_job_id', importJobId)
@@ -659,9 +654,8 @@ describe('Import System - Delete Import Job', () => {
   it('admin can delete import job', async () => {
     const client = await signInAsUser(admin.email, admin.password)
 
-    // Verify file exists before deletion
-    const { data: filesBefore } = await adminClient.storage.from('imports').list(admin.id)
-    const fileExists = filesBefore?.some((f) => f.name.includes(`delete_${testPrefix}`))
+    // Verify file exists before deletion (just checking API works)
+    await adminClient.storage.from('imports').list(admin.id)
 
     // Delete job (would also delete file in server action)
     const { error: deleteError } = await client.from('import_jobs').delete().eq('id', importJobId)
@@ -758,7 +752,7 @@ describe('Import System - Delete Import Job', () => {
   })
 
   it('cannot delete active imports (status parsing or importing)', async () => {
-    const client = await signInAsUser(admin.email, admin.password)
+    await signInAsUser(admin.email, admin.password)
 
     // Create active job
     const testPath = `imports/${admin.id}/active_${testPrefix}.csv`
@@ -912,7 +906,7 @@ describe('Import System - Cancel Import Job', () => {
   })
 
   it('cannot cancel non-active jobs', async () => {
-    const client = await signInAsUser(admin.email, admin.password)
+    await signInAsUser(admin.email, admin.password)
 
     // Create completed job
     const { data: completed } = await adminClient
@@ -1225,7 +1219,7 @@ describe('Import System - Integration Edge Cases', () => {
     const client = await signInAsUser(admin.email, admin.password)
     const fakeId = '00000000-0000-0000-0000-000000000000'
 
-    const { data, error } = await client
+    const { data } = await client
       .from('import_jobs')
       .select('*')
       .eq('id', fakeId)

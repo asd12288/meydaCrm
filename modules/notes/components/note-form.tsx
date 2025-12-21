@@ -81,7 +81,6 @@ export function NoteForm({ note, onSuccess, onCancel }: NoteFormProps) {
         placeholder="Contenu de la note..."
         rows={6}
         error={errors.content?.message}
-        hint="Supporte le markdown: **gras**, *italique*, - liste"
         {...register('content')}
       />
 

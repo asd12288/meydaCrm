@@ -1,8 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { IconCheck, IconBellOff } from '@tabler/icons-react';
-import { Button } from '@/components/ui/button';
+import { useEffect, useRef } from 'react';
+import { IconBellOff } from '@tabler/icons-react';
 import { EmptyState } from '@/modules/shared';
 import { useNotifications } from '../hooks/use-notifications';
 import { NotificationItem } from './notification-item';
@@ -16,22 +15,20 @@ interface NotificationDropdownProps {
 /**
  * Notification dropdown with infinite scroll
  * Shows all notifications with pagination and real-time updates
+ * Automatically marks all notifications as read when opened
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function NotificationDropdown({ onClose }: NotificationDropdownProps) {
   const {
     notifications,
-    unreadCount,
     hasMore,
     isLoading,
     isLoadingMore,
     loadMore,
     markAsRead,
-    markAllAsRead,
   } = useNotifications();
 
   const loadMoreRef = useRef<HTMLDivElement>(null);
-  const [isMarkingAll, setIsMarkingAll] = useState(false);
 
   // Infinite scroll: observe the load more trigger
   useEffect(() => {
@@ -58,38 +55,11 @@ export function NotificationDropdown({ onClose }: NotificationDropdownProps) {
     };
   }, [hasMore, isLoadingMore, isLoading, loadMore]);
 
-  const handleMarkAllAsRead = async () => {
-    setIsMarkingAll(true);
-    await markAllAsRead();
-    setIsMarkingAll(false);
-  };
-
   return (
     <div className="absolute right-0 top-full mt-2 w-96 bg-white dark:bg-dark rounded-xl border border-border shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 z-50">
       {/* Header */}
-      <div className="px-4 py-3 border-b border-border bg-lightgray dark:bg-darkgray flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-ld">Toutes les notifications</h3>
-        {unreadCount > 0 && (
-          <Button
-            variant="ghostText"
-            size="sm"
-            onClick={handleMarkAllAsRead}
-            disabled={isMarkingAll}
-            className="text-xs text-primary hover:text-primary/80 font-medium"
-          >
-            {isMarkingAll ? (
-              <>
-                <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                <span>En cours...</span>
-              </>
-            ) : (
-              <>
-                <IconCheck size={14} />
-                <span>Marquer tout comme lu</span>
-              </>
-            )}
-          </Button>
-        )}
+      <div className="px-4 py-3 border-b border-border bg-lightgray dark:bg-darkgray">
+        <h3 className="text-sm font-semibold text-ld">Notifications</h3>
       </div>
 
       {/* Notifications List */}

@@ -170,18 +170,20 @@ export function getLeadColumns({ isAdmin, includeSelection, onDelete }: ColumnOp
     })
   );
 
-  // Assignee
-  columns.push(
-    columnHelper.accessor('assignee', {
-      header: () => COLUMN_LABELS.assignee,
-      cell: (info) => (
-        <span className="text-darklink text-sm truncate max-w-25 block">
-          {info.getValue()?.display_name || 'Non assigne'}
-        </span>
-      ),
-      size: 110,
-    })
-  );
+  // Assignee (admin only - sales users only see their own leads)
+  if (isAdmin) {
+    columns.push(
+      columnHelper.accessor('assignee', {
+        header: () => COLUMN_LABELS.assignee,
+        cell: (info) => (
+          <span className="text-darklink text-sm truncate max-w-25 block">
+            {info.getValue()?.display_name || 'Non assigné'}
+          </span>
+        ),
+        size: 110,
+      })
+    );
+  }
 
   // Created at (sortable)
   columns.push(

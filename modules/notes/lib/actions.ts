@@ -285,6 +285,37 @@ export async function searchLeadsForNotes(query: string): Promise<{
 }
 
 /**
+ * Get all leads assigned to the current user (for dropdown picker)
+ * Returns all non-deleted leads assigned to the user, sorted by name
+ */
+export async function getAssignedLeadsForNotes(): Promise<{
+  leads: Array<{ id: string; first_name: string | null; last_name: string | null; company: string | null }>;
+  error?: string;
+}> {
+  const supabase = await createClient();
+  const user = await getCurrentUser();
+
+  if (!user) {
+    return { leads: [], error: FR_MESSAGES.UNAUTHENTICATED };
+  }
+
+  const { data, error } = await supabase
+    .from('leads')
+    .select('id, first_name, last_name, company')
+    .eq('assigned_to', user.id)
+    .is('deleted_at', null)
+    .order('last_name', { ascending: true })
+    .order('first_name', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching assigned leads:', error);
+    return { leads: [], error: 'Erreur lors du chargement des leads' };
+  }
+
+  return { leads: data || [] };
+}
+
+/**
  * Update note position/size after drag or resize
  * Optimized for frequent calls - minimal validation, fast update
  * No revalidatePath - optimistic UI handles display

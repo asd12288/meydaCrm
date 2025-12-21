@@ -125,7 +125,7 @@ export function NoteGrid({ notes: initialNotes }: NoteGridProps) {
           onClose={handleCloseCreate}
           title="Nouvelle note"
           icon={<IconNote size={20} />}
-          size="md"
+          size="lg"
         >
           <NoteForm onSuccess={handleCloseCreate} onCancel={handleCloseCreate} />
         </Modal>

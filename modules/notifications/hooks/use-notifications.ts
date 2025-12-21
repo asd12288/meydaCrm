@@ -134,17 +134,18 @@ export function useNotifications(options: UseNotificationsOptions = {}): UseNoti
     []
   );
 
-  // Mark all notifications as read
+  // Mark all notifications as read (optimistic - clears immediately)
   const markAllAsRead = useCallback(async () => {
-    const result = await markAllNotificationsRead();
+    // Optimistic update: clear count and mark as read immediately
+    const now = new Date().toISOString();
+    setNotifications((prev) => prev.map((n) => ({ ...n, readAt: n.readAt || now })));
+    setUnreadCount(0);
 
-    if (result.success) {
-      // Update local state
-      const now = new Date().toISOString();
-      setNotifications((prev) => prev.map((n) => ({ ...n, readAt: n.readAt || now })));
-      setUnreadCount(0);
-    } else {
+    // Then persist to server in background
+    const result = await markAllNotificationsRead();
+    if (!result.success) {
       console.error('Error marking all as read:', result.error);
+      // Could revert here, but for notifications it's not critical
     }
   }, []);
 
@@ -203,15 +204,8 @@ export function useNotifications(options: UseNotificationsOptions = {}): UseNoti
             // Add to top of list
             setNotifications((prev) => [notification, ...prev]);
 
-            // Increment unread count
+            // Increment unread count (local is accurate for real-time updates)
             setUnreadCount((prev) => prev + 1);
-
-            // Refresh unread count from server (more accurate)
-            getUnreadCount().then((result) => {
-              if (result.success && result.count !== undefined) {
-                setUnreadCount(result.count);
-              }
-            });
           }
         )
         .subscribe((status) => {

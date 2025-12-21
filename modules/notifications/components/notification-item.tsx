@@ -38,9 +38,8 @@ export function NotificationItem({ notification, onMarkAsRead }: NotificationIte
     <div
       onClick={handleClick}
       className={`
-        flex gap-3 px-4 py-3 cursor-pointer transition-all duration-200 dropdown-item-stagger group
+        flex gap-3 px-4 py-3 cursor-pointer transition-colors duration-150 group
         ${isRead ? 'hover:bg-lightgray dark:hover:bg-darkgray' : 'bg-primary/5 hover:bg-primary/10 dark:bg-primary/10 dark:hover:bg-primary/20'}
-        hover:pl-5
       `}
     >
       {/* Icon */}

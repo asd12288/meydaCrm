@@ -6,11 +6,6 @@
  */
 
 import { spawn } from 'child_process';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 const NGROK_DOMAIN = 'sheep-wanted-squirrel.ngrok-free.app';
 const LOCAL_PORT = 3000;

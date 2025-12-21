@@ -688,8 +688,8 @@ describe('Lead Actions - Assign Single Lead', () => {
       })
       .eq('id', testLeadId)
 
-    // Get updated_at timestamp
-    const { data: lead1 } = await adminClient
+    // Get updated_at timestamp (verify API works)
+    await adminClient
       .from('leads')
       .select('updated_at')
       .eq('id', testLeadId)
@@ -811,8 +811,8 @@ describe('Lead Actions - Update Lead', () => {
   it('admin can update any lead fields', async () => {
     const client = await signInAsUser(admin.email, admin.password)
 
-    // Get current data
-    const { data: currentLead } = await adminClient
+    // Verify lead exists before update
+    await adminClient
       .from('leads')
       .select('first_name, last_name, email, phone, company')
       .eq('id', testLeadId)
@@ -1365,7 +1365,7 @@ describe('Lead Actions - Get Lead By ID', () => {
   it('sales cannot fetch unassigned lead details (RLS blocks)', async () => {
     const client = await signInAsUser(sales.email, sales.password)
 
-    const { data: lead, error } = await client
+    const { data: lead } = await client
       .from('leads')
       .select('*')
       .eq('id', unassignedLeadId)

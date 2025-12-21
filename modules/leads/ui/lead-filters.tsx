@@ -20,7 +20,7 @@ import {
   IconDownload,
   IconSparkles,
 } from '@tabler/icons-react';
-import { FilterDropdown, type FilterOption, UserAvatar, useToast, useModal } from '@/modules/shared';
+import { FilterDropdown, type FilterOption, UserAvatar, useModal } from '@/modules/shared';
 import { Button } from '@/components/ui/button';
 import { useFilterNavigation } from '../hooks/use-filter-navigation';
 import { ExportModal } from '@/modules/export/components/export-modal';
@@ -63,7 +63,6 @@ export function LeadFilters({ salesUsers, isAdmin, hideStatusFilter = false }: L
   const { searchParams, updateFilter, clearFilters } = useFilterNavigation();
   const [searchValue, setSearchValue] = useState(searchParams.get('search') || '');
   const exportModal = useModal();
-  const { toast } = useToast();
 
   const currentSearch = searchParams.get('search') || '';
   const currentStatus = searchParams.get('status') || '';

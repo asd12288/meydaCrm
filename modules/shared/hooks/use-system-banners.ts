@@ -96,9 +96,12 @@ export function useSystemBanners(options: UseSystemBannersOptions = {}): UseSyst
 
     channelRef.current = channel;
 
+    // Capture supabase client ref for cleanup
+    const supabase = supabaseRef.current;
+
     return () => {
       if (channelRef.current) {
-        supabaseRef.current.removeChannel(channelRef.current);
+        supabase.removeChannel(channelRef.current);
         channelRef.current = null;
       }
     };
