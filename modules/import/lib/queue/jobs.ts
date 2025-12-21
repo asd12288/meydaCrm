@@ -95,10 +95,6 @@ export async function enqueueParseJob(
     },
   });
 
-  console.log(
-    `[QStash] Enqueued parse job for ${payload.importJobId}: ${result.messageId}`
-  );
-
   return result.messageId;
 }
 
@@ -130,10 +126,6 @@ export async function enqueueCommitJob(
       ...getBypassHeaders(),
     },
   });
-
-  console.log(
-    `[QStash] Enqueued commit job for ${payload.importJobId}: ${result.messageId}`
-  );
 
   return result.messageId;
 }

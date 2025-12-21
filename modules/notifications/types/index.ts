@@ -41,13 +41,15 @@ export interface LeadCommentMetadata {
 }
 
 export interface ImportCompletedMetadata {
-  importJobId: string;
+  importJobId?: string;
+  exportJobId?: string;
   fileName?: string;
   importedCount?: number;
 }
 
 export interface ImportFailedMetadata {
-  importJobId: string;
+  importJobId?: string;
+  exportJobId?: string;
   fileName?: string;
   errorMessage?: string;
 }

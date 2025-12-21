@@ -10,6 +10,7 @@ import { getCurrentUser } from '@/modules/auth';
 import { TicketListPanel } from '../components/ticket-list-panel';
 import { TicketDetailPanel } from '../components/ticket-detail-panel';
 import { CreateTicketModal } from '../components/create-ticket-modal';
+import { BannerManagement } from '../components/banner-management';
 import { getTicket, getTickets } from '../lib/actions';
 import type { SupportTicketWithDetails, SupportTicketStatus } from '../types';
 
@@ -27,6 +28,7 @@ export function SupportEmailView({
 
   // User state
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isDeveloper, setIsDeveloper] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   // Tickets state with pagination
@@ -62,6 +64,7 @@ export function SupportEmailView({
     getCurrentUser().then((user) => {
       if (isMountedRef.current) {
         setIsAdmin(user?.profile?.role === 'admin');
+        setIsDeveloper(user?.profile?.role === 'developer');
         setCurrentUserId(user?.profile?.id || null);
       }
     });
@@ -217,6 +220,13 @@ export function SupportEmailView({
           ) : undefined
         }
       />
+
+      {/* Developer-only: Banner Management */}
+      {isDeveloper && (
+        <div className="mb-6">
+          <BannerManagement />
+        </div>
+      )}
 
       {/* Main split layout */}
       <CardBox className="!p-0 overflow-hidden flex-1">

@@ -80,8 +80,6 @@ export async function buildAssignmentContext(
 
   // Pre-load users for by_column mode
   if (config.mode === 'by_column') {
-    console.log('[Assignment] Pre-loading users for by_column mode');
-
     const { data: users } = await supabase
       .from('profiles')
       .select('id, display_name, role');
@@ -92,7 +90,6 @@ export async function buildAssignmentContext(
         if (user.display_name) {
           const normalized = normalizeForComparison(user.display_name);
           userMap.set(normalized, user.id);
-          console.log(`[Assignment] Mapped: "${normalized}" → ${user.id}`);
         }
         // Also map by ID for direct ID references
         userMap.set(user.id.toLowerCase(), user.id);
@@ -113,13 +110,10 @@ export async function buildAssignmentContext(
           // Only add first name mapping if it's unique (no ambiguity)
           if (firstNameCounts.get(firstName) === 1 && !userMap.has(firstName)) {
             userMap.set(firstName, user.id);
-            console.log(`[Assignment] Mapped (first name): "${firstName}" → ${user.id}`);
           }
         }
       }
     }
-
-    console.log(`[Assignment] Loaded ${userMap.size} user mappings`);
   }
 
   return {
@@ -172,12 +166,7 @@ export function getAssignment(
         return null; // Empty value - leave unassigned
       }
       const normalizedValue = normalizeForComparison(rawValue);
-      const userId = userMap.get(normalizedValue);
-      if (!userId) {
-        // Log unmatched values for debugging (will appear in server logs)
-        console.log(`[Assignment] Unmatched value: "${rawValue}" (normalized: "${normalizedValue}")`);
-      }
-      return userId || null;
+      return userMap.get(normalizedValue) || null;
     }
 
     default:

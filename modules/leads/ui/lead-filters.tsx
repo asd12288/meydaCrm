@@ -18,13 +18,13 @@ import {
   IconRefresh,
   IconMail,
   IconDownload,
-  IconLoader2,
   IconSparkles,
 } from '@tabler/icons-react';
-import { FilterDropdown, type FilterOption, UserAvatar, useToast } from '@/modules/shared';
+import { FilterDropdown, type FilterOption, UserAvatar, useToast, useModal } from '@/modules/shared';
 import { Button } from '@/components/ui/button';
-import { FR_MESSAGES } from '@/lib/errors';
 import { useFilterNavigation } from '../hooks/use-filter-navigation';
+import { ExportModal } from '@/modules/export/components/export-modal';
+import type { ExportFilters } from '@/modules/export/types';
 import { LEAD_STATUS_OPTIONS, STATUS_COLORS, SEARCH_DEBOUNCE_MS, MIN_SEARCH_LENGTH } from '../config/constants';
 import { UNASSIGNED_FILTER_VALUE } from '../types';
 import type { SalesUser } from '../types';
@@ -62,7 +62,7 @@ interface LeadFiltersProps {
 export function LeadFilters({ salesUsers, isAdmin, hideStatusFilter = false }: LeadFiltersProps) {
   const { searchParams, updateFilter, clearFilters } = useFilterNavigation();
   const [searchValue, setSearchValue] = useState(searchParams.get('search') || '');
-  const [isExporting, setIsExporting] = useState(false);
+  const exportModal = useModal();
   const { toast } = useToast();
 
   const currentSearch = searchParams.get('search') || '';
@@ -86,61 +86,14 @@ export function LeadFilters({ salesUsers, isAdmin, hideStatusFilter = false }: L
 
   const hasActiveFilters = currentSearch || (!hideStatusFilter && currentStatus) || currentAssignee;
 
-  // Handle CSV export
-  const handleExport = async () => {
-    if (isExporting) return;
-
-    setIsExporting(true);
-    toast.info('Préparation de l\'export... Cela peut prendre quelques instants.');
-
-    try {
-      // Build export URL with current filters
-      const exportParams = new URLSearchParams();
-      if (currentSearch) exportParams.set('search', currentSearch);
-      if (currentStatus) exportParams.set('status', currentStatus);
-      if (currentAssignee) exportParams.set('assignedTo', currentAssignee);
-      const sortBy = searchParams.get('sortBy');
-      const sortOrder = searchParams.get('sortOrder');
-      if (sortBy) exportParams.set('sortBy', sortBy);
-      if (sortOrder) exportParams.set('sortOrder', sortOrder);
-
-      const response = await fetch(`/api/leads/export?${exportParams.toString()}`);
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          toast.error(FR_MESSAGES.SESSION_EXPIRED);
-        } else if (response.status === 403) {
-          toast.error(FR_MESSAGES.UNAUTHORIZED);
-        } else {
-          toast.error('Erreur lors de l\'export');
-        }
-        return;
-      }
-
-      // Trigger download with proper cleanup to prevent memory leaks
-      let blobUrl: string | null = null;
-      try {
-        const blob = await response.blob();
-        blobUrl = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = blobUrl;
-        a.download = `leads-export-${new Date().toISOString().split('T')[0]}.csv`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        toast.success('Export terminé');
-      } finally {
-        if (blobUrl) {
-          URL.revokeObjectURL(blobUrl);
-        }
-      }
-    } catch (error) {
-      console.error('[Export] Error:', error);
-      toast.error('Erreur lors de l\'export');
-    } finally {
-      setIsExporting(false);
-    }
-  };
+  // Build export filters for modal
+  const exportFilters: ExportFilters = useMemo(() => ({
+    search: currentSearch || undefined,
+    status: currentStatus || undefined,
+    assignedTo: currentAssignee || undefined,
+    sortBy: searchParams.get('sortBy') || undefined,
+    sortOrder: (searchParams.get('sortOrder') as 'asc' | 'desc') || undefined,
+  }), [currentSearch, currentStatus, currentAssignee, searchParams]);
 
   // Convert status options to FilterOption format with icons and colors
   const statusOptions: FilterOption[] = useMemo(
@@ -295,17 +248,21 @@ export function LeadFilters({ salesUsers, isAdmin, hideStatusFilter = false }: L
           type="button"
           variant="outline"
           size="sm"
-          onClick={handleExport}
-          disabled={isExporting}
+          onClick={() => exportModal.open()}
           className="h-10"
         >
-          {isExporting ? (
-            <IconLoader2 size={16} className="animate-spin" />
-          ) : (
-            <IconDownload size={16} />
-          )}
-          {isExporting ? 'Export...' : 'Exporter CSV'}
+          <IconDownload size={16} />
+          Exporter CSV
         </Button>
+      )}
+
+      {/* Export Modal */}
+      {isAdmin && (
+        <ExportModal
+          isOpen={exportModal.isOpen}
+          onClose={exportModal.close}
+          filters={exportFilters}
+        />
       )}
     </div>
   );

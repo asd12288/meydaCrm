@@ -115,9 +115,9 @@ export function FileDropzone({
   const getFileIcon = (filename: string) => {
     const ext = getFileExtension(filename);
     if (ext === 'csv') {
-      return <IconFile className="w-8 h-8 text-success" />;
+      return <IconFile className="w-8 h-8 text-primary" />;
     }
-    return <IconFileSpreadsheet className="w-8 h-8 text-success" />;
+    return <IconFileSpreadsheet className="w-8 h-8 text-primary" />;
   };
 
   const formatFileSize = (bytes: number): string => {
@@ -129,7 +129,7 @@ export function FileDropzone({
   // Show selected file
   if (selectedFile && !error) {
     return (
-      <div className="border-2 border-success/30 bg-lightsuccess/20 rounded-lg p-6">
+      <div className="border-2 border-primary/30 bg-lightprimary/20 rounded-lg p-6">
         <div className="flex items-center gap-4">
           {getFileIcon(selectedFile.name)}
           <div className="flex-1 min-w-0">

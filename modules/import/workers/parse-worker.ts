@@ -50,18 +50,9 @@ export async function handleParseDirectly(importJobId: string): Promise<{
   processingTimeMs: number;
 }> {
   const startTime = Date.now();
-
-  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  console.log('🔄 [ParseWorker] STARTING PARSE JOB');
-  console.log(`📋 [ParseWorker] Job ID: ${importJobId}`);
-  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-
-  console.log('🔌 [ParseWorker] Creating admin Supabase client...');
   const supabase = createAdminClient();
-  console.log('✅ [ParseWorker] Supabase client created');
 
   // Get the import job
-  console.log('📥 [ParseWorker] Fetching job from database...');
   const { data: job, error: jobError } = await supabase
     .from('import_jobs')
     .select('*')
@@ -69,50 +60,32 @@ export async function handleParseDirectly(importJobId: string): Promise<{
     .single();
 
   if (jobError || !job) {
-    console.error('❌ [ParseWorker] Job not found:', jobError);
     throw new Error(`Job not found: ${importJobId}`);
   }
 
-  console.log('✅ [ParseWorker] Job loaded:', {
-    fileName: job.file_name,
-    fileType: job.file_type,
-    status: job.status,
-    storagePath: job.storage_path,
-  });
-
   // Update status to parsing
-  console.log('📝 [ParseWorker] Updating job status to "parsing"...');
   await supabase
     .from('import_jobs')
     .update({
       status: 'parsing',
       error_message: null,
-      error_details: null,
       worker_id: 'direct-worker',
     })
     .eq('id', importJobId);
-  console.log('✅ [ParseWorker] Status updated to "parsing"');
 
   try {
     // Get signed URL for the file
-    console.log(`🔗 [ParseWorker] Getting signed URL for: ${job.storage_path}`);
     const { data: urlData, error: urlError } = await supabase.storage
       .from('imports')
       .createSignedUrl(job.storage_path, 3600);
 
     if (urlError || !urlData?.signedUrl) {
-      console.error('❌ [ParseWorker] Failed to get signed URL:', urlError);
       throw new Error(`Failed to get signed URL: ${urlError?.message}`);
     }
 
-    console.log('✅ [ParseWorker] Signed URL obtained');
-    console.log(`🔗 [ParseWorker] URL: ${urlData.signedUrl.substring(0, 80)}...`);
-
     // Get file metadata for size estimation
-    console.log('📏 [ParseWorker] Getting file metadata for progress estimation...');
     let estimatedTotalChunks: number | null = null;
 
-    // Try to get file size from storage metadata
     const { data: fileList } = await supabase.storage
       .from('imports')
       .list(job.storage_path.split('/').slice(0, -1).join('/'), {
@@ -122,48 +95,26 @@ export async function handleParseDirectly(importJobId: string): Promise<{
     const fileMetadata = fileList?.find(f => job.storage_path.endsWith(f.name));
     if (fileMetadata?.metadata?.size) {
       const fileSize = fileMetadata.metadata.size as number;
-      // Estimate rows: fileSize / avgRowSize, then chunks: rows / batchSize
       const estimatedRows = Math.ceil(fileSize / ESTIMATED_AVG_ROW_SIZE_BYTES);
       estimatedTotalChunks = Math.max(1, Math.ceil(estimatedRows / INSERT_BATCH_SIZE));
-      console.log(`📊 [ParseWorker] File size: ${(fileSize / 1024).toFixed(1)} KB`);
-      console.log(`📊 [ParseWorker] Estimated rows: ~${estimatedRows.toLocaleString()}`);
-      console.log(`📊 [ParseWorker] Estimated chunks: ~${estimatedTotalChunks}`);
 
-      // Set estimated total_chunks early for progress tracking
       await supabase
         .from('import_jobs')
-        .update({
-          total_chunks: estimatedTotalChunks,
-        })
+        .update({ total_chunks: estimatedTotalChunks })
         .eq('id', importJobId);
-    } else {
-      console.log('⚠️ [ParseWorker] Could not get file size, progress will be indeterminate during parsing');
     }
 
     // Get column mappings
-    console.log('🗺️ [ParseWorker] Checking column mappings...');
     const mappingConfig = job.column_mapping as ColumnMappingConfig | null;
     if (!mappingConfig?.mappings) {
-      console.error('❌ [ParseWorker] No column mapping configured');
       throw new Error('Column mapping not configured');
     }
-
-    console.log(`✅ [ParseWorker] Found ${mappingConfig.mappings.length} column mappings`);
-
-    // Always start fresh (resume functionality removed)
-    console.log('🆕 [ParseWorker] Starting fresh parse');
 
     // Counters
     let totalRows = 0;
     let validRows = 0;
     let invalidRows = 0;
     let currentChunk = 0;
-
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('🔍 [ParseWorker] STARTING STREAM PARSE');
-    console.log(`📄 [ParseWorker] File type: ${job.file_type}`);
-    console.log(`📊 [ParseWorker] Chunk size: ${INSERT_BATCH_SIZE} rows`);
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
     // Stream parse the file
     const stats = await streamParseFile(
@@ -176,8 +127,6 @@ export async function handleParseDirectly(importJobId: string): Promise<{
         sheetName: mappingConfig.sheetName,
 
         onChunk: async (rows: ParsedRow[]) => {
-          console.log(`📦 [ParseWorker] Processing chunk ${currentChunk} with ${rows.length} rows...`);
-          
           // Prepare rows for insert
           const insertRows = rows.map((row) => ({
             import_job_id: importJobId,
@@ -190,16 +139,13 @@ export async function handleParseDirectly(importJobId: string): Promise<{
           }));
 
           // Batch insert
-          console.log(`💾 [ParseWorker] Inserting ${insertRows.length} rows to database...`);
           const { error: insertError } = await supabase
             .from('import_rows')
             .insert(insertRows);
 
           if (insertError) {
-            console.error(`❌ [ParseWorker] Insert error for chunk ${currentChunk}:`, insertError);
             throw new Error(`Failed to insert rows: ${insertError.message}`);
           }
-          console.log(`✅ [ParseWorker] Chunk ${currentChunk} inserted successfully`);
 
           // Update counters
           for (const row of rows) {
@@ -212,7 +158,6 @@ export async function handleParseDirectly(importJobId: string): Promise<{
           }
 
           // Save progress
-          console.log(`💾 [ParseWorker] Saving progress...`);
           await supabase
             .from('import_jobs')
             .update({
@@ -223,16 +168,10 @@ export async function handleParseDirectly(importJobId: string): Promise<{
             })
             .eq('id', importJobId);
 
-          console.log(
-            `✅ [ParseWorker] Chunk ${currentChunk} complete: ${totalRows} total (${validRows} valid, ${invalidRows} invalid)`
-          );
-
           currentChunk++;
         },
 
         onError: async (error: Error) => {
-          console.error(`[ParseWorker] Error:`, error);
-
           await supabase
             .from('import_jobs')
             .update({
@@ -244,23 +183,8 @@ export async function handleParseDirectly(importJobId: string): Promise<{
       }
     );
 
-    // Parse complete - now trigger commit
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('🏁 [ParseWorker] PARSE COMPLETE');
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-
-    const duration = ((Date.now() - startTime) / 1000).toFixed(1);
-    const speed = Math.round(stats.totalRows / (Date.now() - startTime) * 1000);
-
-    console.log(`📊 [ParseWorker] Total: ${stats.totalRows.toLocaleString()} rows`);
-    console.log(`✅ [ParseWorker] Valid: ${stats.validRows.toLocaleString()} rows`);
-    console.log(`❌ [ParseWorker] Invalid: ${stats.invalidRows.toLocaleString()} rows`);
-    console.log(`⏱️ [ParseWorker] Duration: ${duration}s`);
-    console.log(`⚡ [ParseWorker] Speed: ${speed.toLocaleString()} rows/sec`);
-
     // Check if there are valid rows to commit
     if (stats.validRows === 0) {
-      console.log('⚠️ [ParseWorker] No valid rows to import - marking as completed');
       await supabase
         .from('import_jobs')
         .update({
@@ -298,13 +222,7 @@ export async function handleParseDirectly(importJobId: string): Promise<{
       checkWithinFile: true,
     };
 
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('🔗 [ParseWorker] CHAINING TO COMMIT WORKER');
-    console.log(`📋 [ParseWorker] Assignment mode: ${finalAssignment.mode}`);
-    console.log(`📋 [ParseWorker] Duplicate strategy: ${finalDuplicates.strategy}`);
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-
-    // Update job status - mark as ready briefly then trigger commit
+    // Update job status and trigger commit
     await supabase
       .from('import_jobs')
       .update({
@@ -318,19 +236,13 @@ export async function handleParseDirectly(importJobId: string): Promise<{
       .eq('id', importJobId);
 
     // Queue commit job via QStash
-    console.log('☁️ [ParseWorker] Queuing commit job via QStash');
-    const commitMessageId = await enqueueCommitJob({
+    await enqueueCommitJob({
       importJobId,
       assignment: finalAssignment,
       duplicates: finalDuplicates,
       defaultStatus: 'new',
       defaultSource: `Import ${job.file_name}`,
     });
-    console.log(`✅ [ParseWorker] Commit job queued: ${commitMessageId}`);
-
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('✅ [ParseWorker] PARSE → COMMIT CHAIN COMPLETE');
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
     return {
       success: true,
@@ -341,8 +253,6 @@ export async function handleParseDirectly(importJobId: string): Promise<{
     };
 
   } catch (error) {
-    console.error(`[ParseWorker] Job ${importJobId} failed:`, error);
-
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
     // Get job to find creator

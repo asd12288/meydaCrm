@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:prod": "next dev",
+    "dev:branch": "node -e \"require('dotenv').config({path:'.env.development'})\" && next dev",
     "dev:webhook": "node scripts/dev-webhook.mjs",
     "build": "next build",
     "start": "next start",
@@ -34,6 +36,7 @@
     "apexcharts": "^5.3.6",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "csv-parse": "^6.1.0",
     "drizzle-orm": "^0.45.1",
     "exceljs": "^4.4.0",
     "flowbite": "^4.0.1",

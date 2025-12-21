@@ -21,7 +21,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 export const maxDuration = 300;
 export const dynamic = 'force-dynamic';
 
-const CHUNK_SIZE = 5000;
+const CHUNK_SIZE = 1000; // Supabase API limit is 1000 rows per request
 const MIN_SEARCH_LENGTH = 3;
 
 /**

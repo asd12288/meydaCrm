@@ -1126,4 +1126,78 @@ import { FormSelectDropdown } from '@/modules/shared';
 
 ---
 
+## 17) Development Workflow
+
+### Branch Strategy
+
+| Environment | Supabase Project | Git Branch | Vercel Environment |
+|-------------|------------------|------------|-------------------|
+| **Production** | `owwyxrxojltmupqrvqcp` | `main` | Production |
+| **Preview/Dev** | `wdtzyhtmrpbsrxycsqrf` | feature branches | Preview |
+
+### Supabase Branches
+
+- **Production**: `owwyxrxojltmupqrvqcp` - NEVER modify directly without explicit user confirmation
+- **Development**: `wdtzyhtmrpbsrxycsqrf` - Use for all testing and development
+
+### Safety Rules (MUST follow)
+
+1. **NEVER** run DELETE/DROP/TRUNCATE on production without explicit user confirmation
+2. **ALWAYS** verify `project_id` before executing SQL via MCP tools:
+   - Production: `owwyxrxojltmupqrvqcp`
+   - Development: `wdtzyhtmrpbsrxycsqrf`
+3. **Test migrations on develop branch first** before applying to production
+4. **Never push directly to main** - Always use feature branches + PRs
+
+### GitHub Branch Protection
+
+The `main` branch has protection rules enabled:
+- Requires pull request before merging
+- Requires status checks to pass (build)
+- No direct pushes allowed
+
+### Workflow for New Features
+
+```bash
+# 1. Create feature branch
+git checkout -b feature/my-feature
+
+# 2. Develop and test against develop Supabase branch
+# Use SUPABASE_DEV_URL and SUPABASE_DEV_SERVICE_KEY from .env.local
+
+# 3. Push and create PR
+git push -u origin feature/my-feature
+gh pr create --title "Feature: My feature" --body "Description"
+
+# 4. After PR merge, verify production
+```
+
+### Environment Variables (.env.local)
+
+```bash
+# Production (default for app)
+NEXT_PUBLIC_SUPABASE_URL="https://owwyxrxojltmupqrvqcp.supabase.co"
+
+# Development branch (for scripts)
+SUPABASE_DEV_URL="https://wdtzyhtmrpbsrxycsqrf.supabase.co"
+SUPABASE_DEV_SERVICE_KEY="[from Supabase dashboard]"
+```
+
+### Vercel Environment Configuration
+
+| Environment | Supabase URL | Use Case |
+|-------------|--------------|----------|
+| Production | `owwyxrxojltmupqrvqcp` | Live site |
+| Preview | `wdtzyhtmrpbsrxycsqrf` | PR previews |
+
+### Scripts for Data Management
+
+| Script | Purpose |
+|--------|---------|
+| `scripts/clear-production-leads.ts` | Clear all leads (requires --confirm) |
+| `scripts/import-all-leads.ts` | Import XLSX + CSV leads |
+| `scripts/seed-develop-branch.ts` | Seed develop with users + leads |
+
+---
+
 End of CLAUDE.md

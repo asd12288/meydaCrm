@@ -3,6 +3,7 @@ import { Header } from '../components/header';
 import { MainContent } from '../components/main-content';
 import { SidebarProvider } from '../context/sidebar-context';
 import { ExpiryWarningBanner } from '@/modules/subscription/components/expiry-warning-banner';
+import { BannerProvider, BannerContainer } from '@/modules/shared';
 import type { NormalizedProfile } from '@/lib/auth';
 
 interface SubscriptionInfo {
@@ -19,45 +20,50 @@ interface DashboardLayoutProps {
 }
 
 export function DashboardLayout({ children, profile, subscription }: DashboardLayoutProps) {
-  // Show banner if approaching expiry OR in grace period
-  const showBanner =
+  // Show subscription banner if approaching expiry OR in grace period
+  const showSubscriptionBanner =
     (subscription?.showWarning && subscription.daysRemaining !== null) ||
     subscription?.isGrace;
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen bg-lightgray dark:bg-darkgray">
-        {/* Fixed Sidebar */}
-        <Sidebar userRole={profile.role} />
+    <BannerProvider>
+      <SidebarProvider>
+        <div className="min-h-screen bg-lightgray dark:bg-darkgray">
+          {/* Fixed Sidebar */}
+          <Sidebar userRole={profile.role} />
 
-        {/* Main content area with margin for sidebar */}
-        <MainContent>
-          {/* Fixed Header */}
-          <Header
-            displayName={profile.displayName}
-            role={profile.role}
-            avatar={profile.avatar}
-          />
+          {/* Main content area with margin for sidebar */}
+          <MainContent>
+            {/* Fixed Header */}
+            <Header
+              displayName={profile.displayName}
+              role={profile.role}
+              avatar={profile.avatar}
+            />
 
-          {/* Subscription expiry warning banner */}
-          {showBanner && (
-            <div className="sticky top-16 z-20">
-              <ExpiryWarningBanner
-                daysRemaining={subscription?.daysRemaining ?? 0}
-                isGrace={subscription?.isGrace}
-                graceDaysRemaining={subscription?.graceDaysRemaining}
-              />
-            </div>
-          )}
+            {/* System banners (warnings, welcome messages, etc.) */}
+            <BannerContainer />
 
-          {/* Scrollable main content */}
-          <main className="p-4 lg:p-5 xl:p-6">
-            <div className="max-w-400 mx-auto">
-              {children}
-            </div>
-          </main>
-        </MainContent>
-      </div>
-    </SidebarProvider>
+            {/* Subscription expiry warning banner */}
+            {showSubscriptionBanner && (
+              <div className="sticky top-16 z-20">
+                <ExpiryWarningBanner
+                  daysRemaining={subscription?.daysRemaining ?? 0}
+                  isGrace={subscription?.isGrace}
+                  graceDaysRemaining={subscription?.graceDaysRemaining}
+                />
+              </div>
+            )}
+
+            {/* Scrollable main content */}
+            <main className="p-4 lg:p-5 xl:p-6">
+              <div className="max-w-400 mx-auto">
+                {children}
+              </div>
+            </main>
+          </MainContent>
+        </div>
+      </SidebarProvider>
+    </BannerProvider>
   );
 }

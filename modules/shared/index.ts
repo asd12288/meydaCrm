@@ -78,3 +78,9 @@ export { useToast } from './hooks/use-toast';
 export { ErrorBoundary, useErrorBoundary } from 'react-error-boundary';
 export { ErrorFallback, type FallbackProps } from './ui/error-fallback';
 export { SectionErrorFallback } from './ui/section-error-fallback';
+
+// Banner system
+export { SystemBanner, type SystemBannerProps, type BannerType } from './components/system-banner';
+export { BannerContainer } from './components/banner-container';
+export { BannerProvider, useBanner, type Banner } from './context/banner-context';
+export { useSystemBanners } from './hooks/use-system-banners';

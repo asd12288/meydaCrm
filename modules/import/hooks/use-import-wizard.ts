@@ -197,7 +197,7 @@ export function useImportWizard() {
         // This avoids Deno Edge Function compatibility issues with XLSX library
         setState((prev) => ({ ...prev, conversionProgress: 10 }));
 
-        console.log(`Converting Excel file to CSV: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`);
+        // Convert Excel file to CSV
 
         // Convert Excel to CSV
         const { csvFile, headers, rowCount, originalName } = await convertExcelToCSV(file);
@@ -233,8 +233,6 @@ export function useImportWizard() {
           delimiter,
         };
 
-        console.log(`Excel converted: ${rowCount} rows, ${headers.length} columns`);
-
         setState((prev) => ({
           ...prev,
           file: uploadedFile,
@@ -248,7 +246,6 @@ export function useImportWizard() {
         }));
       }
     } catch (err) {
-      console.error('File processing error:', err);
       setState((prev) => ({
         ...prev,
         error: err instanceof Error ? err.message : 'Erreur lors de l\'analyse du fichier',

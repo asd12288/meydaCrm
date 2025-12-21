@@ -66,16 +66,6 @@ export type LeadFieldKey =
   | 'created_at'
   | 'updated_at';
 
-/**
- * Fields that are required for a valid lead (at least one must be present)
- */
-export const REQUIRED_FIELDS: LeadFieldKey[] = ['email', 'phone', 'external_id'];
-
-/**
- * Fields that can be used for duplicate detection
- */
-export const DUPLICATE_CHECK_FIELDS: LeadFieldKey[] = ['external_id', 'email', 'phone'];
-
 // =============================================================================
 // PARSED ROW TYPES
 // =============================================================================

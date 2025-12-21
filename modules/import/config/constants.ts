@@ -40,18 +40,9 @@ export const CLIENT_SIDE_PARSE_THRESHOLD = 0; // Always use client-side
 /** Number of rows to send per batch when doing client-side parsing */
 export const CLIENT_BATCH_SIZE = 500;
 
-/** Maximum rows to preview in validation step */
-export const PREVIEW_ROW_LIMIT = 100;
-
-/** Maximum rows to show in error table */
-export const ERROR_PREVIEW_LIMIT = 50;
-
 // =============================================================================
 // VALIDATION
 // =============================================================================
-
-/** Maximum rows allowed per import (200K for large files) */
-export const MAX_IMPORT_ROWS = 300000
 
 /** Minimum confidence score for auto-mapping (0-1) */
 export const AUTO_MAP_CONFIDENCE_THRESHOLD = 0.7;

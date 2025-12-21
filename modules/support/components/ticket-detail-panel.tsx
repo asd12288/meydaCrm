@@ -200,6 +200,7 @@ export function TicketDetailPanel({
       {/* Conversation area */}
       <div className="flex-1 min-h-0 overflow-y-auto">
         <TicketConversation
+          ticket={ticket}
           comments={optimisticComments}
           currentUserId={currentUserId}
         />

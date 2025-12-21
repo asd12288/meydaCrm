@@ -155,17 +155,6 @@ export function getLeadColumns({ isAdmin, includeSelection, onDelete }: ColumnOp
     })
   );
 
-  // Company (sortable)
-  columns.push(
-    columnHelper.accessor('company', {
-      header: () => <SortableHeader columnId="company" label={COLUMN_LABELS.company} />,
-      cell: (info) => (
-        <span className="text-darklink text-sm truncate max-w-30 block">{info.getValue() || '-'}</span>
-      ),
-      size: 130,
-    })
-  );
-
   // Status badge (clickable, sortable)
   columns.push(
     columnHelper.accessor('status', {
@@ -194,16 +183,36 @@ export function getLeadColumns({ isAdmin, includeSelection, onDelete }: ColumnOp
     })
   );
 
-  // Updated at (sortable)
+  // Created at (sortable)
   columns.push(
-    columnHelper.accessor('updated_at', {
-      header: () => <SortableHeader columnId="updated_at" label={COLUMN_LABELS.updatedAt} />,
+    columnHelper.accessor('created_at', {
+      header: () => <SortableHeader columnId="created_at" label={COLUMN_LABELS.createdAt} />,
       cell: (info) => (
-        <span className="text-sm text-darklink">
+        <span className="text-sm text-darklink whitespace-nowrap">
           {new Date(info.getValue()).toLocaleDateString('fr-FR')}
         </span>
       ),
-      size: 100,
+      size: 90,
+    })
+  );
+
+  // Notes/Description (truncated for responsive design)
+  columns.push(
+    columnHelper.accessor('notes', {
+      header: () => COLUMN_LABELS.notes,
+      cell: (info) => {
+        const notes = info.getValue();
+        if (!notes) return <span className="text-darklink/50 text-sm italic">-</span>;
+        return (
+          <span
+            className="text-darklink text-sm line-clamp-1 max-w-40"
+            title={notes}
+          >
+            {notes}
+          </span>
+        );
+      },
+      size: 160,
     })
   );
 

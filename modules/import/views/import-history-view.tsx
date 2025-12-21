@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import {
   IconUpload,
@@ -16,6 +16,12 @@ import { ConfirmDialog, FormErrorAlert, ErrorBoundary, SectionErrorFallback } fr
 import { Button } from '@/components/ui/button';
 import { getImportJobs, retryImportJob, deleteImportJob } from '../lib/actions';
 import type { ImportJobWithStats } from '../types';
+
+// Polling interval in ms (3 seconds)
+const POLL_INTERVAL_MS = 3000;
+
+// Statuses that indicate an active job requiring polling
+const ACTIVE_STATUSES = ['queued', 'pending', 'parsing', 'importing'];
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof IconCheck }> = {
   pending: { label: 'En attente', color: 'text-darklink', icon: IconClock },
@@ -39,12 +45,10 @@ export function ImportHistoryView() {
   } | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadJobs();
-  }, []);
-
-  const loadJobs = async () => {
-    setLoading(true);
+  const loadJobs = useCallback(async (showLoading = true) => {
+    if (showLoading) {
+      setLoading(true);
+    }
     setError(null);
     try {
       const result = await getImportJobs();
@@ -59,7 +63,25 @@ export function ImportHistoryView() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  // Initial load
+  useEffect(() => {
+    loadJobs();
+  }, [loadJobs]);
+
+  // Check if there are any active jobs that need polling
+  const hasActiveJobs = jobs.some((job) => ACTIVE_STATUSES.includes(job.status));
+
+  // Poll for updates when there are active jobs
+  useEffect(() => {
+    if (!hasActiveJobs) return;
+
+    // Set up polling interval (don't show loading spinner during polling)
+    const intervalId = setInterval(() => loadJobs(false), POLL_INTERVAL_MS);
+
+    return () => clearInterval(intervalId);
+  }, [hasActiveJobs, loadJobs]);
 
   const handleRetryClick = (jobId: string) => {
     setConfirmDialog({ type: 'retry', jobId });
@@ -151,7 +173,7 @@ export function ImportHistoryView() {
         <div className="text-center">
           <IconAlertCircle className="w-12 h-12 text-error mx-auto mb-4" />
           <p className="text-error">{error}</p>
-          <Button variant="primary" onClick={loadJobs} className="mt-4">
+          <Button variant="primary" onClick={() => loadJobs()} className="mt-4">
             Réessayer
           </Button>
         </div>

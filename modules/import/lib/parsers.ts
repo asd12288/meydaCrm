@@ -7,7 +7,7 @@
  */
 
 import * as XLSX from 'xlsx';
-import type { ParseFileResult, RawRow, LeadFieldKey } from '../types';
+import type { RawRow, LeadFieldKey } from '../types';
 import type { ColumnMapping } from '../types/mapping';
 
 // =============================================================================
@@ -326,81 +326,3 @@ export function validateFileSize(file: File, maxSizeBytes: number): {
   return { isValid: true };
 }
 
-// =============================================================================
-// PREVIEW GENERATION
-// =============================================================================
-
-/**
- * Generate a preview of the file for the UI
- */
-export async function generateFilePreview(
-  file: File,
-  options: {
-    maxPreviewRows?: number;
-  } = {}
-): Promise<ParseFileResult> {
-  const { maxPreviewRows = 100 } = options;
-
-  const typeValidation = validateFileType(file);
-  if (!typeValidation.isValid) {
-    throw new Error(typeValidation.error);
-  }
-
-  if (typeValidation.fileType === 'csv') {
-    const { content, encoding } = await readFileAsText(file);
-    const { headers, rows, delimiter } = parseCSVContent(content, {
-      hasHeader: true,
-      maxRows: maxPreviewRows,
-    });
-
-    // Count total rows (excluding header)
-    const totalLines = content.split('\n').filter((l) => l.trim() !== '').length;
-    const rowCount = Math.max(0, totalLines - 1);
-
-    return {
-      headers,
-      rowCount,
-      sampleRows: rows.map((r) => r.values),
-      encoding,
-      delimiter,
-    };
-  }
-
-  // For Excel files, we'll need to use a library like xlsx
-  // This will be implemented in Phase 6.7 (Edge Function) for better performance
-  throw new Error(
-    'Les fichiers Excel seront traites cote serveur. Veuillez patienter...'
-  );
-}
-
-// =============================================================================
-// CHUNK PROCESSING
-// =============================================================================
-
-/**
- * Process rows in chunks for better UI responsiveness
- */
-export async function processRowsInChunks<T, R>(
-  items: T[],
-  chunkSize: number,
-  processor: (chunk: T[], startIndex: number) => Promise<R[]>,
-  onProgress?: (processed: number, total: number) => void
-): Promise<R[]> {
-  const results: R[] = [];
-  const total = items.length;
-
-  for (let i = 0; i < total; i += chunkSize) {
-    const chunk = items.slice(i, i + chunkSize);
-    const chunkResults = await processor(chunk, i);
-    results.push(...chunkResults);
-
-    if (onProgress) {
-      onProgress(Math.min(i + chunkSize, total), total);
-    }
-
-    // Yield to allow UI updates
-    await new Promise((resolve) => setTimeout(resolve, 0));
-  }
-
-  return results;
-}

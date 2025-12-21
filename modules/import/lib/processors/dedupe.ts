@@ -74,12 +74,8 @@ export async function buildDedupeSet(
     return dedupeSet;
   }
 
-  console.log(`[Dedupe] Building set for fields: ${config.checkFields.join(', ')}`);
-  const startTime = Date.now();
-
   for (const field of config.checkFields) {
     let cursor: string | null = null;
-    let totalLoaded = 0;
 
     while (true) {
       // Build query with cursor pagination
@@ -99,7 +95,6 @@ export async function buildDedupeSet(
       const { data, error } = await query;
 
       if (error) {
-        console.error(`[Dedupe] Error loading ${field}:`, error);
         break;
       }
 
@@ -109,14 +104,11 @@ export async function buildDedupeSet(
 
       // Add values to set
       for (const lead of data) {
-         
         const value = ((lead as Record<string, unknown>)[field] as string)?.toLowerCase?.().trim();
         if (value) {
           dedupeSet.add(`${field}:${value}`);
         }
       }
-
-      totalLoaded += data.length;
 
       // Update cursor for next page
       cursor = data[data.length - 1].id;
@@ -126,13 +118,7 @@ export async function buildDedupeSet(
         break;
       }
     }
-
-    console.log(`[Dedupe] Loaded ${totalLoaded} ${field} values`);
   }
-
-  console.log(
-    `[Dedupe] Built set with ${dedupeSet.size} entries in ${Date.now() - startTime}ms`
-  );
 
   return dedupeSet;
 }

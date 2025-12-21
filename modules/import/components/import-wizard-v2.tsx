@@ -449,7 +449,7 @@ export function ImportWizardV2({ salesUsers, onImportComplete }: ImportWizardV2P
     return (
       <Button
         type="button"
-        variant={currentStep === 'preview' ? 'success' : 'primary'}
+        variant="primary"
         onClick={config.onClick}
         disabled={!canGoNext || isProcessing}
       >

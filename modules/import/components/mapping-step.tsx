@@ -84,7 +84,7 @@ export function MappingStep({
             <div
               className={`
                 flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium
-                ${isComplete ? 'bg-lightsuccess/30 text-success' : 'bg-lightwarning/30 text-warning'}
+                ${isComplete ? 'bg-lightprimary/30 text-primary' : 'bg-lightwarning/30 text-warning'}
               `}
             >
               {isComplete ? (
@@ -135,7 +135,7 @@ export function MappingStep({
               key={col.sourceIndex}
               className={`
                 border rounded-lg overflow-hidden transition-all
-                ${isMapped ? 'border-success/30 bg-lightsuccess/5' : 'border-border'}
+                ${isMapped ? 'border-primary/30 bg-lightprimary/5' : 'border-border'}
               `}
             >
               {/* Main row */}
@@ -160,7 +160,7 @@ export function MappingStep({
 
                 {/* Arrow */}
                 <IconArrowRight
-                  className={`w-5 h-5 flex-shrink-0 ${isMapped ? 'text-success' : 'text-darklink/30'}`}
+                  className={`w-5 h-5 flex-shrink-0 ${isMapped ? 'text-primary' : 'text-darklink/30'}`}
                 />
 
                 {/* Target field selector */}

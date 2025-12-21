@@ -34,10 +34,8 @@ export function ImportWizardCard({
 
   const handleComplete = (importJobId: string) => {
     onComplete?.(importJobId);
-    // Close wizard after completion (user will see updated history)
-    setTimeout(() => {
-      onClose();
-    }, 2000);
+    // Keep wizard open to show results summary
+    // User can manually close when ready
   };
 
   return (
