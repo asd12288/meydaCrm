@@ -795,9 +795,9 @@ export async function deleteLead(
   }
 
   revalidatePath('/leads');
-  
+
   // Invalidate dashboard cache (lead counts changed)
   await invalidateDashboardCache();
-  
+
   return { success: true };
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { IconPhone, IconBuilding, IconMessage } from '@tabler/icons-react';
+import { IconPhone, IconBuilding, IconMessage, IconDotsVertical } from '@tabler/icons-react';
 import {
   KanbanBoardCard,
   KanbanBoardCardTitle,
@@ -20,8 +20,9 @@ export function KanbanCard({ lead }: KanbanCardProps) {
   const router = useRouter();
   const name = formatLeadName(lead);
 
-  // Navigate to lead detail on card click
-  const handleCardClick = () => {
+  // Navigate to lead detail
+  const handleViewDetails = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card drag
     router.push(`/leads/${lead.id}`);
   };
 
@@ -35,8 +36,7 @@ export function KanbanCard({ lead }: KanbanCardProps) {
   return (
     <KanbanBoardCard
       data={{ id: lead.id }}
-      onClick={handleCardClick}
-      className="hover:shadow-md hover:-translate-y-0.5 hover:border-primary/30 active:scale-[0.98] transition-all duration-150"
+      className="hover:shadow-md hover:-translate-y-0.5 hover:border-primary/30 transition-all duration-150"
     >
       {/* Card title - Lead name */}
       <KanbanBoardCardTitle className="truncate pr-6">
@@ -81,10 +81,19 @@ export function KanbanCard({ lead }: KanbanCardProps) {
         )}
       </div>
 
-      {/* Comment button (visible on hover, stays visible when popover open) */}
+      {/* Comment button (top right, visible on hover) */}
       <div className="absolute top-2.5 right-2.5 z-40">
         <QuickCommentPopover leadId={lead.id} leadName={name} />
       </div>
+
+      {/* View details button (bottom right, visible on hover) */}
+      <button
+        onClick={handleViewDetails}
+        title="Voir les détails"
+        className="absolute bottom-2.5 right-2.5 z-40 flex h-7 w-7 items-center justify-center rounded-md border bg-white dark:bg-darkgray border-border dark:border-darkborder text-darklink hover:bg-lightgray dark:hover:bg-darkmuted cursor-pointer transition-all duration-150 opacity-0 group-hover:opacity-100"
+      >
+        <IconDotsVertical size={14} />
+      </button>
     </KanbanBoardCard>
   );
 }

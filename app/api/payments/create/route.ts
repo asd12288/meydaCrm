@@ -230,8 +230,8 @@ export async function POST(request: NextRequest) {
       order_id: orderId,
       order_description: `CRM Subscription - ${plan} (${period.replace('_', ' ')})`,
       ipn_callback_url: `${appUrl}/api/webhooks/nowpayments`,
-      success_url: `${appUrl}/support?payment=success`,
-      cancel_url: `${appUrl}/support?payment=cancelled`,
+      success_url: `${appUrl}/subscription?payment=success`,
+      cancel_url: `${appUrl}/subscription?payment=cancelled`,
     };
 
     console.log('Creating NOWPayments invoice:', JSON.stringify(invoicePayload));

@@ -78,7 +78,7 @@ function ToastContainer({ toasts, onDismiss }: ToastContainerProps) {
 
   return createPortal(
     <div
-      className="fixed top-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none"
+      className="fixed bottom-4 right-4 z-[9999] flex flex-col-reverse gap-2 pointer-events-none"
       aria-live="polite"
       aria-label="Notifications"
     >

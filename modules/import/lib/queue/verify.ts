@@ -69,6 +69,9 @@ export async function verifyQStashSignature<T = unknown>(
 /**
  * Create a verified handler for QStash webhooks
  *
+ * SECURITY: Always verifies HMAC signature from QStash.
+ * For local development, use ngrok to receive real QStash webhooks.
+ *
  * @example
  * ```ts
  * // app/api/import/parse/route.ts
@@ -83,18 +86,9 @@ export function createQStashHandler<TPayload, TResult = unknown>(
 ) {
   return async (request: Request): Promise<Response> => {
     try {
-      // In development, skip signature verification
-      const isDev = process.env.NODE_ENV === 'development';
-
-      let payload: TPayload;
-
-      if (isDev && !request.headers.get('Upstash-Signature')) {
-        // Allow direct calls in development for testing
-        payload = (await request.json()) as TPayload;
-      } else {
-        // Verify signature in production
-        payload = await verifyQStashSignature<TPayload>(request);
-      }
+      // SECURITY: Always verify QStash signature - no bypass allowed
+      // For local testing, use ngrok tunnel with real QStash webhooks
+      const payload = await verifyQStashSignature<TPayload>(request);
 
       const result = await handler(payload, request);
 

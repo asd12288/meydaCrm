@@ -3,7 +3,6 @@ import { createClient } from '@/lib/supabase/server';
 import { DashboardLayout } from '@/modules/layout';
 import { getProfile, createDefaultProfile } from '@/lib/auth';
 import { checkSubscriptionStatus } from '@/lib/subscription';
-import { SubscriptionBlockedModal } from '@/modules/subscription/components/subscription-blocked-modal';
 
 export default async function ProtectedLayout({
   children,
@@ -28,12 +27,13 @@ export default async function ProtectedLayout({
   // Check subscription status (only applies to admins)
   const subscriptionStatus = await checkSubscriptionStatus();
 
-  // For admins, only block if subscription is EXPIRED (not grace)
-  // Allow: no subscription (new user), pending, active, grace (with warning)
-  // Block: expired only
+  // For admins with EXPIRED subscription, redirect to /renew page
+  // This is a clean separation - expired users can't access the app at all
   const isAdmin = profile?.role === 'admin';
   const subscriptionExpired = subscriptionStatus.status === 'expired';
-  const showBlockedModal = isAdmin && subscriptionExpired;
+  if (isAdmin && subscriptionExpired) {
+    redirect('/renew');
+  }
 
   // Subscription info for dashboard layout (warning banner)
   const subscriptionInfo = {
@@ -53,7 +53,6 @@ export default async function ProtectedLayout({
     );
     return (
       <DashboardLayout profile={defaultProfile} subscription={subscriptionInfo}>
-        {showBlockedModal && <SubscriptionBlockedModal isOpen={true} />}
         {children}
       </DashboardLayout>
     );
@@ -61,7 +60,6 @@ export default async function ProtectedLayout({
 
   return (
     <DashboardLayout profile={profile} subscription={subscriptionInfo}>
-      {showBlockedModal && <SubscriptionBlockedModal isOpen={true} />}
       {children}
     </DashboardLayout>
   );

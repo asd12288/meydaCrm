@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { IconUserPlus } from '@tabler/icons-react';
-import { CardBox, PageHeader } from '@/modules/shared';
+import { CardBox, PageHeader, ErrorBoundary, SectionErrorFallback } from '@/modules/shared';
 import { Button } from '@/components/ui/button';
 import { UsersTable } from '../components/users-table';
 import { CreateUserModal } from '../components/create-user-modal';
@@ -50,7 +50,9 @@ export function UsersListClient({
         <UserFilters />
 
         {/* Table */}
-        <UsersTable users={users} currentUserId={currentUserId} />
+        <ErrorBoundary FallbackComponent={SectionErrorFallback}>
+          <UsersTable users={users} currentUserId={currentUserId} />
+        </ErrorBoundary>
 
         {/* Pagination */}
         <UsersPagination

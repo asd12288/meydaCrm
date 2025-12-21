@@ -82,15 +82,17 @@ export function LeadComments({
   const handleDeleteConfirm = () => {
     if (!deleteCommentId) return;
 
-    startTransition(async () => {
-      addOptimisticComment({ type: "delete", id: deleteCommentId });
+    const idToDelete = deleteCommentId;
+    setDeleteCommentId(null); // Close dialog immediately (modal state, not optimistic data)
 
-      const result = await deleteComment(deleteCommentId);
+    startTransition(async () => {
+      addOptimisticComment({ type: "delete", id: idToDelete });
+
+      const result = await deleteComment(idToDelete);
 
       if (result.error) {
         setError(result.error);
-      } else {
-        setDeleteCommentId(null);
+        // Data will auto-revert from revalidatePath
       }
     });
   };

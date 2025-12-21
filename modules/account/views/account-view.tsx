@@ -1,4 +1,4 @@
-import { PageHeader } from '@/modules/shared';
+import { PageHeader, ErrorBoundary, SectionErrorFallback } from '@/modules/shared';
 import { requireAuth } from '@/modules/auth/lib/actions';
 import { getAccountStats } from '../lib/actions';
 import {
@@ -37,13 +37,19 @@ export async function AccountView() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Left column - Profile Info */}
         <div className="space-y-6">
-          <ProfileInfoCard profile={user.profile} email={user.email} />
-          <PasswordChangeCard />
+          <ErrorBoundary FallbackComponent={SectionErrorFallback}>
+            <ProfileInfoCard profile={user.profile} email={user.email} />
+          </ErrorBoundary>
+          <ErrorBoundary FallbackComponent={SectionErrorFallback}>
+            <PasswordChangeCard />
+          </ErrorBoundary>
         </div>
 
         {/* Right column - Stats */}
         <div>
-          {stats && <MyLeadsStatsCard stats={stats} isAdmin={isAdmin} />}
+          <ErrorBoundary FallbackComponent={SectionErrorFallback}>
+            {stats && <MyLeadsStatsCard stats={stats} isAdmin={isAdmin} />}
+          </ErrorBoundary>
         </div>
       </div>
     </div>

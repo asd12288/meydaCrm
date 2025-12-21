@@ -12,7 +12,7 @@ import {
   IconRefresh,
   IconTrash,
 } from '@tabler/icons-react';
-import { ConfirmDialog, FormErrorAlert } from '@/modules/shared';
+import { ConfirmDialog, FormErrorAlert, ErrorBoundary, SectionErrorFallback } from '@/modules/shared';
 import { getImportJobs, getErrorReportUrl, retryImportJob, deleteImportJob } from '../lib/actions';
 import type { ImportJobWithStats } from '../types';
 
@@ -231,9 +231,10 @@ export function ImportHistoryView() {
           </Link>
         </div>
       ) : (
-        <div className="bg-white dark:bg-dark border border-ld rounded-xl overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+        <ErrorBoundary FallbackComponent={SectionErrorFallback}>
+          <div className="bg-white dark:bg-dark border border-ld rounded-xl overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
               <thead className="bg-muted border-b border-ld">
                 <tr>
                   <th className="px-4 py-3 text-left font-semibold">Date</th>
@@ -321,9 +322,10 @@ export function ImportHistoryView() {
                   );
                 })}
               </tbody>
-            </table>
+              </table>
+            </div>
           </div>
-        </div>
+        </ErrorBoundary>
       )}
 
       {/* Confirmation dialogs */}

@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useMemo, useTransition, useOptimistic, useRef, memo, useCallback } from 'react';
+import { useState, useMemo, useRef, memo, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   useReactTable,
   getCoreRowModel,
@@ -28,41 +29,38 @@ interface LeadsTableProps {
  * when parent state changes but leads/isAdmin/salesUsers props remain the same
  */
 export const LeadsTable = memo(function LeadsTable({ leads, isAdmin, salesUsers }: LeadsTableProps) {
+  const router = useRouter();
   const { toast } = useToast();
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
   const [deleteLeadId, setDeleteLeadId] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
-
-  // Optimistic leads state for instant delete feedback
-  const [optimisticLeads, removeOptimisticLead] = useOptimistic(
-    leads,
-    (state, deletedId: string) => state.filter((lead) => lead.id !== deletedId)
-  );
+  const [isPending, setIsPending] = useState(false);
 
   // Memoized callbacks to prevent unnecessary re-renders
   const handleDeleteClick = useCallback((leadId: string) => {
     setDeleteLeadId(leadId);
   }, []);
 
-  const handleDeleteConfirm = useCallback(() => {
-    if (!deleteLeadId) return;
+  const handleDeleteConfirm = useCallback(async () => {
+    if (!deleteLeadId || isPending) return;
 
     const idToDelete = deleteLeadId;
     setDeleteLeadId(null); // Close dialog immediately
+    setIsPending(true);
 
-    startTransition(async () => {
-      // Optimistic: remove from UI immediately
-      removeOptimisticLead(idToDelete);
-
+    try {
       const result = await deleteLead(idToDelete);
       if (result.error) {
         toast.error(result.error);
-        // The page will revalidate and restore the lead if delete failed
       } else {
         toast.success('Lead supprimé');
+        router.refresh();
       }
-    });
-  }, [deleteLeadId, removeOptimisticLead, toast]);
+    } catch {
+      toast.error('Une erreur est survenue');
+    } finally {
+      setIsPending(false);
+    }
+  }, [deleteLeadId, isPending, toast, router]);
 
   const handleDeleteCancel = useCallback(() => {
     setDeleteLeadId(null);
@@ -79,7 +77,7 @@ export const LeadsTable = memo(function LeadsTable({ leads, isAdmin, salesUsers 
   );
 
   const table = useReactTable({
-    data: optimisticLeads,
+    data: leads,
     columns,
     getCoreRowModel: getCoreRowModel(),
     enableRowSelection: isAdmin,

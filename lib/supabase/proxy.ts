@@ -35,14 +35,26 @@ export async function updateSession(request: NextRequest) {
   // Public routes that don't require auth
   const isPublicRoute = pathname === '/login' || pathname === '/';
 
-  // QStash webhook routes - authenticated via signature, not cookies
+  // QStash webhook routes - authenticated via HMAC signature in handler, not cookies
+  // SECURITY: These routes bypass session auth because QStash uses cryptographic
+  // signatures instead. The createQStashHandler() in each route verifies the
+  // Upstash-Signature header using QSTASH_CURRENT_SIGNING_KEY.
+  // See: modules/import/lib/queue/verify.ts
   const isQStashWebhook =
     pathname === '/api/import/parse' ||
     pathname === '/api/import/commit' ||
     pathname === '/api/import/error-report';
 
-  // Allow QStash webhooks through without cookie auth
-  if (isQStashWebhook) {
+  // NOWPayments webhook routes - authenticated via HMAC-SHA512 signature in handler
+  // SECURITY: These routes bypass session auth because NOWPayments uses cryptographic
+  // signatures (x-nowpayments-sig header) verified against NOWPAYMENTS_IPN_SECRET.
+  // The test endpoint is DEV-only (returns 403 in production).
+  const isNowPaymentsWebhook =
+    pathname === '/api/webhooks/nowpayments' ||
+    pathname === '/api/webhooks/nowpayments/test';
+
+  // Allow external webhooks through - signature verification happens in route handler
+  if (isQStashWebhook || isNowPaymentsWebhook) {
     return supabaseResponse;
   }
 

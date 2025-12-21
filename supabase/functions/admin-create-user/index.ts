@@ -33,31 +33,48 @@ Deno.serve(async (req: Request) => {
       }
     );
 
-    // Verify caller is admin (except for initial setup)
+    // SECURITY: Verify caller is admin - Authorization header is REQUIRED
     const authHeader = req.headers.get("Authorization");
-    if (authHeader) {
-      const token = authHeader.replace("Bearer ", "");
-      const {
-        data: { user: caller },
-      } = await supabaseAdmin.auth.getUser(token);
-
-      if (caller) {
-        const { data: callerProfile } = await supabaseAdmin
-          .from("profiles")
-          .select("role")
-          .eq("id", caller.id)
-          .single();
-
-        if (callerProfile?.role !== "admin") {
-          return new Response(
-            JSON.stringify({ error: "Acces non autorise" }),
-            {
-              status: 403,
-              headers: { ...corsHeaders, "Content-Type": "application/json" },
-            }
-          );
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: "Autorisation requise" }),
+        {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
         }
-      }
+      );
+    }
+
+    const token = authHeader.replace("Bearer ", "");
+    const {
+      data: { user: caller },
+      error: authError,
+    } = await supabaseAdmin.auth.getUser(token);
+
+    if (authError || !caller) {
+      return new Response(
+        JSON.stringify({ error: "Token invalide ou expiré" }),
+        {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    const { data: callerProfile } = await supabaseAdmin
+      .from("profiles")
+      .select("role")
+      .eq("id", caller.id)
+      .single();
+
+    if (callerProfile?.role !== "admin" && callerProfile?.role !== "developer") {
+      return new Response(
+        JSON.stringify({ error: "Accès non autorisé" }),
+        {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
     }
 
     // Parse request body

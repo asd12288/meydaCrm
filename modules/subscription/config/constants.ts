@@ -13,7 +13,7 @@ export const PLANS: Record<SubscriptionPlan, PlanConfig> = {
   standard: {
     id: 'standard',
     name: 'Standard',
-    basePrice: 99,
+    basePrice: 10,
     leads: 10000,
     features: [
       '10 000 leads maximum',
@@ -23,7 +23,7 @@ export const PLANS: Record<SubscriptionPlan, PlanConfig> = {
   pro: {
     id: 'pro',
     name: 'Pro',
-    basePrice: 199,
+    basePrice: 10,
     leads: Infinity,
     features: [
       'Leads illimites',

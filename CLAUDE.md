@@ -1052,6 +1052,13 @@ export function MyForm({ onSuccess, onCancel }) {
 19. **Never duplicate table skeleton patterns** - Use `TableSkeleton` component
 20. **Never duplicate table empty states** - Use `TableEmptyState` component
 
+#### Error Boundary Rules
+
+21. **Always wrap Suspense with ErrorBoundary** - Prevents streaming failures from crashing
+22. **Use `SectionErrorFallback` for dashboard/cards** - Compact error UI
+23. **Use `ErrorFallback` for major sections** - Full error UI with message
+24. **Use `useErrorBoundary` for async errors** - Catches errors that boundaries can't (event handlers, async)
+
 ### FormSelectDropdown Usage (with React Hook Form)
 
 **IMPORTANT**: For form selects, use `FormSelectDropdown` with RHF `Controller`:

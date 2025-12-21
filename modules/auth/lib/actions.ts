@@ -2,17 +2,44 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { headers } from 'next/headers';
+import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
+import { usernameSchema, extractValidationError } from '@/lib/validation';
+import { loginRateLimiter } from '@/lib/rate-limit';
 import type { AuthUser } from '../types';
 
+// Login validation schema
+const loginSchema = z.object({
+  username: usernameSchema,
+  password: z.string().min(1, 'Mot de passe requis'),
+});
+
 export async function login(formData: FormData) {
+  // Rate limit by IP address to prevent brute force attacks
+  const headersList = await headers();
+  const ip = headersList.get('x-forwarded-for')?.split(',')[0] ??
+             headersList.get('x-real-ip') ??
+             'unknown';
+
+  const { success: rateLimitOk } = await loginRateLimiter.limit(ip);
+  if (!rateLimitOk) {
+    return { error: 'Trop de tentatives. Réessayez dans une minute.' };
+  }
+
   const supabase = await createClient();
 
   const username = formData.get('username') as string;
   const password = formData.get('password') as string;
 
-  // Convert username to email format (username@crm.local)
-  const email = `${username.toLowerCase().replace(/\s+/g, '.')}@crm.local`;
+  // Validate input to prevent injection attacks
+  const validation = loginSchema.safeParse({ username, password });
+  if (!validation.success) {
+    return { error: extractValidationError(validation) };
+  }
+
+  // Convert validated username to email format (username@crm.local)
+  const email = `${validation.data.username.toLowerCase().replace(/\s+/g, '.')}@crm.local`;
 
   const { error } = await supabase.auth.signInWithPassword({
     email,

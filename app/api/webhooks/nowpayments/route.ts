@@ -9,23 +9,25 @@
  * 2. Find payment by payment_id or order_id
  * 3. Update payment status
  * 4. Activate subscription if payment is finished
+ *
+ * Features:
+ * - Signature verification (HMAC-SHA512)
+ * - Idempotency (won't reprocess final states)
+ * - Renewal support (extends from existing end date if active)
+ * - Structured logging for debugging
+ * - Test mode support for development
  */
 
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
+import { createWebhookLogger, WEBHOOK_EVENTS } from '@/lib/webhook-logger';
+import { calculateSubscriptionEndDate } from '@/lib/subscription-helpers';
 
 // Vercel function configuration
 export const maxDuration = 60; // 1 minute max
 export const dynamic = 'force-dynamic';
 
-// Period configuration for calculating end date
-const PERIODS = {
-  '1_month': { months: 1 },
-  '3_months': { months: 3 },
-  '12_months': { months: 12 },
-} as const;
-
-type PeriodId = keyof typeof PERIODS;
+type PeriodId = '1_month' | '3_months' | '12_months';
 
 // NOWPayments IPN payload interface
 interface IPNPayload {
@@ -105,17 +107,6 @@ async function verifySignature(
 }
 
 /**
- * Calculate end date based on period
- */
-function calculateEndDate(period: PeriodId): Date {
-  const now = new Date();
-  const months = PERIODS[period]?.months || 1;
-  const endDate = new Date(now);
-  endDate.setMonth(endDate.getMonth() + months);
-  return endDate;
-}
-
-/**
  * Create admin Supabase client (bypasses RLS)
  */
 function createAdminClient() {
@@ -138,6 +129,8 @@ function createAdminClient() {
  * POST handler for NOWPayments webhook
  */
 export async function POST(request: NextRequest) {
+  const logger = createWebhookLogger('NOWPAYMENTS_IPN');
+
   try {
     // Get IPN secret for signature verification
     const ipnSecret = process.env.NOWPAYMENTS_IPN_SECRET;
@@ -148,32 +141,55 @@ export async function POST(request: NextRequest) {
     // Get signature from header
     const signature = request.headers.get('x-nowpayments-sig');
 
-    // Verify signature if IPN secret is configured
-    if (ipnSecret && signature) {
-      const isValid = await verifySignature(rawBody, signature, ipnSecret);
-      if (!isValid) {
-        console.error('Invalid IPN signature');
-        return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+    // Check for test mode (development only)
+    const isTestMode =
+      request.headers.get('x-test-mode') === 'true' &&
+      process.env.NODE_ENV !== 'production';
+
+    logger.info('Webhook received', {
+      hasSignature: !!signature,
+      isTestMode,
+      bodyLength: rawBody.length,
+    });
+
+    // Verify signature if IPN secret is configured (skip in test mode)
+    if (!isTestMode) {
+      if (ipnSecret && signature) {
+        const isValid = await verifySignature(rawBody, signature, ipnSecret);
+        if (!isValid) {
+          logger.error('Invalid IPN signature', { event: WEBHOOK_EVENTS.SIGNATURE_FAILED });
+          return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+        }
+        logger.info('Signature verified', { event: WEBHOOK_EVENTS.SIGNATURE_VERIFIED });
+      } else if (ipnSecret && !signature) {
+        logger.error('Missing IPN signature header', { event: WEBHOOK_EVENTS.SIGNATURE_FAILED });
+        return NextResponse.json({ error: 'Missing signature' }, { status: 401 });
+      } else {
+        logger.warn('IPN secret not configured - skipping signature verification');
       }
-      console.log('IPN signature verified successfully');
-    } else if (ipnSecret && !signature) {
-      console.error('Missing IPN signature header');
-      return NextResponse.json({ error: 'Missing signature' }, { status: 401 });
     } else {
-      console.warn('IPN secret not configured - skipping signature verification');
+      logger.info('Test mode - skipping signature verification');
     }
 
     // Parse the payload
     const payload: IPNPayload = JSON.parse(rawBody);
-    console.log('Received IPN payload:', JSON.stringify(payload));
+
+    // Set payment identifiers for logging
+    const paymentId = payload.payment_id?.toString();
+    const orderId = payload.order_id;
+    logger.setPaymentId(paymentId);
+    logger.setOrderId(orderId);
+
+    logger.info('Processing IPN', {
+      paymentStatus: payload.payment_status,
+      priceAmount: payload.price_amount,
+      priceCurrency: payload.price_currency,
+    });
 
     // Create admin client with service role
     const supabaseAdmin = createAdminClient();
 
     // Find payment by NOWPayments payment ID or order ID
-    const paymentId = payload.payment_id?.toString();
-    const orderId = payload.order_id;
-
     let payment;
 
     // First try to find by nowpayments_payment_id
@@ -197,12 +213,16 @@ export async function POST(request: NextRequest) {
     }
 
     if (!payment) {
-      console.error('Payment not found for ID:', paymentId, 'Order:', orderId);
+      logger.warn('Payment not found', { event: WEBHOOK_EVENTS.PAYMENT_NOT_FOUND });
       // Return 200 to prevent NOWPayments from retrying
       return NextResponse.json({ status: 'payment_not_found' }, { status: 200 });
     }
 
-    console.log('Found payment:', payment.id, 'Current status:', payment.status);
+    logger.info('Payment found', {
+      event: WEBHOOK_EVENTS.PAYMENT_FOUND,
+      internalPaymentId: payment.id,
+      currentStatus: payment.status,
+    });
 
     // Map NOWPayments status to our status
     const statusMap: Record<string, string> = {
@@ -222,7 +242,10 @@ export async function POST(request: NextRequest) {
     // Check for idempotency - don't process if already in final state
     const finalStatuses = ['finished', 'failed', 'refunded', 'expired'];
     if (finalStatuses.includes(payment.status)) {
-      console.log('Payment already in final state:', payment.status);
+      logger.info('Payment already in final state', {
+        event: WEBHOOK_EVENTS.ALREADY_PROCESSED,
+        existingStatus: payment.status,
+      });
       return NextResponse.json({ status: 'already_processed' }, { status: 200 });
     }
 
@@ -248,46 +271,85 @@ export async function POST(request: NextRequest) {
       .eq('id', payment.id);
 
     if (updatePaymentError) {
-      console.error('Error updating payment:', updatePaymentError);
+      logger.error('Error updating payment', {
+        error: updatePaymentError.message,
+        code: updatePaymentError.code,
+      });
       return NextResponse.json({ error: 'Failed to update payment' }, { status: 500 });
     }
 
-    console.log('Payment status updated to:', newStatus);
+    logger.info('Payment status updated', {
+      event: WEBHOOK_EVENTS.STATUS_UPDATED,
+      oldStatus: payment.status,
+      newStatus,
+    });
 
     // If payment is finished, activate the subscription
     if (newStatus === 'finished' && payment.subscriptions) {
       const subscription = payment.subscriptions;
-      const endDate = calculateEndDate(payment.period as PeriodId);
+
+      // Check if this is a renewal (subscription is active with future end date)
+      const isRenewal =
+        subscription.status === 'active' &&
+        subscription.end_date &&
+        new Date(subscription.end_date) > new Date();
+
+      // Calculate end date - extend from current end if renewing
+      const endDate = calculateSubscriptionEndDate(
+        payment.period as PeriodId,
+        isRenewal ? subscription.end_date : null
+      );
+
+      // Build update object
+      const subscriptionUpdate: Record<string, unknown> = {
+        status: 'active',
+        plan: payment.plan, // Update to the new plan if changed
+        period: payment.period, // Update to the new period
+        end_date: endDate.toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      // Only set start_date for new subscriptions, not renewals
+      if (!isRenewal) {
+        subscriptionUpdate.start_date = new Date().toISOString();
+      }
 
       const { error: updateSubError } = await supabaseAdmin
         .from('subscriptions')
-        .update({
-          status: 'active',
-          start_date: new Date().toISOString(),
-          end_date: endDate.toISOString(),
-          updated_at: new Date().toISOString(),
-        })
+        .update(subscriptionUpdate)
         .eq('id', subscription.id);
 
       if (updateSubError) {
-        console.error('Error activating subscription:', updateSubError);
+        logger.error('Error activating subscription', {
+          error: updateSubError.message,
+          code: updateSubError.code,
+        });
         return NextResponse.json(
           { error: 'Failed to activate subscription' },
           { status: 500 }
         );
       }
 
-      console.log(
-        'Subscription activated:',
-        subscription.id,
-        'End date:',
-        endDate.toISOString()
-      );
+      logger.info(isRenewal ? 'Subscription renewed' : 'Subscription activated', {
+        event: isRenewal
+          ? WEBHOOK_EVENTS.SUBSCRIPTION_RENEWED
+          : WEBHOOK_EVENTS.SUBSCRIPTION_ACTIVATED,
+        subscriptionId: subscription.id,
+        plan: payment.plan,
+        period: payment.period,
+        isRenewal,
+        previousEndDate: isRenewal ? subscription.end_date : null,
+        newEndDate: endDate.toISOString(),
+      });
     }
 
+    logger.complete('Webhook processed successfully', newStatus);
     return NextResponse.json({ status: 'ok' }, { status: 200 });
   } catch (error) {
-    console.error('Webhook error:', error);
+    logger.fail('Webhook processing failed', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     // Return 200 to prevent excessive retries from NOWPayments
     const message = error instanceof Error ? error.message : 'Internal error';
     return NextResponse.json({ error: message }, { status: 200 });

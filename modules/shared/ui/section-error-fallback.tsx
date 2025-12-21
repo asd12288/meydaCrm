@@ -11,18 +11,18 @@ export function SectionErrorFallback({ resetErrorBoundary }: FallbackProps) {
   return (
     <div
       role="alert"
-      className="flex flex-col items-center justify-center p-6 rounded-lg bg-lighterror/30 dark:bg-error/5 min-h-[120px]"
+      className="flex flex-col items-center justify-center p-4 rounded-lg bg-muted/50 dark:bg-darkgray/30 min-h-25"
     >
-      <div className="flex items-center gap-2 text-error mb-3">
-        <IconAlertTriangle size={20} />
-        <span className="font-medium">Erreur de chargement</span>
+      <div className="flex items-center gap-2 text-darklink mb-2">
+        <IconAlertTriangle size={16} className="text-warning" />
+        <span className="text-sm">Erreur de chargement</span>
       </div>
 
       <button
         onClick={resetErrorBoundary}
-        className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-full bg-error/10 text-error hover:bg-error/20 transition-colors"
+        className="flex items-center gap-1 px-2.5 py-1 text-xs rounded bg-lightgray dark:bg-dark text-darklink hover:text-ld transition-colors border border-border"
       >
-        <IconRefresh size={16} />
+        <IconRefresh size={14} />
         <span>Réessayer</span>
       </button>
     </div>

@@ -19,18 +19,18 @@ This guide explains how to test the crypto subscription payment system using NOW
    NOWPAYMENTS_API_KEY=your_sandbox_api_key
    NOWPAYMENTS_IPN_SECRET=your_ipn_secret
    NOWPAYMENTS_SANDBOX=true
-   
+
    # Supabase
    NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
    SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
-   
+
    # Optional - auto-detected in dev
    APP_URL=https://sheep-wanted-squirrel.ngrok-free.app
    ```
 
    **Note**: Both payment creation and webhook handling are Next.js API routes, so no Supabase Edge Function deployment needed!
 
-5. Run the database migration (if not already done):
+3. Run the database migration (if not already done):
    ```bash
    supabase db push
    # Or apply manually:
@@ -39,10 +39,10 @@ This guide explains how to test the crypto subscription payment system using NOW
 
 ## Testing Workflow
 
-### 1. Access Support Page
+### 1. Access Subscription Page
 
 1. Log in as admin
-2. Navigate to Support page (sidebar)
+2. Navigate to Subscription page (sidebar)
 3. Verify:
    - "Aucun abonnement actif" message displays
    - Plan cards show correct pricing
@@ -82,27 +82,55 @@ The webhook handler is a Next.js API route accessible via your ngrok tunnel.
 3. **Verify webhook URL** in NOWPayments dashboard:
    - Should be: `https://sheep-wanted-squirrel.ngrok-free.app/api/webhooks/nowpayments`
 
-4. **Check Next.js console** for webhook logs when payment status changes:
-   - `Received IPN payload: {...}`
-   - `Found payment: ...`
-   - `Payment status updated to: finished`
-   - `Subscription activated: ...`
+4. **Check Next.js console** for structured webhook logs:
+   - `[WEBHOOK:NOWPAYMENTS_IPN] Webhook received`
+   - `[WEBHOOK:NOWPAYMENTS_IPN] Payment found`
+   - `[WEBHOOK:NOWPAYMENTS_IPN] Payment status updated`
+   - `[WEBHOOK:NOWPAYMENTS_IPN] Subscription activated`
 
 The webhook will:
 - Update payment status in `payments` table
 - Activate subscription when payment completes
 - Set `start_date` and `end_date`
+- For renewals: extend from current end_date (not from NOW)
 
-### 5. Verify Subscription Activation
+### 5. Test Webhook Manually (NEW - Development Only)
+
+Use the test endpoint to simulate webhooks without completing payments:
+
+```bash
+# Get usage instructions and list recent payments
+curl http://localhost:3000/api/webhooks/nowpayments/test
+
+# Simulate a successful payment (use order_id from list above)
+curl -X POST http://localhost:3000/api/webhooks/nowpayments/test \
+  -H "Content-Type: application/json" \
+  -d '{"orderId": "crm-pay-xxx", "status": "finished"}'
+```
+
+**Available statuses:**
+- `waiting` - Invoice created, waiting for payment
+- `confirming` - Payment received, awaiting confirmations
+- `confirmed` - Enough confirmations, processing
+- `sending` - Sending to merchant
+- `partially_paid` - Underpaid
+- `finished` - Complete (activates subscription)
+- `failed` - Payment failed
+- `refunded` - Payment refunded
+- `expired` - Invoice expired
+
+**Note**: This endpoint is disabled in production.
+
+### 6. Verify Subscription Activation
 
 After successful payment:
-1. Refresh Support page
+1. Refresh Subscription page
 2. Verify:
    - Status badge shows "Actif"
    - Start/end dates are correct
    - Days remaining shows correct count
 
-### 6. Test Expiry Warning
+### 7. Test Expiry Warning
 
 To test the warning banner:
 1. Manually update subscription `end_date` in database to 5 days from now
@@ -115,18 +143,52 @@ SET end_date = NOW() + INTERVAL '5 days'
 WHERE id = 'your-subscription-id';
 ```
 
-### 7. Test Subscription Blocking
+**Banner behavior:**
+- Can be dismissed (persists for 24 hours via localStorage)
+- Reappears each day
+- Cannot be dismissed during grace period (too important)
+
+### 8. Test Grace Period
+
+To test the grace period (7 days after expiry):
+1. Set subscription to just expired:
+   ```sql
+   UPDATE subscriptions
+   SET status = 'active', end_date = NOW() - INTERVAL '1 day'
+   WHERE id = 'your-subscription-id';
+   ```
+2. Navigate to any page - subscription should transition to `grace`
+3. Verify: Red warning banner appears (cannot be dismissed)
+4. User can still access CRM during grace period
+
+### 9. Test Subscription Blocking
 
 To test the blocked modal:
-1. Manually set subscription status to 'expired' or set `end_date` to past
-2. Navigate to any page except /support
+1. Set subscription status to 'expired':
+   ```sql
+   UPDATE subscriptions
+   SET status = 'expired', end_date = NOW() - INTERVAL '10 days'
+   WHERE id = 'your-subscription-id';
+   ```
+2. Navigate to any page except /subscription
 3. Verify: Modal appears with "Abonnement expire" message
 
-```sql
-UPDATE subscriptions
-SET status = 'expired', end_date = NOW() - INTERVAL '1 day'
-WHERE id = 'your-subscription-id';
-```
+### 10. Test Renewal Extension
+
+To verify renewals extend from existing end date:
+1. Set subscription to active with future end date:
+   ```sql
+   UPDATE subscriptions
+   SET status = 'active', end_date = NOW() + INTERVAL '7 days'
+   WHERE id = 'your-subscription-id';
+   ```
+2. Create a new payment and simulate completion:
+   ```bash
+   curl -X POST http://localhost:3000/api/webhooks/nowpayments/test \
+     -H "Content-Type: application/json" \
+     -d '{"orderId": "crm-pay-xxx", "status": "finished"}'
+   ```
+3. Verify: New end_date = old end_date + period (not NOW + period)
 
 ## Database Verification
 
@@ -140,26 +202,13 @@ Check payment history:
 SELECT * FROM payments ORDER BY created_at DESC;
 ```
 
-## Webhook Testing with cURL
-
-Test the Next.js webhook endpoint manually:
-
-```bash
-curl -X POST https://sheep-wanted-squirrel.ngrok-free.app/api/webhooks/nowpayments \
-  -H "Content-Type: application/json" \
-  -H "x-nowpayments-sig: your_signature_here" \
-  -d '{
-    "payment_id": "123456",
-    "payment_status": "finished",
-    "order_id": "crm-pay-xxx",
-    "price_amount": 99,
-    "price_currency": "usd",
-    "pay_amount": 99,
-    "pay_currency": "usdttrc20"
-  }'
+Check notification deduplication (should see max 1 per 12 hours):
+```sql
+SELECT type, COUNT(*), MAX(created_at)
+FROM notifications
+WHERE type = 'subscription_warning'
+GROUP BY type;
 ```
-
-**Note**: For testing without signature verification, temporarily remove `NOWPAYMENTS_IPN_SECRET` from `.env.local` (not recommended for production).
 
 ## Troubleshooting
 
@@ -170,36 +219,47 @@ curl -X POST https://sheep-wanted-squirrel.ngrok-free.app/api/webhooks/nowpaymen
 - Verify user is authenticated and is admin
 
 ### Webhook not processing
-- Check Next.js console for webhook logs
+- Check Next.js console for `[WEBHOOK:*]` structured logs
 - Verify ngrok is running: `npm run dev:webhook`
 - Verify Next.js is running: `npm run dev`
-- Verify webhook URL in NOWPayments dashboard: `https://sheep-wanted-squirrel.ngrok-free.app/api/webhooks/nowpayments`
-- Test webhook URL manually with curl (see above)
-- Check signature verification (temporarily remove `NOWPAYMENTS_IPN_SECRET` from `.env.local` for testing)
+- Verify webhook URL in NOWPayments dashboard
+- Use test endpoint for debugging: `GET /api/webhooks/nowpayments/test`
 
 ### Subscription not activating
 - Check webhook logs for errors
 - Verify payment record exists in database
-- Check `nowpayments_payment_id` matches
+- Check `nowpayments_payment_id` or `nowpayments_order_id` matches
+- Use test endpoint to simulate: `POST /api/webhooks/nowpayments/test`
+
+### Duplicate notifications
+- Notifications are deduplicated with 12-hour window
+- Check `notifications` table for duplicates
+- If duplicates exist, clean up manually:
+  ```sql
+  DELETE FROM notifications WHERE type = 'subscription_warning';
+  ```
 
 ## Production Deployment
 
-1. Create production NOWPayments account
-2. Update Next.js environment variables (Vercel/your hosting):
-   - Set `NOWPAYMENTS_IPN_SECRET` to production IPN secret
-   - Update other environment variables as needed
+1. Create production NOWPayments account (not sandbox)
 
-3. Update Next.js environment variables (Vercel/your hosting):
-   - Set `NOWPAYMENTS_API_KEY` to production API key
-   - Set `NOWPAYMENTS_IPN_SECRET` to production IPN secret
-   - Remove or set `NOWPAYMENTS_SANDBOX=false`
-   - Set `APP_URL` to production domain (optional, auto-detected on Vercel)
+2. Update Vercel environment variables:
+   - `NOWPAYMENTS_API_KEY` = production API key
+   - `NOWPAYMENTS_IPN_SECRET` = production IPN secret
+   - Remove `NOWPAYMENTS_SANDBOX` or set to `false`
+   - `APP_URL` = production domain (optional, auto-detected on Vercel)
 
-4. Update webhook URL in NOWPayments dashboard to production:
+3. Update webhook URL in NOWPayments dashboard:
    ```
    https://your-production-url.com/api/webhooks/nowpayments
    ```
 
-5. Deploy Next.js app - Both payment creation and webhook routes deploy automatically
+4. Deploy Next.js app - Both payment creation and webhook routes deploy automatically
+
+5. Verify test endpoint is disabled:
+   ```bash
+   curl https://your-production-url.com/api/webhooks/nowpayments/test
+   # Should return: {"error":"Test endpoint disabled in production"}
+   ```
 
 **Note**: Everything runs as Next.js API routes - no Supabase Edge Functions needed!

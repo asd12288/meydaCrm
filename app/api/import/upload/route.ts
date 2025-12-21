@@ -1,6 +1,11 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import {
+  uploadRateLimiter,
+  getClientIdentifier,
+  checkRateLimit,
+} from '@/lib/rate-limit';
 
 const uploadSchema = z.object({
   fileName: z.string().min(1),
@@ -15,6 +20,14 @@ const uploadSchema = z.object({
  */
 export async function POST(request: Request) {
   try {
+    // Rate limit by IP to prevent storage abuse
+    const identifier = getClientIdentifier(request);
+    const rateLimitResult = await checkRateLimit(uploadRateLimiter, identifier);
+
+    if (rateLimitResult instanceof Response) {
+      return rateLimitResult; // Rate limit exceeded - returns 429
+    }
+
     const supabase = await createClient();
 
     // Check authentication

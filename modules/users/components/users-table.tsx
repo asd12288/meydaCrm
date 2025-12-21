@@ -1,17 +1,17 @@
 'use client';
 
-import { useState, useMemo, useCallback, useTransition, useOptimistic, memo } from 'react';
+import { useState, useMemo, useCallback, memo } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
   flexRender,
 } from '@tanstack/react-table';
+import { useRouter } from 'next/navigation';
 import { TableEmptyState, ConfirmDialog, useToast } from '@/modules/shared';
 import { getUserColumns } from '../config/columns';
 import { ResetPasswordModal } from './reset-password-modal';
 import { EditUserModal } from './edit-user-modal';
 import { deleteUser } from '../lib/actions';
-import { useRouter } from 'next/navigation';
 import type { UserProfile } from '../types';
 
 interface UsersTableProps {
@@ -36,13 +36,7 @@ export const UsersTable = memo(function UsersTable({ users, currentUserId }: Use
     id: string;
     name: string;
   } | null>(null);
-  const [isPending, startTransition] = useTransition();
-
-  // Optimistic users state for instant delete feedback
-  const [optimisticUsers, removeOptimisticUser] = useOptimistic(
-    users,
-    (state, deletedId: string) => state.filter((user) => user.id !== deletedId)
-  );
+  const [isPending, setIsPending] = useState(false);
 
   const handleResetPassword = useCallback(
     (userId: string, userName: string) => {
@@ -67,26 +61,27 @@ export const UsersTable = memo(function UsersTable({ users, currentUserId }: Use
     setEditUser(null);
   }, []);
 
-  const handleDeleteConfirm = useCallback(() => {
-    if (!deleteUserData) return;
+  const handleDeleteConfirm = useCallback(async () => {
+    if (!deleteUserData || isPending) return;
 
     const idToDelete = deleteUserData.id;
     setDeleteUserData(null); // Close dialog immediately
+    setIsPending(true);
 
-    startTransition(async () => {
-      // Optimistic: remove from UI immediately
-      removeOptimisticUser(idToDelete);
-
+    try {
       const result = await deleteUser(idToDelete);
       if (result.success) {
         toast.success('Utilisateur supprimé');
+        router.refresh();
       } else {
         toast.error(result.error || 'Erreur lors de la suppression');
-        // Revalidation will restore the user if delete failed
-        router.refresh();
       }
-    });
-  }, [deleteUserData, removeOptimisticUser, toast, router]);
+    } catch {
+      toast.error('Une erreur est survenue');
+    } finally {
+      setIsPending(false);
+    }
+  }, [deleteUserData, isPending, toast, router]);
 
   const handleDeleteCancel = useCallback(() => {
     setDeleteUserData(null);
@@ -104,7 +99,7 @@ export const UsersTable = memo(function UsersTable({ users, currentUserId }: Use
 
   // Filtering is done server-side via URL params in getUsers()
   const table = useReactTable({
-    data: optimisticUsers,
+    data: users,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getRowId: (row) => row.id,

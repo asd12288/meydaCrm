@@ -1,17 +1,21 @@
 'use client';
 
-import { useEffect, useState, useCallback, type ReactNode } from 'react';
-import { IconX } from '@tabler/icons-react';
-import { Button } from '@/components/ui/button';
+import { useState, useCallback, type ReactNode } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 export type ModalSize = 'sm' | 'md' | 'lg' | 'xl' | 'full';
 
 const sizeClasses: Record<ModalSize, string> = {
-  sm: 'max-w-sm',
-  md: 'max-w-md',
-  lg: 'max-w-lg',
-  xl: 'max-w-xl',
-  full: 'max-w-4xl',
+  sm: 'sm:max-w-sm',
+  md: 'sm:max-w-md',
+  lg: 'sm:max-w-lg',
+  xl: 'sm:max-w-xl',
+  full: 'sm:max-w-4xl',
 };
 
 export interface ModalProps {
@@ -36,8 +40,8 @@ export interface ModalProps {
 }
 
 /**
- * Reusable Modal component with escape key and scroll lock handling
- * Reduces boilerplate across all modal implementations
+ * Reusable Modal component using shadcn Dialog (Radix UI)
+ * Only renders when open to prevent infinite re-render loops
  */
 export function Modal({
   isOpen,
@@ -50,95 +54,34 @@ export function Modal({
   closeOnBackdrop = true,
   closeOnEscape = true,
 }: ModalProps) {
-  const [isClosing, setIsClosing] = useState(false);
-  const [shouldRender, setShouldRender] = useState(false);
+  // Don't render anything when closed - prevents infinite re-render loops
+  if (!isOpen) {
+    return null;
+  }
 
-  // Handle open/close with animation
-  useEffect(() => {
-    if (isOpen) {
-      setShouldRender(true);
-      setIsClosing(false);
-    }
-  }, [isOpen]);
-
-  // Animated close handler
-  const handleClose = useCallback(() => {
-    setIsClosing(true);
-    setTimeout(() => {
-      setShouldRender(false);
-      setIsClosing(false);
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
       onClose();
-    }, 150); // Match animation duration
-  }, [onClose]);
-
-  // Handle escape key
-  useEffect(() => {
-    if (!closeOnEscape || !shouldRender) return;
-
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !isClosing) {
-        handleClose();
-      }
-    };
-    document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
-  }, [shouldRender, isClosing, handleClose, closeOnEscape]);
-
-  // Prevent body scroll when modal is open
-  useEffect(() => {
-    if (shouldRender) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
     }
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [shouldRender]);
-
-  if (!shouldRender) return null;
+  };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
-      <div
-        className={`absolute inset-0 bg-black/50 backdrop-blur-[2px] ${
-          isClosing ? 'animate-modal-backdrop-exit' : 'animate-modal-backdrop-enter'
-        }`}
-        onClick={closeOnBackdrop && !isClosing ? handleClose : undefined}
-        aria-hidden="true"
-      />
-
-      {/* Modal */}
-      <div
-        className={`relative w-full ${sizeClasses[size]} mx-4 bg-white dark:bg-dark rounded-lg shadow-xl overflow-hidden flex flex-col max-h-[90vh] ${
-          isClosing ? 'animate-modal-content-exit' : 'animate-modal-content-enter'
-        }`}
+    <Dialog open={true} onOpenChange={handleOpenChange}>
+      <DialogContent
+        className={`${sizeClasses[size]} bg-white dark:bg-dark border-ld`}
+        showCloseButton={showCloseButton}
+        onPointerDownOutside={closeOnBackdrop ? undefined : (e) => e.preventDefault()}
+        onEscapeKeyDown={closeOnEscape ? undefined : (e) => e.preventDefault()}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-ld shrink-0">
-          <div className="flex items-center gap-2">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-ld">
             {icon && <span className="text-primary">{icon}</span>}
-            <h3 className="text-lg font-semibold text-ld">{title}</h3>
-          </div>
-          {showCloseButton && (
-            <Button
-              type="button"
-              variant="circleHover"
-              size="circle"
-              onClick={handleClose}
-              disabled={isClosing}
-              aria-label="Fermer"
-            >
-              <IconX size={20} />
-            </Button>
-          )}
-        </div>
-
-        {/* Body - scrollable when content overflows */}
-        <div className="p-6 flex flex-col flex-1 min-h-0 overflow-y-auto">{children}</div>
-      </div>
-    </div>
+            {title}
+          </DialogTitle>
+        </DialogHeader>
+        <div className="flex flex-col flex-1 min-h-0">{children}</div>
+      </DialogContent>
+    </Dialog>
   );
 }
 

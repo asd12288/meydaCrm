@@ -1,9 +1,12 @@
 import { createClient } from '@/lib/supabase/server';
 import type { Subscription, SubscriptionStatus } from '@/db/types';
 import { createNotificationForUsers } from '@/modules/notifications';
+import { shouldNotifyAdmins } from '@/lib/subscription-helpers';
 
 const EXPIRY_WARNING_DAYS = 7;
 const GRACE_PERIOD_DAYS = 7;
+// Notification deduplication window in hours
+const NOTIFICATION_WINDOW_HOURS = 12;
 
 export interface SubscriptionCheckResult {
   isActive: boolean;
@@ -19,6 +22,9 @@ export interface SubscriptionCheckResult {
  * Check subscription status for layout enforcement
  * This function is designed to be called from the protected layout
  * It checks if there's an active subscription and calculates days remaining
+ *
+ * IMPORTANT: This function includes notification deduplication and idempotency guards
+ * to prevent duplicate notifications and status updates on every page navigation.
  */
 export async function checkSubscriptionStatus(): Promise<SubscriptionCheckResult> {
   const supabase = await createClient();
@@ -80,11 +86,14 @@ export async function checkSubscriptionStatus(): Promise<SubscriptionCheckResult
     };
   }
 
+  // Supabase returns snake_case, but our types use camelCase
+  // We need to handle both for safety
   const subscription = data as Subscription;
+  const subscriptionEndDate = (data as { end_date?: string }).end_date || subscription.endDate;
 
   // If already in grace period, calculate remaining grace days
   if (subscription.status === 'grace') {
-    const endDate = subscription.endDate ? new Date(subscription.endDate) : null;
+    const endDate = subscriptionEndDate ? new Date(subscriptionEndDate) : null;
     let graceDaysRemaining = null;
 
     if (endDate) {
@@ -114,7 +123,7 @@ export async function checkSubscriptionStatus(): Promise<SubscriptionCheckResult
     }
 
     // In grace period - still active but show warning
-    // Send notification to all admin users
+    // Send notification to all admin users (with deduplication)
     const { data: admins } = await supabase
       .from('profiles')
       .select('id')
@@ -122,16 +131,27 @@ export async function checkSubscriptionStatus(): Promise<SubscriptionCheckResult
 
     if (admins && admins.length > 0) {
       const adminIds = admins.map((a) => a.id);
-      await createNotificationForUsers(
+
+      // Check if notification was sent recently to prevent duplicates
+      const shouldNotify = await shouldNotifyAdmins(
+        supabase,
         adminIds,
         'subscription_warning',
-        'Alerte abonnement',
-        graceDaysRemaining === 1
-          ? 'DERNIER JOUR! Votre abonnement a expiré. Votre accès sera bloqué demain.'
-          : `Votre abonnement a expiré! Il vous reste ${graceDaysRemaining} jours pour renouveler.`,
-        { daysRemaining: 0, isGrace: true },
-        '/subscription'
+        NOTIFICATION_WINDOW_HOURS
       );
+
+      if (shouldNotify) {
+        await createNotificationForUsers(
+          adminIds,
+          'subscription_warning',
+          'Alerte abonnement',
+          graceDaysRemaining === 1
+            ? 'DERNIER JOUR! Votre abonnement a expire. Votre acces sera bloque demain.'
+            : `Votre abonnement a expire! Il vous reste ${graceDaysRemaining} jours pour renouveler.`,
+          { daysRemaining: 0, isGrace: true },
+          '/subscription'
+        );
+      }
     }
 
     return {
@@ -159,7 +179,7 @@ export async function checkSubscriptionStatus(): Promise<SubscriptionCheckResult
   }
 
   // Calculate days remaining
-  if (!subscription.endDate) {
+  if (!subscriptionEndDate) {
     return {
       isActive: true,
       daysRemaining: null,
@@ -171,18 +191,22 @@ export async function checkSubscriptionStatus(): Promise<SubscriptionCheckResult
     };
   }
 
-  const endDate = new Date(subscription.endDate);
+  const endDate = new Date(subscriptionEndDate);
   const now = new Date();
   const diffTime = endDate.getTime() - now.getTime();
   const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
   // Check if subscription period has ended - enter grace period
   if (daysRemaining <= 0) {
-    // Update subscription status to grace (not expired immediately)
-    await supabase
-      .from('subscriptions')
-      .update({ status: 'grace', updated_at: new Date().toISOString() })
-      .eq('id', subscription.id);
+    // IDEMPOTENCY: Only update if status is currently 'active'
+    // This prevents updating on every page navigation
+    if (subscription.status === 'active') {
+      await supabase
+        .from('subscriptions')
+        .update({ status: 'grace', updated_at: new Date().toISOString() })
+        .eq('id', subscription.id)
+        .eq('status', 'active'); // Double-check to prevent race conditions
+    }
 
     // Calculate grace days remaining
     const daysSinceExpiry = Math.abs(daysRemaining);
@@ -207,7 +231,7 @@ export async function checkSubscriptionStatus(): Promise<SubscriptionCheckResult
     }
 
     // In grace period - still active but show warning
-    // Send notification to all admin users
+    // Send notification to all admin users (with deduplication)
     const { data: admins } = await supabase
       .from('profiles')
       .select('id')
@@ -215,16 +239,27 @@ export async function checkSubscriptionStatus(): Promise<SubscriptionCheckResult
 
     if (admins && admins.length > 0) {
       const adminIds = admins.map((a) => a.id);
-      await createNotificationForUsers(
+
+      // Check if notification was sent recently to prevent duplicates
+      const shouldNotify = await shouldNotifyAdmins(
+        supabase,
         adminIds,
         'subscription_warning',
-        'Alerte abonnement',
-        graceDaysRemaining === 1
-          ? 'DERNIER JOUR! Votre abonnement a expiré. Votre accès sera bloqué demain.'
-          : `Votre abonnement a expiré! Il vous reste ${graceDaysRemaining} jours pour renouveler.`,
-        { daysRemaining: 0, isGrace: true },
-        '/subscription'
+        NOTIFICATION_WINDOW_HOURS
       );
+
+      if (shouldNotify) {
+        await createNotificationForUsers(
+          adminIds,
+          'subscription_warning',
+          'Alerte abonnement',
+          graceDaysRemaining === 1
+            ? 'DERNIER JOUR! Votre abonnement a expire. Votre acces sera bloque demain.'
+            : `Votre abonnement a expire! Il vous reste ${graceDaysRemaining} jours pour renouveler.`,
+          { daysRemaining: 0, isGrace: true },
+          '/subscription'
+        );
+      }
     }
 
     return {
@@ -241,7 +276,7 @@ export async function checkSubscriptionStatus(): Promise<SubscriptionCheckResult
   // Check if should show warning (7 days before expiry)
   const showWarning = daysRemaining <= EXPIRY_WARNING_DAYS;
 
-  // Send notification when warning threshold is reached
+  // Send notification when warning threshold is reached (with deduplication)
   if (showWarning) {
     const { data: admins } = await supabase
       .from('profiles')
@@ -250,18 +285,29 @@ export async function checkSubscriptionStatus(): Promise<SubscriptionCheckResult
 
     if (admins && admins.length > 0) {
       const adminIds = admins.map((a) => a.id);
-      await createNotificationForUsers(
+
+      // Check if notification was sent recently to prevent duplicates
+      const shouldNotify = await shouldNotifyAdmins(
+        supabase,
         adminIds,
         'subscription_warning',
-        'Alerte abonnement',
-        daysRemaining === 0
-          ? "Votre abonnement expire aujourd'hui."
-          : daysRemaining === 1
-          ? 'Votre abonnement expire demain.'
-          : `Votre abonnement expire dans ${daysRemaining} jours.`,
-        { daysRemaining, isGrace: false },
-        '/subscription'
+        NOTIFICATION_WINDOW_HOURS
       );
+
+      if (shouldNotify) {
+        await createNotificationForUsers(
+          adminIds,
+          'subscription_warning',
+          'Alerte abonnement',
+          daysRemaining === 0
+            ? "Votre abonnement expire aujourd'hui."
+            : daysRemaining === 1
+              ? 'Votre abonnement expire demain.'
+              : `Votre abonnement expire dans ${daysRemaining} jours.`,
+          { daysRemaining, isGrace: false },
+          '/subscription'
+        );
+      }
     }
   }
 
