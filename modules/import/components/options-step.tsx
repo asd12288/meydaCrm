@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import {
   IconUserOff,
   IconUsers,
@@ -11,17 +10,12 @@ import {
   IconCheck,
   IconChevronDown,
 } from '@tabler/icons-react';
-import { Button } from '@/components/ui/button';
 import {
   UserAvatar,
   OptionCard,
   OptionCardGroup,
-  ToggleChip,
-  ToggleChipGroup,
-  CheckboxCard,
 } from '@/modules/shared';
-import type { AssignmentConfig, DuplicateConfig, LeadFieldKey } from '../types';
-import { DUPLICATE_CHECK_FIELDS } from '../types/mapping';
+import type { AssignmentConfig, DuplicateConfig } from '../types';
 import type { SalesUser } from '@/modules/leads/types';
 
 interface OptionsStepProps {
@@ -84,8 +78,6 @@ export function OptionsStep({
   onUpdateAssignment,
   onUpdateDuplicates,
 }: OptionsStepProps) {
-  const [showAdvanced, setShowAdvanced] = useState(false);
-
   const activeSalesUsers = salesUsers.filter(
     (u) => u.role === 'sales' || u.role === 'admin'
   );
@@ -280,97 +272,36 @@ export function OptionsStep({
             );
           })}
         </OptionCardGroup>
-
-        {/* Advanced options */}
-        <Button
-          type="button"
-          variant="ghostText"
-          size="sm"
-          onClick={() => setShowAdvanced(!showAdvanced)}
-          className="mt-4"
-        >
-          <IconChevronDown
-            size={16}
-            className={`transition-transform ${showAdvanced ? 'rotate-180' : ''}`}
-          />
-          Options avancées
-        </Button>
-
-        {showAdvanced && (
-          <div className="mt-4 p-4 bg-muted/50 dark:bg-darkmuted rounded-xl space-y-4">
-            {/* Check fields */}
-            <div>
-              <label className="text-sm text-ld mb-2 block">Champs de détection</label>
-              <ToggleChipGroup>
-                {DUPLICATE_CHECK_FIELDS.map((field) => {
-                  const isChecked = duplicateConfig.checkFields.includes(field);
-                  const fieldLabels: Record<LeadFieldKey, string> = {
-                    email: 'Email',
-                    phone: 'Téléphone',
-                    external_id: 'ID externe',
-                    first_name: 'Prénom',
-                    last_name: 'Nom',
-                    company: 'Entreprise',
-                    job_title: 'Poste',
-                    address: 'Adresse',
-                    city: 'Ville',
-                    postal_code: 'Code postal',
-                    country: 'Pays',
-                    status: 'Statut',
-                    source: 'Source',
-                    notes: 'Notes',
-                    assigned_to: 'Assigné à',
-                    created_at: 'Date de création',
-                    updated_at: 'Date de modification',
-                  };
-                  return (
-                    <ToggleChip
-                      key={field}
-                      label={fieldLabels[field]}
-                      isSelected={isChecked}
-                      onClick={() => {
-                        const newFields = isChecked
-                          ? duplicateConfig.checkFields.filter((f) => f !== field)
-                          : [...duplicateConfig.checkFields, field];
-                        onUpdateDuplicates({ checkFields: newFields as LeadFieldKey[] });
-                      }}
-                    />
-                  );
-                })}
-              </ToggleChipGroup>
-            </div>
-
-            {/* Toggles */}
-            <div className="space-y-2">
-              <CheckboxCard
-                label="Vérifier dans la base de données"
-                checked={duplicateConfig.checkDatabase}
-                onChange={(e) => onUpdateDuplicates({ checkDatabase: e.target.checked })}
-              />
-              <CheckboxCard
-                label="Détecter les doublons dans le fichier"
-                checked={duplicateConfig.checkWithinFile}
-                onChange={(e) => onUpdateDuplicates({ checkWithinFile: e.target.checked })}
-              />
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Summary */}
-      <div className="p-4 bg-primary/5 border border-primary/10 rounded-xl text-sm text-ld">
-        <span className="font-medium">Resume : </span>
-        {assignment.mode === 'none' && 'Leads sans attribution'}
-        {assignment.mode === 'round_robin' && `Repartis entre ${assignment.roundRobinUserIds?.length || 0} commerciaux`}
-        {assignment.mode === 'by_column' && (
-          assignment.assignmentColumn
-            ? `Attribution par colonne "${assignment.assignmentColumn}"`
-            : <span className="text-warning">Attribution par colonne (aucune colonne sélectionnée)</span>
-        )}
-        {' • '}
-        {duplicateConfig.strategy === 'skip' && 'Doublons ignores'}
-        {duplicateConfig.strategy === 'update' && 'Doublons mis a jour'}
-        {duplicateConfig.strategy === 'create' && 'Doublons crees'}
+      <div className="p-4 bg-primary/5 border border-primary/10 rounded-xl">
+        <div className="grid grid-cols-2 gap-4 text-sm">
+          <div>
+            <span className="text-darklink">Attribution :</span>
+            <p className="font-medium text-ld mt-0.5">
+              {assignment.mode === 'none' && 'Sans attribution'}
+              {assignment.mode === 'round_robin' && (
+                assignment.roundRobinUserIds && assignment.roundRobinUserIds.length > 0
+                  ? `${assignment.roundRobinUserIds.length} commerciaux sélectionnés`
+                  : <span className="text-warning">Aucun commercial sélectionné</span>
+              )}
+              {assignment.mode === 'by_column' && (
+                assignment.assignmentColumn
+                  ? `Colonne "${assignment.assignmentColumn}"`
+                  : <span className="text-warning">Aucune colonne sélectionnée</span>
+              )}
+            </p>
+          </div>
+          <div>
+            <span className="text-darklink">Doublons :</span>
+            <p className="font-medium text-ld mt-0.5">
+              {duplicateConfig.strategy === 'skip' && 'Ignorés (non importés)'}
+              {duplicateConfig.strategy === 'update' && 'Mis à jour'}
+              {duplicateConfig.strategy === 'create' && 'Créés comme nouveaux'}
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );

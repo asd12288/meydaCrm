@@ -26,25 +26,23 @@ import { MIN_SEARCH_LENGTH } from '../config/constants';
 /**
  * Fetch paginated leads with filters
  * RLS automatically filters: admin sees all, sales sees only assigned
- * Optimized: Uses 'estimated' count for faster pagination on 290k+ rows
+ *
+ * No count query for performance - pagination uses hasMore pattern
  */
 export async function getLeads(
   filters: LeadFilters
 ): Promise<PaginatedLeadsResponse> {
   const supabase = await createClient();
+  const pageSize = filters.pageSize || 20;
+  const page = filters.page || 1;
 
-  // Build base query with assignee join
-  // Use 'estimated' count for faster pagination (avoids full table scan)
-  // Per PostgREST docs: uses planner statistics, typically within 1-5% accuracy
+  // Build query with assignee join
   let query = supabase
     .from('leads')
-    .select('*, assignee:profiles!leads_assigned_to_profiles_id_fk(id, display_name)', {
-      count: 'estimated',
-    })
+    .select('*, assignee:profiles!leads_assigned_to_profiles_id_fk(id, display_name)')
     .is('deleted_at', null);
 
-  // Apply search filter only if minimum length is met (performance optimization)
-  // Short searches on 290k rows are very expensive
+  // Apply search filter only if minimum length is met
   if (filters.search && filters.search.trim().length >= MIN_SEARCH_LENGTH) {
     const searchTerm = `%${filters.search.trim()}%`;
     query = query.or(
@@ -57,10 +55,9 @@ export async function getLeads(
     query = query.eq('status', filters.status);
   }
 
-  // Apply assignee filter (admin only - sales can't filter by assignee)
+  // Apply assignee filter
   if (filters.assignedTo) {
     if (filters.assignedTo === UNASSIGNED_FILTER_VALUE) {
-      // Special value to filter for unassigned leads
       query = query.is('assigned_to', null);
     } else {
       query = query.eq('assigned_to', filters.assignedTo);
@@ -72,36 +69,32 @@ export async function getLeads(
   const ascending = filters.sortOrder === 'asc';
   query = query.order(sortColumn, { ascending });
 
-  // Apply pagination
-  const pageSize = filters.pageSize || 20;
-  const page = filters.page || 1;
+  // Fetch one extra row to detect if there's a next page
   const from = (page - 1) * pageSize;
-  const to = from + pageSize - 1;
+  const to = from + pageSize; // +1 to check hasMore
   query = query.range(from, to);
 
-  const { data, error, count } = await query;
+  const { data, error } = await query;
 
   if (error) {
-    console.error('Error fetching leads:', error);
+    console.error('[getLeads] Error fetching leads:', error);
     return {
       leads: [],
-      total: 0,
       page,
       pageSize,
-      totalPages: 0,
+      hasMore: false,
     };
   }
 
-  const total = count || 0;
-  const totalPages = Math.ceil(total / pageSize);
+  // Check if there are more results
+  const hasMore = (data?.length || 0) > pageSize;
+  const leads = hasMore ? data!.slice(0, pageSize) : (data || []);
 
   return {
-    leads: (data as LeadWithAssignee[]) || [],
-    total,
+    leads: leads as LeadWithAssignee[],
     page,
     pageSize,
-    totalPages,
-    isEstimated: true, // Using 'estimated' count for faster pagination
+    hasMore,
   };
 }
 

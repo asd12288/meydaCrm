@@ -40,7 +40,7 @@ export async function LeadsListView({ searchParams }: LeadsListViewProps) {
   // Kanban: only assigned leads with last comments
   // Table: all leads based on filters and RLS
   const [leadsData, kanbanData, salesUsers, unassignedData] = await Promise.all([
-    isKanbanView ? Promise.resolve({ leads: [], total: 0, page: 1, pageSize: 20, totalPages: 0, isEstimated: false }) : getLeads(filters),
+    isKanbanView ? Promise.resolve({ leads: [], page: 1, pageSize: 20, hasMore: false }) : getLeads(filters),
     isKanbanView ? getLeadsForKanban(filters) : Promise.resolve({ leads: [], total: 0 }),
     isAdmin ? getSalesUsers() : Promise.resolve([]),
     isAdmin && !isKanbanView ? getUnassignedNewLeadsCount() : Promise.resolve({ count: 0, leadIds: [] }),
@@ -97,11 +97,9 @@ export async function LeadsListView({ searchParams }: LeadsListViewProps) {
 
           {/* Pagination */}
           <LeadsPagination
-            total={leadsData.total}
             page={leadsData.page}
             pageSize={leadsData.pageSize}
-            totalPages={leadsData.totalPages}
-            isEstimated={leadsData.isEstimated}
+            hasMore={leadsData.hasMore}
           />
         </CardBox>
       )}

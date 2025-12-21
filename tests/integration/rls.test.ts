@@ -57,30 +57,44 @@ describe('RLS Policies - Leads', () => {
   describe('Read Access', () => {
     it('admin can see all leads', async () => {
       const client = await signInAsUser(admin.email, admin.password)
-      const { data, error } = await client.from('leads').select('*')
+      // Query specifically for test lead (avoids scanning 193k+ rows)
+      const { data, error } = await client
+        .from('leads')
+        .select('*')
+        .eq('id', testLeadId)
+        .single()
 
       expect(error).toBeNull()
       expect(data).toBeDefined()
-      expect(data!.length).toBeGreaterThanOrEqual(1)
-      expect(data!.some((l) => l.id === testLeadId)).toBe(true)
+      expect(data!.id).toBe(testLeadId)
     })
 
     it('sales1 can see their assigned leads', async () => {
       const client = await signInAsUser(sales1.email, sales1.password)
-      const { data, error } = await client.from('leads').select('*')
+      // Query specifically for test lead (RLS should allow it)
+      const { data, error } = await client
+        .from('leads')
+        .select('*')
+        .eq('id', testLeadId)
+        .single()
 
       expect(error).toBeNull()
       expect(data).toBeDefined()
-      expect(data!.some((l) => l.id === testLeadId)).toBe(true)
+      expect(data!.id).toBe(testLeadId)
     })
 
     it('sales2 cannot see leads assigned to sales1', async () => {
       const client = await signInAsUser(sales2.email, sales2.password)
-      const { data, error } = await client.from('leads').select('*')
+      // Query for test lead - RLS should block it
+      const { data, error } = await client
+        .from('leads')
+        .select('*')
+        .eq('id', testLeadId)
 
+      // RLS blocks the read - returns empty array (no error)
       expect(error).toBeNull()
-      // sales2 should NOT see leads assigned to sales1
-      expect(data!.some((l) => l.id === testLeadId)).toBe(false)
+      expect(data).toBeDefined()
+      expect(data!.length).toBe(0)
     })
   })
 

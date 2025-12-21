@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import {
   IconPlus,
@@ -17,6 +17,12 @@ import { CardBox, ConfirmDialog, FormErrorAlert } from '@/modules/shared';
 import { Button } from '@/components/ui/button';
 import { retryImportJob, deleteImportJob, getRecentImportJobs } from '../lib/actions';
 import type { ImportJobWithStats } from '../types';
+
+// Polling interval in ms (3 seconds)
+const POLL_INTERVAL_MS = 3000;
+
+// Statuses that indicate an active job requiring polling
+const ACTIVE_STATUSES = ['queued', 'pending', 'parsing', 'importing'];
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof IconCheck }> = {
   pending: { label: 'En attente', color: 'text-darklink', icon: IconClock },
@@ -86,13 +92,29 @@ export function RecentHistoryCard({
   } | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
-  const refreshJobs = async () => {
+  const refreshJobs = useCallback(async () => {
     const result = await getRecentImportJobs(10);
     if (result.success && result.data) {
       setJobs(result.data.jobs);
       setTotal(result.data.total);
     }
-  };
+  }, []);
+
+  // Check if there are any active jobs that need polling
+  const hasActiveJobs = jobs.some((job) => ACTIVE_STATUSES.includes(job.status));
+
+  // Poll for updates when there are active jobs
+  useEffect(() => {
+    if (!hasActiveJobs) return;
+
+    // Initial refresh to get latest state
+    refreshJobs();
+
+    // Set up polling interval
+    const intervalId = setInterval(refreshJobs, POLL_INTERVAL_MS);
+
+    return () => clearInterval(intervalId);
+  }, [hasActiveJobs, refreshJobs]);
 
   const handleRetryClick = (jobId: string) => {
     setConfirmDialog({ type: 'retry', jobId });
@@ -217,7 +239,6 @@ export function RecentHistoryCard({
                   <th className="px-4 py-2.5 text-left font-medium text-darklink">Date</th>
                   <th className="px-4 py-2.5 text-left font-medium text-darklink">Fichier</th>
                   <th className="px-4 py-2.5 text-left font-medium text-darklink">Statut</th>
-                  <th className="px-4 py-2.5 text-right font-medium text-darklink">Lignes</th>
                   <th className="px-4 py-2.5 text-right font-medium text-darklink">Actions</th>
                 </tr>
               </thead>
@@ -278,15 +299,6 @@ export function RecentHistoryCard({
                             </div>
                           )}
                         </div>
-                      </td>
-                      <td className="px-4 py-2.5 text-right">
-                        <span className="text-ld font-medium">
-                          {job.imported_rows?.toLocaleString('fr-FR') || '-'}
-                        </span>
-                        <span className="text-darklink"> / </span>
-                        <span className="text-darklink">
-                          {job.total_rows?.toLocaleString('fr-FR') || '-'}
-                        </span>
                       </td>
                       <td className="px-4 py-2.5">
                         <div className="flex items-center justify-end gap-1">

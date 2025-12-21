@@ -29,8 +29,6 @@ export function PreviewStep({
   file,
   summary,
 }: PreviewStepProps) {
-  const hasIssues = summary.invalid > 0 || summary.duplicates > 0;
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -52,12 +50,12 @@ export function PreviewStep({
         </div>
 
         {/* Valid rows */}
-        <div className="bg-lightsuccess/20 rounded-lg p-3 text-center">
+        <div className="bg-lightprimary/20 rounded-lg p-3 text-center">
           <div className="flex items-center justify-center gap-1 mb-1">
-            <IconCheck size={14} className="text-success" />
-            <p className="text-xs text-success">Valides</p>
+            <IconCheck size={14} className="text-primary" />
+            <p className="text-xs text-primary">Valides</p>
           </div>
-          <p className="text-xl font-bold text-success">
+          <p className="text-xl font-bold text-primary">
             {summary.valid.toLocaleString('fr-FR')}
           </p>
         </div>
@@ -73,38 +71,15 @@ export function PreviewStep({
           </p>
         </div>
 
-        {/* Duplicates */}
-        <div className={`rounded-lg p-3 text-center ${summary.duplicates > 0 ? 'bg-lightwarning/20' : 'bg-muted dark:bg-darkmuted'}`}>
+        {/* Duplicates - detected during import */}
+        <div className="rounded-lg p-3 text-center bg-muted dark:bg-darkmuted">
           <div className="flex items-center justify-center gap-1 mb-1">
-            <IconAlertTriangle size={14} className={summary.duplicates > 0 ? 'text-warning' : 'text-darklink'} />
-            <p className={`text-xs ${summary.duplicates > 0 ? 'text-warning' : 'text-darklink'}`}>Doublons</p>
+            <IconAlertTriangle size={14} className="text-darklink" />
+            <p className="text-xs text-darklink">Doublons</p>
           </div>
-          <p className={`text-xl font-bold ${summary.duplicates > 0 ? 'text-warning' : 'text-darklink'}`}>
-            {summary.duplicates.toLocaleString('fr-FR')}
+          <p className="text-sm font-medium text-darklink">
+            Detectes a l&apos;import
           </p>
-        </div>
-      </div>
-
-      {/* Import confirmation message */}
-      <div className={`p-4 rounded-lg ${hasIssues ? 'bg-lightwarning/20 border border-warning/30' : 'bg-lightsuccess/20 border border-success/30'}`}>
-        <div className="flex items-start gap-3">
-          {hasIssues ? (
-            <IconAlertTriangle className="w-5 h-5 text-warning shrink-0 mt-0.5" />
-          ) : (
-            <IconCheck className="w-5 h-5 text-success shrink-0 mt-0.5" />
-          )}
-          <div className="flex-1">
-            <p className={`font-medium ${hasIssues ? 'text-warning' : 'text-success'}`}>
-              {hasIssues
-                ? `${summary.valid.toLocaleString('fr-FR')} leads valides seront importes (${(summary.invalid + summary.duplicates).toLocaleString('fr-FR')} ignores)`
-                : `${summary.valid.toLocaleString('fr-FR')} leads prets a etre importes`}
-            </p>
-            <p className={`text-sm mt-1 ${hasIssues ? 'text-warning/80' : 'text-success/80'}`}>
-              {hasIssues
-                ? 'Les lignes invalides et les doublons seront ignores lors de l\'import.'
-                : 'Toutes les lignes ont ete validees avec succes.'}
-            </p>
-          </div>
         </div>
       </div>
 

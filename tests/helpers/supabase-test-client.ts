@@ -120,31 +120,37 @@ export async function deleteTestUser(
 export async function signInAsUser(
   email: string,
   password: string,
-  retries = 3
+  retries = 5
 ): Promise<SupabaseClient> {
   const client = createAnonClient()
   let lastError: Error | null = null
 
   for (let attempt = 0; attempt < retries; attempt++) {
     if (attempt > 0) {
-      // Exponential backoff: 1s, 2s, 4s
-      const delay = Math.pow(2, attempt - 1) * 1000
+      // Exponential backoff: 2s, 4s, 8s, 16s
+      const delay = Math.pow(2, attempt) * 1000
       await new Promise((resolve) => setTimeout(resolve, delay))
     }
 
-    const { error } = await client.auth.signInWithPassword({ email, password })
+    try {
+      const { error } = await client.auth.signInWithPassword({ email, password })
 
-    if (!error) {
-      // Small delay after successful sign-in to avoid rate limiting
-      await new Promise((resolve) => setTimeout(resolve, 150))
-      return client
-    }
+      if (!error) {
+        // Small delay after successful sign-in to avoid rate limiting
+        await new Promise((resolve) => setTimeout(resolve, 200))
+        return client
+      }
 
-    lastError = new Error(error.message)
+      lastError = new Error(error.message)
 
-    // If not rate limited, don't retry
-    if (!error.message.toLowerCase().includes('rate limit') && !error.message.toLowerCase().includes('too many')) {
-      throw new Error(`Failed to sign in as ${email}: ${error.message}`)
+      // If not rate limited, don't retry
+      if (!error.message.toLowerCase().includes('rate limit') && !error.message.toLowerCase().includes('too many')) {
+        throw new Error(`Failed to sign in as ${email}: ${error.message}`)
+      }
+    } catch (e) {
+      // Handle network errors (timeout, etc.)
+      lastError = e instanceof Error ? e : new Error(String(e))
+      // Continue retrying on network errors
     }
   }
 

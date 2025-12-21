@@ -4,8 +4,6 @@ import {
   IconCheck,
   IconX,
   IconLoader2,
-  IconFileCheck,
-  IconUserPlus,
 } from '@tabler/icons-react';
 import type { ImportProgress } from '../types';
 
@@ -135,86 +133,41 @@ export function ProgressStep({ progress, fileName }: ProgressStepProps) {
     );
   }
 
-  // Active import state - two-phase progress display
-  // At this point, phase can only be: 'uploading' | 'parsing' | 'validating' | 'importing'
-  const isImporting = progress.phase === 'importing';
-  const isParsing = progress.phase === 'parsing' || progress.phase === 'validating' || progress.phase === 'uploading';
-
+  // Active import state - clean minimal design
   return (
-    <div className="py-6 space-y-6">
-      {/* Phase indicator */}
-      <div className="flex justify-center gap-8">
-        <div className={`flex items-center gap-2 ${
-          isParsing ? 'text-primary' : 'text-darklink'
-        }`}>
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-            isParsing
-              ? 'bg-primary text-white'
-              : isImporting
-                ? 'bg-success text-white'
-                : 'bg-muted'
-          }`}>
-            {isImporting ? (
-              <IconCheck size={16} />
-            ) : (
-              <IconFileCheck size={16} />
-            )}
-          </div>
-          <span className="text-sm font-medium">Validation</span>
+    <div className="py-12 space-y-8">
+      {/* Centered spinner with phase label */}
+      <div className="flex flex-col items-center gap-4">
+        <IconLoader2 className="w-10 h-10 text-primary animate-spin" />
+        <div className="text-center">
+          <h3 className="text-lg font-medium text-ld">
+            {getPhaseLabel()}
+          </h3>
+          <p className="text-sm text-darklink mt-1">{getDetailLabel()}</p>
         </div>
-
-        <div className={`flex items-center gap-2 ${
-          isImporting ? 'text-primary' : 'text-darklink'
-        }`}>
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-            isImporting
-              ? 'bg-primary text-white'
-              : 'bg-muted'
-          }`}>
-            <IconUserPlus size={16} />
-          </div>
-          <span className="text-sm font-medium">Import</span>
-        </div>
-      </div>
-
-      {/* Header */}
-      <div className="text-center">
-        <h3 className="text-lg font-medium text-ld mb-1">
-          {getPhaseLabel()}
-        </h3>
-        {fileName && (
-          <p className="text-sm text-darklink">{fileName}</p>
-        )}
       </div>
 
       {/* Progress bar */}
-      <div className="max-w-md mx-auto space-y-2">
-        <div className="relative h-3 bg-muted rounded-full overflow-hidden">
+      <div className="max-w-sm mx-auto space-y-2">
+        <div className="relative h-2 bg-muted rounded-full overflow-hidden">
           {isIndeterminate ? (
-            // Animated indeterminate bar
             <div className="h-full bg-primary w-1/3 animate-indeterminate" />
           ) : (
-            // Determinate progress bar
             <div
               className="h-full bg-primary transition-all duration-300 ease-out"
               style={{ width: `${percentage}%` }}
             />
           )}
         </div>
-
-        {/* Percentage and detail */}
-        <div className="flex justify-between items-center text-sm">
-          <span className="text-darklink">{getDetailLabel()}</span>
-          {!isIndeterminate && (
-            <span className="font-semibold text-primary">{percentage}%</span>
-          )}
-        </div>
+        {!isIndeterminate && (
+          <p className="text-center text-sm font-medium text-primary">{percentage}%</p>
+        )}
       </div>
 
-      {/* Spinner */}
-      <div className="flex justify-center">
-        <IconLoader2 className="w-6 h-6 text-primary animate-spin" />
-      </div>
+      {/* File name */}
+      {fileName && (
+        <p className="text-center text-xs text-darklink">{fileName}</p>
+      )}
     </div>
   );
 }

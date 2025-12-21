@@ -115,9 +115,10 @@ export const COLUMN_LABELS = {
   name: 'Nom',
   email: 'Email',
   phone: 'Téléphone',
-  company: 'Entreprise',
   status: 'Statut',
   assignee: 'Commercial',
+  createdAt: 'Ajouté le',
   updatedAt: 'Mis à jour',
+  notes: 'Description',
   actions: '',
 };

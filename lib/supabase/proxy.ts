@@ -43,7 +43,8 @@ export async function updateSession(request: NextRequest) {
   const isQStashWebhook =
     pathname === '/api/import/parse' ||
     pathname === '/api/import/commit' ||
-    pathname === '/api/import/error-report';
+    pathname === '/api/import/error-report' ||
+    pathname === '/api/export/run';
 
   // NOWPayments webhook routes - authenticated via HMAC-SHA512 signature in handler
   // SECURITY: These routes bypass session auth because NOWPayments uses cryptographic

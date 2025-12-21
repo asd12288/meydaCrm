@@ -20,6 +20,8 @@ export default defineConfig({
         singleFork: true,
       },
     },
+    // Run test files serially (not in parallel) to avoid rate limiting
+    fileParallelism: false,
   },
   resolve: {
     alias: {

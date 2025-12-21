@@ -80,28 +80,32 @@ describe('Lead Actions - Get Leads', () => {
 
   it('admin sees all leads (RLS enforced)', async () => {
     const client = await signInAsUser(admin.email, admin.password)
-    const { data, error, count } = await client
+    // Query specifically for test leads (avoids scanning 193k+ rows)
+    const { data, error } = await client
       .from('leads')
-      .select('*', { count: 'exact' })
-      .is('deleted_at', null)
+      .select('*')
+      .in('id', testLeadIds)
 
     expect(error).toBeNull()
     expect(data).toBeDefined()
-    expect(count).toBeGreaterThanOrEqual(3)
-    expect(data!.some((l) => testLeadIds.includes(l.id))).toBe(true)
+    // Admin should see all 3 test leads
+    expect(data!.length).toBe(3)
+    expect(data!.every((l) => testLeadIds.includes(l.id))).toBe(true)
   })
 
   it('sales sees only assigned leads (RLS enforced)', async () => {
     const client = await signInAsUser(sales1.email, sales1.password)
-    const { data, error } = await client.from('leads').select('*').is('deleted_at', null)
+    // Query specifically for test leads - RLS should filter to only assigned ones
+    const { data, error } = await client
+      .from('leads')
+      .select('*')
+      .in('id', testLeadIds)
 
     expect(error).toBeNull()
     expect(data).toBeDefined()
-    // Should only see leads assigned to sales1
-    const assignedLeads = data!.filter((l) => l.assigned_to === sales1.id)
-    expect(assignedLeads.length).toBeGreaterThanOrEqual(1)
-    // Should not see leads assigned to sales2 or unassigned
-    expect(data!.some((l) => l.assigned_to === sales2.id)).toBe(false)
+    // Sales1 should only see their assigned lead (lead2)
+    expect(data!.length).toBe(1)
+    expect(data![0].assigned_to).toBe(sales1.id)
   })
 
   it('pagination works correctly', async () => {
@@ -109,31 +113,39 @@ describe('Lead Actions - Get Leads', () => {
     const pageSize = 2
     const page = 1
 
+    // Query only test leads to avoid scanning 193k+ rows
     const { data, count, error } = await client
       .from('leads')
       .select('*', { count: 'exact' })
       .is('deleted_at', null)
+      .in('id', testLeadIds)
       .range((page - 1) * pageSize, page * pageSize - 1)
 
     expect(error).toBeNull()
     expect(data).toBeDefined()
     expect(data!.length).toBeLessThanOrEqual(pageSize)
-    expect(count).toBeGreaterThanOrEqual(3)
+    expect(count).toBe(3) // Our 3 test leads
     const totalPages = Math.ceil((count || 0) / pageSize)
-    expect(totalPages).toBeGreaterThanOrEqual(1)
+    expect(totalPages).toBe(2) // 3 leads / 2 per page = 2 pages
   })
 
   it('filter by status works', async () => {
     const client = await signInAsUser(admin.email, admin.password)
+    // Query only test leads to avoid scanning 193k+ rows
+    // Note: Some test leads may have been updated by previous tests
     const { data, error } = await client
       .from('leads')
       .select('*')
       .is('deleted_at', null)
+      .in('id', testLeadIds)
       .eq('status', 'new')
 
     expect(error).toBeNull()
     expect(data).toBeDefined()
+    // Verify filter works - all returned leads have status 'new'
     expect(data!.every((l) => l.status === 'new')).toBe(true)
+    // At least 1 lead should match (lead1 always has 'new' status)
+    expect(data!.length).toBeGreaterThanOrEqual(1)
   })
 
   it('filter by assignee works (admin only)', async () => {
@@ -153,15 +165,19 @@ describe('Lead Actions - Get Leads', () => {
     const client = await signInAsUser(admin.email, admin.password)
     const searchTerm = `Lead1_${testPrefix}`
 
+    // Query only test leads to avoid scanning 193k+ rows, then apply search filter
     const { data, error } = await client
       .from('leads')
       .select('*')
       .is('deleted_at', null)
+      .in('id', testLeadIds)
       .or(`first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`)
 
     expect(error).toBeNull()
     expect(data).toBeDefined()
-    expect(data!.some((l) => l.last_name?.includes('Lead1'))).toBe(true)
+    // Should find lead1 which has last_name matching the search term
+    expect(data!.length).toBe(1)
+    expect(data![0].last_name).toContain('Lead1')
   })
 
   it('sorting works (sortBy, sortOrder)', async () => {

@@ -37,12 +37,13 @@ describe('Lead Constants', () => {
   });
 
   describe('LEAD_STATUS_OPTIONS', () => {
-    it('should have 9 status options', () => {
-      expect(LEAD_STATUS_OPTIONS).toHaveLength(9);
+    it('should have 10 status options', () => {
+      expect(LEAD_STATUS_OPTIONS).toHaveLength(10);
     });
 
     it('should have French labels', () => {
       const frenchLabels = [
+        'Nouveau',
         'RDV',
         'Pas de réponse 1',
         'Pas de réponse 2',
@@ -61,6 +62,7 @@ describe('Lead Constants', () => {
 
     it('should have valid status values', () => {
       const validValues = [
+        'new',
         'rdv',
         'no_answer_1',
         'no_answer_2',
@@ -97,10 +99,11 @@ describe('Lead Constants', () => {
       expect(COLUMN_LABELS.name).toBe('Nom');
       expect(COLUMN_LABELS.email).toBe('Email');
       expect(COLUMN_LABELS.phone).toBe('Téléphone');
-      expect(COLUMN_LABELS.company).toBe('Entreprise');
       expect(COLUMN_LABELS.status).toBe('Statut');
       expect(COLUMN_LABELS.assignee).toBe('Commercial');
+      expect(COLUMN_LABELS.createdAt).toBe('Ajouté le');
       expect(COLUMN_LABELS.updatedAt).toBe('Mis à jour');
+      expect(COLUMN_LABELS.notes).toBe('Description');
     });
 
     it('should have empty labels for selection and actions', () => {

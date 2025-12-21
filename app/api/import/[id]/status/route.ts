@@ -53,11 +53,31 @@ export async function GET(
 
   // Create SSE stream
   const encoder = new TextEncoder();
-  let heartbeatInterval: ReturnType<typeof setInterval> | null = null;
-  let isConnectionOpen = true;
 
   const stream = new ReadableStream({
     async start(controller) {
+      let heartbeatInterval: ReturnType<typeof setInterval> | null = null;
+      let isConnectionOpen = true;
+      let closeResolve: (() => void) | null = null;
+
+      // Promise that keeps the stream open until we want to close it
+      const keepAlivePromise = new Promise<void>((resolve) => {
+        closeResolve = resolve;
+      });
+
+      // Helper to close the stream properly
+      const closeStream = () => {
+        if (!isConnectionOpen) return;
+        isConnectionOpen = false;
+        if (heartbeatInterval) {
+          clearInterval(heartbeatInterval);
+          heartbeatInterval = null;
+        }
+        if (closeResolve) {
+          closeResolve();
+        }
+      };
+
       // Helper to send SSE message
       const sendMessage = (data: ImportJobProgress | null, type: string = 'progress') => {
         if (!isConnectionOpen) return;
@@ -72,7 +92,7 @@ export async function GET(
           controller.enqueue(encoder.encode(`data: ${JSON.stringify(message)}\n\n`));
         } catch {
           // Controller might be closed
-          isConnectionOpen = false;
+          closeStream();
         }
       };
 
@@ -103,6 +123,20 @@ export async function GET(
 
       if (initialJob) {
         sendMessage(transformToProgress(initialJob), 'progress');
+
+        // If already in terminal state, close after sending
+        if (['completed', 'failed', 'cancelled'].includes(initialJob.status)) {
+          setTimeout(() => {
+            closeStream();
+          }, 500);
+          await keepAlivePromise;
+          try {
+            controller.close();
+          } catch {
+            // Already closed
+          }
+          return;
+        }
       }
 
       // Subscribe to Realtime updates
@@ -128,12 +162,8 @@ export async function GET(
             // Close connection when import is done
             if (progress.status === 'completed' || progress.status === 'failed' || progress.status === 'cancelled') {
               setTimeout(() => {
-                isConnectionOpen = false;
-                if (heartbeatInterval) {
-                  clearInterval(heartbeatInterval);
-                }
                 channel.unsubscribe();
-                controller.close();
+                closeStream();
               }, 1000); // Give client time to receive final message
             }
           }
@@ -150,25 +180,25 @@ export async function GET(
         try {
           controller.enqueue(encoder.encode(': heartbeat\n\n'));
         } catch {
-          isConnectionOpen = false;
-          if (heartbeatInterval) clearInterval(heartbeatInterval);
           channel.unsubscribe();
+          closeStream();
         }
       }, 15000);
 
       // Handle client disconnect
       request.signal.addEventListener('abort', () => {
-        isConnectionOpen = false;
-        if (heartbeatInterval) {
-          clearInterval(heartbeatInterval);
-        }
         channel.unsubscribe();
-        try {
-          controller.close();
-        } catch {
-          // Already closed
-        }
+        closeStream();
       });
+
+      // Keep the stream open until closeStream() is called
+      await keepAlivePromise;
+
+      try {
+        controller.close();
+      } catch {
+        // Already closed
+      }
     },
   });
 

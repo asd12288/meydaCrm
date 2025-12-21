@@ -66,12 +66,10 @@ export interface LeadWithAssignee extends SupabaseLead {
 // Paginated response from getLeads
 export interface PaginatedLeadsResponse {
   leads: LeadWithAssignee[];
-  total: number;
   page: number;
   pageSize: number;
-  totalPages: number;
-  /** Whether the total count is estimated (faster) or exact */
-  isEstimated?: boolean;
+  /** Whether there are more results after this page */
+  hasMore: boolean;
 }
 
 // Status update payload

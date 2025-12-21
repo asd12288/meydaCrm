@@ -28,8 +28,9 @@ const XLSX_PATH = './data/leads.xlsx';
 // Archive user ID for unknown sales
 const ARCHIVE_USER_ID = '2bb2a181-964b-4391-8e39-0644be2851a1';
 
-// Sales name → user ID mapping
+// Sales name → user ID mapping (full names + first-name-only for CSV)
 const SALES_MAP: Record<string, string> = {
+  // Full names (XLSX format)
   'ALAIN ALAIN': '132e9d4a-05b2-4974-88fa-58d12d442b45',
   'CHARLES CHARLES': 'eb38150a-d139-4cbc-9906-5e9aced19deb',
   'DELEMARRE DELEMARRE': 'a6ace7a3-3caa-438c-bd37-d30a77bc0601',
@@ -52,10 +53,29 @@ const SALES_MAP: Record<string, string> = {
   'remy remy': '5091fef3-9e9f-43a2-a34e-e0fe23687aba',
   'sylvie sylvie': 'ab4584b7-b6b7-481e-a7c5-f21bb6d759f9',
   'telaviv52': 'e2b3d5a3-cf53-4ec1-b3a8-7503b540f165',
-  // Unknown → Archive
-  'DEPOSIT DEPOSIT': ARCHIVE_USER_ID,
-  'ROBOT24 ROBOT24': ARCHIVE_USER_ID,
+  // New users (created for import)
+  'DEPOSIT DEPOSIT': 'd4e173f3-fa6c-4592-9212-807bf8e2232f',
+  'ROBOT24 ROBOT24': '4753c93e-a1b0-41c7-a2b0-56fd0e68e70f',
+  // Archived leads
   'poubelle': ARCHIVE_USER_ID,
+
+  // First-name-only (CSV format)
+  'ALAIN': '132e9d4a-05b2-4974-88fa-58d12d442b45',
+  'CHARLES': 'eb38150a-d139-4cbc-9906-5e9aced19deb',
+  'DELEMARRE': 'a6ace7a3-3caa-438c-bd37-d30a77bc0601',
+  'FEYEUX': '9a999a73-6ab2-4d39-9ce3-2a0ac31a31af',
+  'HELENE': '61948f7d-e6a5-42fb-8d7c-d4ec4353ef87',
+  'JULIEN': 'a69953a7-9b66-4a3c-8837-15d63321d208',
+  'LAURENT': '0471d54d-6cf1-4d1e-bb91-4735612e8060',
+  'LUCAS': '0c1a9922-2f5e-421c-94bf-9c73fcb4faaf',
+  'MAPAIRE': 'bf8b882a-380a-47f1-ab7d-00228575961e',
+  'TAILLARD': 'db89e43d-59da-404a-a74b-e1b6578cefc6',
+  'VINCENT': '271a5da3-cac9-4fa6-84ad-f74c5a0f6295',
+  'DEPOSIT': 'd4e173f3-fa6c-4592-9212-807bf8e2232f',
+  'ROBOT24': '4753c93e-a1b0-41c7-a2b0-56fd0e68e70f',
+  'nicolas1': 'c2441370-9b19-405c-b51f-2c1ad44a5d05',
+  'remy': '5091fef3-9e9f-43a2-a34e-e0fe23687aba',
+  'sylvie': 'ab4584b7-b6b7-481e-a7c5-f21bb6d759f9',
 };
 
 // Status mapping (file value → DB enum)
