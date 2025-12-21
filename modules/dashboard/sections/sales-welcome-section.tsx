@@ -1,4 +1,3 @@
-import { getSalesWelcomeData } from '../lib/actions';
 import { WelcomeCard } from '../components/welcome-card';
 
 interface SalesWelcomeSectionProps {
@@ -7,19 +6,8 @@ interface SalesWelcomeSectionProps {
 }
 
 /**
- * Async server component that fetches sales welcome data independently
- * Wrapped in Suspense for streaming
+ * Simple server component for sales welcome
  */
-export async function SalesWelcomeSection({ userName, userAvatar }: SalesWelcomeSectionProps) {
-  const data = await getSalesWelcomeData();
-
-  return (
-    <WelcomeCard
-      userName={userName}
-      userAvatar={userAvatar}
-      totalLeads={data.totalLeads}
-      trendPercentage={data.trendPercentage}
-      isAdmin={false}
-    />
-  );
+export function SalesWelcomeSection({ userName, userAvatar }: SalesWelcomeSectionProps) {
+  return <WelcomeCard userName={userName} userAvatar={userAvatar} />;
 }

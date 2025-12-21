@@ -1,4 +1,3 @@
-import { getAdminWelcomeData } from '../lib/actions';
 import { WelcomeCard } from '../components/welcome-card';
 
 interface AdminWelcomeSectionProps {
@@ -7,19 +6,8 @@ interface AdminWelcomeSectionProps {
 }
 
 /**
- * Async server component that fetches welcome data independently
- * Wrapped in Suspense for streaming
+ * Simple server component for admin welcome
  */
-export async function AdminWelcomeSection({ userName, userAvatar }: AdminWelcomeSectionProps) {
-  const data = await getAdminWelcomeData();
-
-  return (
-    <WelcomeCard
-      userName={userName}
-      userAvatar={userAvatar}
-      totalLeads={data.totalLeads}
-      trendPercentage={data.trendPercentage}
-      isAdmin={true}
-    />
-  );
+export function AdminWelcomeSection({ userName, userAvatar }: AdminWelcomeSectionProps) {
+  return <WelcomeCard userName={userName} userAvatar={userAvatar} />;
 }

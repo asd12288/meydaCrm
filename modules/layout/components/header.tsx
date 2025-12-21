@@ -17,7 +17,7 @@ import { NotificationBell } from '@/modules/notifications';
 interface HeaderProps {
   displayName: string;
   role: string;
-  avatar: string | null;
+  avatar?: string | null; // Temporarily optional for video test
 }
 
 export function Header({ displayName, role, avatar }: HeaderProps) {

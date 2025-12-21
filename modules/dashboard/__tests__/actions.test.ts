@@ -271,10 +271,9 @@ describe('Dashboard Server Actions - Sales functions', () => {
         data: {
           totalLeads: 100,
           leadsByStatus: {
-            rdv: 10,
-            contacted: 20,
-            qualified: 15,
-            won: 5,
+            Nouveau: 12,
+            'A rappeler': 8,
+            Gagne: 5,
           },
         },
         error: null,
@@ -283,7 +282,8 @@ describe('Dashboard Server Actions - Sales functions', () => {
       const result = await getSalesQuickStatsData();
 
       expect(result.totalLeads).toBe(100);
-      expect(result.activeLeads).toBe(45); // rdv + contacted + qualified
+      expect(result.newLeads).toBe(12);
+      expect(result.callbackLeads).toBe(8);
       expect(result.wonLeads).toBe(5);
     });
   });

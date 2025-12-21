@@ -46,12 +46,27 @@ export interface ImportActivityItem {
   totalRows: number;
 }
 
-// Leads trend data point
+// Leads trend data point (daily)
 export interface LeadsTrendPoint {
   date: string;
   created: number;
   updated: number;
   assigned?: number;
+}
+
+// Monthly trend data point
+export interface MonthlyTrendPoint {
+  month: number; // 1-12
+  year: number;
+  created: number;
+  updated: number;
+  assigned?: number;
+}
+
+// Available years for trend chart
+export interface TrendYearsData {
+  years: number[];
+  monthlyData: Record<number, MonthlyTrendPoint[]>; // year -> monthly data
 }
 
 // Sales Dashboard Data

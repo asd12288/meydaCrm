@@ -1,58 +1,90 @@
 'use client';
 
-import React from 'react';
 import Image from 'next/image';
-import { IconTrendingUp, IconTrendingDown } from '@tabler/icons-react';
+
+// Random subtitles for each time period
+const MORNING_SUBTITLES = [
+  'Prêt pour une belle journée ?',
+  'Un café et c\'est parti !',
+  'Les objectifs n\'attendent pas !',
+  'Nouvelle journée, nouvelles opportunités !',
+  'C\'est l\'heure de briller !',
+  'On attaque fort aujourd\'hui ?',
+  'Les meilleurs leads arrivent tôt !',
+];
+
+const AFTERNOON_SUBTITLES = [
+  'La journée avance bien !',
+  'On garde le rythme !',
+  'La pause café est méritée !',
+  'Encore quelques deals à closer ?',
+  'L\'après-midi des champions !',
+  'Les objectifs sont en vue !',
+  'Continue comme ça !',
+];
+
+const EVENING_SUBTITLES = [
+  'Bientôt le repos mérité !',
+  'Belle journée de travail !',
+  'Tu as fait du bon boulot !',
+  'Dernière ligne droite !',
+  'Le canapé t\'attend bientôt !',
+  'Finis en beauté !',
+  'Bravo pour cette journée !',
+];
+
+const NIGHT_SUBTITLES = [
+  'Encore debout ? Chapeau !',
+  'Les noctambules font les meilleurs vendeurs !',
+  'Le calme de la nuit, parfait pour travailler !',
+  'Insomnie productive ?',
+  'Tu ne dors jamais ?',
+  'Les deals se font aussi la nuit !',
+];
+
+// Pick random subtitle from array
+function pickRandom<T>(arr: T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+// Get time-based greeting with emoji
+function getTimeGreeting(): { text: string; emoji: string; subtitle: string } {
+  const hour = new Date().getHours();
+  if (hour >= 5 && hour < 12) {
+    return { text: 'Bon matin', emoji: '☀️', subtitle: pickRandom(MORNING_SUBTITLES) };
+  }
+  if (hour >= 12 && hour < 18) {
+    return { text: 'Bon après-midi', emoji: '🌤️', subtitle: pickRandom(AFTERNOON_SUBTITLES) };
+  }
+  if (hour >= 18 && hour < 22) {
+    return { text: 'Bonsoir', emoji: '🌅', subtitle: pickRandom(EVENING_SUBTITLES) };
+  }
+  return { text: 'Bonne nuit', emoji: '🌙', subtitle: pickRandom(NIGHT_SUBTITLES) };
+}
 
 interface WelcomeCardProps {
   userName: string;
   userAvatar?: string | null;
-  totalLeads: number;
-  trendPercentage: number;
-  isAdmin?: boolean;
 }
 
-export function WelcomeCard({
-  userName,
-  userAvatar,
-  totalLeads,
-  trendPercentage,
-  isAdmin = false,
-}: WelcomeCardProps) {
-  const isPositive = trendPercentage >= 0;
-  
+export function WelcomeCard({ userName, userAvatar }: WelcomeCardProps) {
+  const { text: greetingText, emoji, subtitle } = getTimeGreeting();
+
   // Get avatar path - use default if not set
-  const avatarSrc = userAvatar 
+  const avatarSrc = userAvatar
     ? `/avatars/${userAvatar}.png`
     : '/avatars/avatar-01.png';
 
   return (
     <div className="relative overflow-hidden rounded-xl dashboard-welcome p-6">
-      <div className="flex items-end justify-between min-h-[140px]">
-        {/* Left: Welcome text and stats */}
-        <div className="flex-1 z-10 pb-2">
-          <h4 className="!text-white/70 text-sm font-medium">Bonjour,</h4>
-          <h2 className="text-2xl font-bold !text-white mt-1">{userName}</h2>
-
-          {/* Stats pills */}
-          <div className="flex items-center gap-3 mt-5">
-            <div className="bg-white/15 backdrop-blur-sm rounded-full px-5 py-3 transition-colors duration-150 hover:bg-white/20 cursor-default">
-              <p className="text-3xl font-bold !text-white leading-none">
-                {totalLeads.toLocaleString('fr-FR')}
-              </p>
-              <p className="!text-white/60 text-xs mt-1">
-                {isAdmin ? 'Total leads' : 'Vos leads'}
-              </p>
-            </div>
-
-            <div className="bg-white/15 backdrop-blur-sm rounded-full px-5 py-3 transition-colors duration-150 hover:bg-white/20 cursor-default">
-              <p className={`text-2xl font-bold leading-none flex items-center gap-1 ${isPositive ? '!text-white' : '!text-white/70'}`}>
-                {isPositive ? <IconTrendingUp size={20} /> : <IconTrendingDown size={20} />}
-                {isPositive ? '+' : ''}{trendPercentage}%
-              </p>
-              <p className="!text-white/60 text-xs mt-1">vs 30 jours</p>
-            </div>
-          </div>
+      <div className="flex items-center justify-between min-h-[140px]">
+        {/* Left: Welcome text */}
+        <div className="flex-1 z-10">
+          <h4 className="!text-white/80 text-xl font-medium">
+            {emoji} {greetingText},
+          </h4>
+          <h2 className="text-4xl font-bold !text-white mt-2">{userName}</h2>
+          <p className="!text-white/60 text-base mt-3">{subtitle}</p>
         </div>
 
         {/* Right: Avatar - positioned at bottom */}

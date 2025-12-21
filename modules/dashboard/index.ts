@@ -6,14 +6,13 @@ export {
   getStatusChartData,
   getTeamPerformanceData,
   getImportActivityData,
-  getAdminTrendData,
+  getMonthlyTrendData,
   getAdminRecentActivityData,
   // Sales section data
   getSalesWelcomeData,
   getSalesQuickStatsData,
   getSalesStatusChartData,
   getSalesActivityData,
-  getSalesTrendData,
   // Types
   type WelcomeData,
   type AdminQuickStatsData,
@@ -45,6 +44,8 @@ export type {
   TeamPerformanceItem,
   ImportActivityItem,
   LeadsTrendPoint,
+  MonthlyTrendPoint,
+  TrendYearsData,
   ChartSeries,
   ChartData,
 } from './types';

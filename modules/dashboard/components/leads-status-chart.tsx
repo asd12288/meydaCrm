@@ -11,40 +11,54 @@ interface LeadsStatusChartProps {
   totalLeads: number;
 }
 
-// Simplified status color mapping - 3 semantic categories only
-// Positive (won, deposit, rdv) → success green
-// Negative (lost, not_interested, wrong_number) → muted gray
-// Neutral (everything else) → primary blue shades
-type StatusCategory = 'positive' | 'negative' | 'neutral';
+// Semantic color mapping for each status (uses DB keys, not French labels)
+// Colors match the status meaning for better visual understanding
+const STATUS_CHART_COLORS: Record<string, string> = {
+  // Success (green) - Won/positive outcomes
+  deposit: 'var(--color-success)',
+  won: '#16a34a', // green-600
 
-const getStatusCategory = (status: string): StatusCategory => {
-  if (['won', 'deposit', 'rdv'].includes(status)) return 'positive';
-  if (['lost', 'not_interested', 'wrong_number', 'no_answer', 'no_answer_2'].includes(status)) return 'negative';
-  return 'neutral';
+  // Warning (orange/yellow) - Active/in progress
+  rdv: 'var(--color-warning)',
+  callback: '#ea580c', // orange-600
+  relance: '#d97706', // amber-600
+
+  // Primary (blue) - Outreach
+  mail: 'var(--color-primary)',
+  contacted: '#0284c7', // sky-600
+
+  // Info (cyan) - New
+  new: 'var(--color-info)',
+
+  // Secondary (purple/gray) - No response
+  no_answer: 'var(--color-secondary)',
+  no_answer_1: '#7c3aed', // violet-600
+  no_answer_2: '#6366f1', // indigo-500
+
+  // Error (red) - Lost/negative
+  not_interested: 'var(--color-error)',
+  wrong_number: '#dc2626', // red-600
+  lost: '#be123c', // rose-700
 };
 
-// Chart colors - professional palette (primary blue + grays)
-// Using darker shades to ensure visibility on both light and dark backgrounds
-const chartColorPalette = [
-  'var(--color-primary)',   // Primary blue (#00A1FF)
-  '#475569',                // Slate-600 (darker)
-  '#64748b',                // Slate-500
-  '#94a3b8',                // Slate-400
-  '#78716c',                // Stone-500
-  '#a8a29e',                // Stone-400
-];
-
-
-const getStatusChartColor = (index: number): string => {
-  return chartColorPalette[index % chartColorPalette.length];
+// Get chart color for a status, with fallback
+const getStatusChartColor = (status: string): string => {
+  return STATUS_CHART_COLORS[status] || 'var(--color-secondary)';
 };
 
-// Legend badge classes - simplified
-const getLegendBadgeClass = (status: string): string => {
-  const category = getStatusCategory(status);
-  if (category === 'positive') return 'dashboard-legend-badge positive';
-  if (category === 'negative') return 'dashboard-legend-badge negative';
-  return 'dashboard-legend-badge';
+// Tailwind classes for legend dots (for CSS variable colors)
+const STATUS_DOT_CLASSES: Record<string, string> = {
+  deposit: 'bg-success',
+  rdv: 'bg-warning',
+  mail: 'bg-primary',
+  new: 'bg-info',
+  no_answer: 'bg-secondary',
+  not_interested: 'bg-error',
+};
+
+// Get dot class or return empty for inline style fallback
+const getStatusDotClass = (status: string): string => {
+  return STATUS_DOT_CLASSES[status] || '';
 };
 
 export function LeadsStatusChart({ leadsByStatus, totalLeads }: LeadsStatusChartProps) {
@@ -58,8 +72,8 @@ export function LeadsStatusChart({ leadsByStatus, totalLeads }: LeadsStatusChart
   const chartLabels = sortedStatuses.map(
     ([status]) => LEAD_STATUS_LABELS[status as keyof typeof LEAD_STATUS_LABELS] || status
   );
-  // Use simplified color palette
-  const chartColors = sortedStatuses.map((_, index) => getStatusChartColor(index));
+  // Use semantic colors based on status
+  const chartColors = sortedStatuses.map(([status]) => getStatusChartColor(status));
 
   const chartConfig: ApexCharts.ApexOptions = {
     series: chartSeries,
@@ -147,18 +161,24 @@ export function LeadsStatusChart({ leadsByStatus, totalLeads }: LeadsStatusChart
           <div className="space-y-3">
             {sortedStatuses.map(([status, count]) => {
               const percentage = totalLeads > 0 ? Math.round((count / totalLeads) * 100) : 0;
+              const chartColor = getStatusChartColor(status);
+              const dotClass = getStatusDotClass(status);
               return (
                 <div
                   key={status}
-                  className="dashboard-legend-item cursor-default"
+                  className="flex items-center gap-3 py-1"
                 >
-                  <span className={getLegendBadgeClass(status)}>
-                    {percentage}%
-                  </span>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-ld">
-                      {LEAD_STATUS_LABELS[status as keyof typeof LEAD_STATUS_LABELS] || status}
-                    </p>
+                  <div
+                    className={`w-3 h-3 rounded-full shrink-0 ${dotClass}`}
+                    style={!dotClass ? { backgroundColor: chartColor } : undefined}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-medium text-ld truncate">
+                        {LEAD_STATUS_LABELS[status as keyof typeof LEAD_STATUS_LABELS] || status}
+                      </p>
+                      <span className="text-xs font-medium text-darklink">{percentage}%</span>
+                    </div>
                     <p className="text-xs text-darklink">{count.toLocaleString('fr-FR')} leads</p>
                   </div>
                 </div>
