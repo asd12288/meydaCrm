@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import Image from 'next/image';
 
 interface HoverVideoProps {
   /** Video source URL */
@@ -56,7 +57,7 @@ export function HoverVideo({
   if (hasError) {
     if (fallback) {
       return (
-        <img
+        <Image
           src={fallback}
           width={width}
           height={height}

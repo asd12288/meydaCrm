@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Image from 'next/image';
 
 // Random subtitles for each time period
@@ -82,15 +82,17 @@ interface WelcomeCardProps {
 }
 
 export function WelcomeCard({ userName, userAvatar }: WelcomeCardProps) {
-  // Use default greeting for SSR, then update on client
-  const [greeting, setGreeting] = useState<GreetingData>(DEFAULT_GREETING);
-
-  useEffect(() => {
-    // Generate random seed once per session using current minute
-    // This ensures consistent subtitle during the same minute
+  // Use lazy initializer to compute greeting once on mount
+  // The initializer function is only called once during first render
+  const [greeting] = useState<GreetingData>(() => {
+    // Check if we're on the client (window exists)
+    if (typeof window === 'undefined') {
+      return DEFAULT_GREETING;
+    }
+    // Uses current minute as seed for consistent subtitle within the same minute
     const seed = Math.floor(Date.now() / 60000);
-    setGreeting(getTimeGreeting(seed));
-  }, []);
+    return getTimeGreeting(seed);
+  });
 
   const { text: greetingText, emoji, subtitle } = greeting;
 
