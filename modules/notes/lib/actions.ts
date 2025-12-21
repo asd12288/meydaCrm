@@ -121,7 +121,6 @@ export async function createNote(input: NoteCreateInput): Promise<{
       content: input.content,
       color: input.color,
       lead_id: input.leadId || null,
-      is_pinned: input.isPinned || false,
       position: newPosition,
       position_x: baseX,
       position_y: baseY,
@@ -172,8 +171,6 @@ export async function updateNote(input: NoteUpdateInput): Promise<{
   if (updateData.content !== undefined) updateObj.content = updateData.content;
   if (updateData.color !== undefined) updateObj.color = updateData.color;
   if (updateData.leadId !== undefined) updateObj.lead_id = updateData.leadId;
-  if (updateData.isPinned !== undefined)
-    updateObj.is_pinned = updateData.isPinned;
 
   const { error } = await supabase
     .from('notes')
@@ -217,48 +214,6 @@ export async function deleteNote(noteId: string): Promise<{
 
   revalidatePath('/notes');
   return actionSuccess();
-}
-
-/**
- * Toggle pin status
- */
-export async function toggleNotePin(noteId: string): Promise<{
-  success?: boolean;
-  isPinned?: boolean;
-  error?: string;
-}> {
-  const supabase = await createClient();
-  const user = await getCurrentUser();
-
-  if (!user) {
-    return actionError(FR_MESSAGES.UNAUTHENTICATED);
-  }
-
-  // Get current pin status
-  const { data: note } = await supabase
-    .from('notes')
-    .select('is_pinned')
-    .eq('id', noteId)
-    .eq('created_by', user.id)
-    .single();
-
-  if (!note) {
-    return actionError('Note non trouvée');
-  }
-
-  const newPinStatus = !note.is_pinned;
-
-  const { error } = await supabase
-    .from('notes')
-    .update({ is_pinned: newPinStatus, updated_at: new Date().toISOString() })
-    .eq('id', noteId);
-
-  if (error) {
-    return actionError('Erreur lors de la mise à jour');
-  }
-
-  revalidatePath('/notes');
-  return { success: true, isPinned: newPinStatus };
 }
 
 /**

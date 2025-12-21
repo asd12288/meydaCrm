@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition, useOptimistic, useCallback } from 'react';
-import { IconPin, IconNote, IconPlus, IconEdit } from '@tabler/icons-react';
+import { IconNote, IconPlus, IconEdit } from '@tabler/icons-react';
 import { Button } from '@/components/ui/button';
 import { Modal, EmptyState } from '@/modules/shared';
 import { reorderNotes } from '../lib/actions';
@@ -30,9 +30,6 @@ export function NoteGrid({ notes: initialNotes }: NoteGridProps) {
     }
   );
 
-  // Separate pinned and unpinned notes
-  const pinnedNotes = optimisticNotes.filter((n) => n.is_pinned);
-  const unpinnedNotes = optimisticNotes.filter((n) => !n.is_pinned);
 
   const handleDragStart = useCallback(
     (e: React.DragEvent, noteId: string) => {
@@ -74,8 +71,6 @@ export function NoteGrid({ notes: initialNotes }: NoteGridProps) {
       const draggedNote = optimisticNotes.find((n) => n.id === draggedNoteId);
       if (!draggedNote) return;
 
-      // Only allow reordering within the same section
-      if (draggedNote.is_pinned !== isPinnedSection) return;
 
       const fromIndex = optimisticNotes.findIndex((n) => n.id === draggedNoteId);
       const toIndex = optimisticNotes.findIndex((n) => n.id === targetId);

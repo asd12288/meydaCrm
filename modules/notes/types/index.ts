@@ -14,7 +14,7 @@ export type NoteColor = (typeof NOTE_COLORS)[number];
 
 // Zod schemas
 
-// Form schema - for react-hook-form (color and isPinned are required)
+// Form schema - for react-hook-form
 export const noteFormSchema = z.object({
   title: z.string().max(200, 'Maximum 200 caractères').optional().nullable(),
   content: z
@@ -23,7 +23,6 @@ export const noteFormSchema = z.object({
     .max(5000, 'Maximum 5000 caractères'),
   color: z.enum(NOTE_COLORS),
   leadId: z.string().uuid().optional().nullable(),
-  isPinned: z.boolean(),
 });
 
 // Create schema - for server action (with defaults)
@@ -35,7 +34,6 @@ export const noteCreateSchema = z.object({
     .max(5000, 'Maximum 5000 caractères'),
   color: z.enum(NOTE_COLORS).default('yellow'),
   leadId: z.string().uuid().optional().nullable(),
-  isPinned: z.boolean().default(false),
 });
 
 export const noteUpdateSchema = z.object({
@@ -48,7 +46,6 @@ export const noteUpdateSchema = z.object({
     .optional(),
   color: z.enum(NOTE_COLORS).optional(),
   leadId: z.string().uuid().optional().nullable(),
-  isPinned: z.boolean().optional(),
 });
 
 // Position schema for drag/resize updates
@@ -83,7 +80,6 @@ export interface SupabaseNote {
   content: string;
   color: NoteColor;
   position: number;
-  is_pinned: boolean;
   // Free-form canvas positioning
   position_x: number;
   position_y: number;

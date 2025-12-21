@@ -3,8 +3,6 @@
 import { useTransition } from 'react';
 import Link from 'next/link';
 import {
-  IconPin,
-  IconPinFilled,
   IconDotsVertical,
   IconEdit,
   IconTrash,
@@ -21,7 +19,7 @@ import {
 import { useToast } from '@/modules/shared/hooks/use-toast';
 import { getNoteColorClasses } from '../config/constants';
 import { renderMarkdown } from '../lib/markdown';
-import { toggleNotePin, deleteNote } from '../lib/actions';
+import { deleteNote } from '../lib/actions';
 import type { NoteWithLead } from '../types';
 
 interface NoteCardProps {
@@ -34,15 +32,6 @@ export function NoteCard({ note, onEdit, isDragging = false }: NoteCardProps) {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
   const colorClasses = getNoteColorClasses(note.color);
-
-  const handleTogglePin = () => {
-    startTransition(async () => {
-      const result = await toggleNotePin(note.id);
-      if (result.error) {
-        toast.error(result.error);
-      }
-    });
-  };
 
   const handleDelete = () => {
     if (!confirm('Supprimer cette note ?')) return;
@@ -84,26 +73,6 @@ export function NoteCard({ note, onEdit, isDragging = false }: NoteCardProps) {
       >
         <IconGripVertical size={16} />
       </div>
-
-      {/* Pin button */}
-      <button
-        onClick={handleTogglePin}
-        disabled={isPending}
-        className={cn(
-          'absolute right-10 top-2 p-1 rounded transition-all',
-          'hover:bg-white/50 dark:hover:bg-dark/50',
-          note.is_pinned
-            ? 'text-primary'
-            : 'text-darklink opacity-0 group-hover:opacity-100'
-        )}
-        aria-label={note.is_pinned ? 'Désépingler' : 'Épingler'}
-      >
-        {note.is_pinned ? (
-          <IconPinFilled size={16} />
-        ) : (
-          <IconPin size={16} />
-        )}
-      </button>
 
       {/* Actions dropdown */}
       <DropdownMenu
