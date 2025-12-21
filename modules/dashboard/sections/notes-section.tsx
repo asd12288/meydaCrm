@@ -1,16 +1,17 @@
 import Link from 'next/link';
 import { IconNote, IconChevronRight, IconUser } from '@tabler/icons-react';
+import { cn } from '@/lib/utils';
 import { CardBox } from '@/modules/shared';
 import { getRecentNotes } from '@/modules/notes/lib/actions';
-import { getNoteColorClasses, renderMarkdown } from '@/modules/notes';
+import { getPostItColorClasses, renderMarkdown } from '@/modules/notes';
 import type { NoteWithLead } from '@/modules/notes/types';
 
 /**
- * Mini note card for dashboard widget
- * Matches the design of NoteCard on the notes page, but compact
+ * Mini post-it note for dashboard widget
+ * Matches the design of PostItNote on the notes page, but compact and non-interactive
  */
-function MiniNoteCard({ note }: { note: NoteWithLead }) {
-  const colorClasses = getNoteColorClasses(note.color);
+function MiniPostItNote({ note }: { note: NoteWithLead }) {
+  const colorClasses = getPostItColorClasses(note.color);
 
   const getLeadDisplayName = () => {
     if (!note.lead) return null;
@@ -19,39 +20,50 @@ function MiniNoteCard({ note }: { note: NoteWithLead }) {
   };
 
   return (
-    <Link
-      href="/notes"
-      className={`block rounded-lg border-2 p-4 transition-all hover:shadow-md group ${colorClasses.bg} ${colorClasses.border}`}
-    >
-      {/* Title */}
-      {note.title && (
-        <h3 className="font-semibold text-ld mb-2 line-clamp-1">
-          {note.title}
-        </h3>
-      )}
-
-      {/* Note content with markdown */}
+    <Link href="/notes" className="block group">
       <div
-        className="text-sm text-darklink prose prose-sm dark:prose-invert max-w-none line-clamp-3"
-        dangerouslySetInnerHTML={{ __html: renderMarkdown(note.content) }}
-      />
+        className={cn(
+          'post-it-inner relative',
+          colorClasses.bg,
+          colorClasses.shadow,
+          'transition-transform hover:scale-[1.02] hover:-rotate-1'
+        )}
+        style={{ minHeight: '140px' }}
+      >
+        {/* Folded corner effect */}
+        <div className={cn('post-it-fold', colorClasses.fold)} />
 
-      {/* Lead badge */}
-      {note.lead && (
-        <span className="mt-3 inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-white/50 dark:bg-dark/50 text-xs font-medium text-darklink">
-          <IconUser size={12} />
-          {getLeadDisplayName()}
-        </span>
-      )}
+        {/* Content area */}
+        <div className="post-it-content">
+          {/* Title */}
+          {note.title && (
+            <h3 className="post-it-title line-clamp-1">{note.title}</h3>
+          )}
 
-      {/* Timestamp */}
-      <div className="mt-3 text-xs text-darklink/60">
-        {new Date(note.updated_at).toLocaleDateString('fr-FR', {
-          day: 'numeric',
-          month: 'short',
-          hour: '2-digit',
-          minute: '2-digit',
-        })}
+          {/* Note content with markdown */}
+          <div
+            className="post-it-body prose prose-sm dark:prose-invert line-clamp-3"
+            dangerouslySetInnerHTML={{ __html: renderMarkdown(note.content) }}
+          />
+        </div>
+
+        {/* Footer */}
+        <div className="post-it-footer">
+          {note.lead ? (
+            <span className="post-it-lead-badge">
+              <IconUser size={12} />
+              {getLeadDisplayName()}
+            </span>
+          ) : (
+            <span />
+          )}
+          <span>
+            {new Date(note.updated_at).toLocaleDateString('fr-FR', {
+              day: 'numeric',
+              month: 'short',
+            })}
+          </span>
+        </div>
       </div>
     </Link>
   );
@@ -114,9 +126,9 @@ export async function SalesNotesSection() {
       {notes.length === 0 ? (
         <EmptyNotesState />
       ) : (
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {notes.map((note) => (
-            <MiniNoteCard key={note.id} note={note} />
+            <MiniPostItNote key={note.id} note={note} />
           ))}
         </div>
       )}

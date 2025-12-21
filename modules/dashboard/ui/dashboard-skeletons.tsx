@@ -251,15 +251,15 @@ export function TrendChartSkeleton() {
 }
 
 /**
- * Skeleton for notes widget (2x2 grid of mini note cards)
+ * Skeleton for notes widget (1 row of 4 post-it notes)
  */
 export function NotesWidgetSkeleton() {
-  // Alternating colors to mimic note cards
+  // Post-it background colors matching the real component
   const noteColors = [
-    'bg-amber-100 dark:bg-amber-900/30 border-amber-300 dark:border-amber-700',
-    'bg-pink-100 dark:bg-pink-900/30 border-pink-300 dark:border-pink-700',
-    'bg-sky-100 dark:bg-sky-900/30 border-sky-300 dark:border-sky-700',
-    'bg-emerald-100 dark:bg-emerald-900/30 border-emerald-300 dark:border-emerald-700',
+    'post-it-bg-yellow',
+    'post-it-bg-pink',
+    'post-it-bg-blue',
+    'post-it-bg-green',
   ];
 
   return (
@@ -269,17 +269,27 @@ export function NotesWidgetSkeleton() {
         <div className="skeleton skeleton-text w-20 h-4" />
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {noteColors.map((colorClass, i) => (
           <div
             key={i}
-            className={`rounded-lg border-2 p-3 animate-pulse ${colorClass}`}
+            className={`post-it-inner relative animate-pulse ${colorClass}`}
+            style={{ minHeight: '140px' }}
           >
-            <div className="skeleton bg-white/50 dark:bg-dark/30 w-full h-4 rounded mb-2" />
-            <div className="skeleton bg-white/50 dark:bg-dark/30 w-3/4 h-4 rounded mb-3" />
-            <div className="flex items-center justify-between">
-              <div className="skeleton bg-white/50 dark:bg-dark/30 w-16 h-3 rounded" />
-              <div className="skeleton bg-white/50 dark:bg-dark/30 w-12 h-3 rounded" />
+            {/* Folded corner */}
+            <div className="post-it-fold" />
+
+            {/* Content area */}
+            <div className="post-it-content">
+              <div className="skeleton bg-gray-600/20 w-3/4 h-4 rounded mb-2" />
+              <div className="skeleton bg-gray-600/15 w-full h-3 rounded mb-1" />
+              <div className="skeleton bg-gray-600/15 w-2/3 h-3 rounded" />
+            </div>
+
+            {/* Footer */}
+            <div className="post-it-footer">
+              <div className="skeleton bg-gray-600/15 w-16 h-3 rounded" />
+              <div className="skeleton bg-gray-600/15 w-12 h-3 rounded" />
             </div>
           </div>
         ))}

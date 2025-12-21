@@ -2,7 +2,7 @@
 export * from './types';
 
 // Config
-export { NOTE_COLOR_LABELS, NOTE_COLOR_CLASSES, NOTE_COLOR_OPTIONS, getNoteColorClasses } from './config/constants';
+export { NOTE_COLOR_LABELS, NOTE_COLOR_CLASSES, NOTE_COLOR_OPTIONS, getNoteColorClasses, getPostItColorClasses } from './config/constants';
 
 // Actions
 export {
