@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 
 // Random subtitles for each time period
@@ -42,24 +43,37 @@ const NIGHT_SUBTITLES = [
   'Les deals se font aussi la nuit !',
 ];
 
-// Pick random subtitle from array
-function pickRandom<T>(arr: T[]): T {
-  return arr[Math.floor(Math.random() * arr.length)];
+// Pick random subtitle from array using seeded index
+function pickRandom<T>(arr: T[], seed: number): T {
+  return arr[seed % arr.length];
 }
 
-// Get time-based greeting with emoji
-function getTimeGreeting(): { text: string; emoji: string; subtitle: string } {
+interface GreetingData {
+  text: string;
+  emoji: string;
+  subtitle: string;
+}
+
+// Default greeting for SSR (safe initial value)
+const DEFAULT_GREETING: GreetingData = {
+  text: 'Bienvenue',
+  emoji: '👋',
+  subtitle: 'Prêt à travailler !',
+};
+
+// Get time-based greeting with emoji (client-only)
+function getTimeGreeting(seed: number): GreetingData {
   const hour = new Date().getHours();
   if (hour >= 5 && hour < 12) {
-    return { text: 'Bon matin', emoji: '☀️', subtitle: pickRandom(MORNING_SUBTITLES) };
+    return { text: 'Bon matin', emoji: '☀️', subtitle: pickRandom(MORNING_SUBTITLES, seed) };
   }
   if (hour >= 12 && hour < 18) {
-    return { text: 'Bon après-midi', emoji: '🌤️', subtitle: pickRandom(AFTERNOON_SUBTITLES) };
+    return { text: 'Bon après-midi', emoji: '🌤️', subtitle: pickRandom(AFTERNOON_SUBTITLES, seed) };
   }
   if (hour >= 18 && hour < 22) {
-    return { text: 'Bonsoir', emoji: '🌅', subtitle: pickRandom(EVENING_SUBTITLES) };
+    return { text: 'Bonsoir', emoji: '🌅', subtitle: pickRandom(EVENING_SUBTITLES, seed) };
   }
-  return { text: 'Bonne nuit', emoji: '🌙', subtitle: pickRandom(NIGHT_SUBTITLES) };
+  return { text: 'Bonne nuit', emoji: '🌙', subtitle: pickRandom(NIGHT_SUBTITLES, seed) };
 }
 
 interface WelcomeCardProps {
@@ -68,7 +82,17 @@ interface WelcomeCardProps {
 }
 
 export function WelcomeCard({ userName, userAvatar }: WelcomeCardProps) {
-  const { text: greetingText, emoji, subtitle } = getTimeGreeting();
+  // Use default greeting for SSR, then update on client
+  const [greeting, setGreeting] = useState<GreetingData>(DEFAULT_GREETING);
+
+  useEffect(() => {
+    // Generate random seed once per session using current minute
+    // This ensures consistent subtitle during the same minute
+    const seed = Math.floor(Date.now() / 60000);
+    setGreeting(getTimeGreeting(seed));
+  }, []);
+
+  const { text: greetingText, emoji, subtitle } = greeting;
 
   // Get avatar path - use default if not set
   const avatarSrc = userAvatar

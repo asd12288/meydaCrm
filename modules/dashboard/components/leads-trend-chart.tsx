@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import { CardBox } from '@/modules/shared';
 import type { TrendYearsData } from '../types';
@@ -71,7 +71,6 @@ export function LeadsTrendChart({ trendData }: LeadsTrendChartProps) {
     : MONTH_NAMES;
 
   const chartConfig: ApexCharts.ApexOptions = {
-    series,
     chart: {
       type: 'line',
       height: 320,
@@ -80,27 +79,40 @@ export function LeadsTrendChart({ trendData }: LeadsTrendChartProps) {
       toolbar: { show: false },
       zoom: { enabled: false },
       sparkline: { enabled: false },
+      background: 'transparent',
     },
-    colors: ['#64748b'], // Neutral slate color
+    colors: ['#00A1FF'], // Primary blue - visible on both light and dark
     stroke: {
       curve: 'smooth',
-      width: 2,
+      width: 3, // Thicker line for better visibility
     },
     markers: {
-      size: 0, // Hidden by default
-      hover: { size: 5 },
+      size: 4, // Show markers for better visibility
+      colors: ['#00A1FF'],
+      strokeColors: '#fff',
+      strokeWidth: 2,
+      hover: { size: 6 },
     },
     dataLabels: {
-      enabled: false, // No labels on points
+      enabled: false,
     },
     fill: {
-      type: 'solid',
-      opacity: 0, // No fill under line
+      type: 'gradient',
+      gradient: {
+        shade: 'light',
+        type: 'vertical',
+        shadeIntensity: 0.3,
+        opacityFrom: 0.4,
+        opacityTo: 0.05,
+        stops: [0, 100],
+      },
     },
     grid: {
-      borderColor: 'rgba(0,0,0,0.05)',
-      strokeDashArray: 0,
+      borderColor: '#e4e4e7',
+      strokeDashArray: 4,
       padding: { left: 10, right: 10 },
+      xaxis: { lines: { show: false } },
+      yaxis: { lines: { show: true } },
     },
     xaxis: {
       categories,
@@ -117,7 +129,7 @@ export function LeadsTrendChart({ trendData }: LeadsTrendChartProps) {
           if (val >= 1000) {
             return `${(val / 1000).toFixed(0)}k`;
           }
-          return val.toString();
+          return Math.round(val).toString();
         },
       },
       min: 0,
@@ -127,6 +139,7 @@ export function LeadsTrendChart({ trendData }: LeadsTrendChartProps) {
     },
     tooltip: {
       enabled: true,
+      theme: 'dark',
       custom: function ({ series: s, seriesIndex, dataPointIndex, w }) {
         const value = s[seriesIndex][dataPointIndex];
         const label = w.globals.categoryLabels[dataPointIndex] || w.globals.labels[dataPointIndex];
@@ -181,8 +194,8 @@ export function LeadsTrendChart({ trendData }: LeadsTrendChartProps) {
       {hasData ? (
         <Chart
           options={chartConfig}
-          series={chartConfig.series}
-          type="line"
+          series={series}
+          type="area"
           height={320}
           width="100%"
         />
