@@ -142,7 +142,7 @@ export async function getTickets(
     .from('support_tickets')
     .select(
       `*,
-      createdByProfile:profiles!support_tickets_created_by_fkey(id, display_name),
+      createdByProfile:profiles!support_tickets_created_by_fkey(id, display_name, avatar, role),
       support_ticket_comments(count)`,
       {
         count: 'exact',
@@ -238,7 +238,7 @@ export async function getTicket(
   const { data: ticket, error: ticketError } = await supabase
     .from('support_tickets')
     .select(
-      '*, createdByProfile:profiles!support_tickets_created_by_fkey(id, display_name)'
+      '*, createdByProfile:profiles!support_tickets_created_by_fkey(id, display_name, avatar, role)'
     )
     .eq('id', ticketId)
     .single();
@@ -252,7 +252,7 @@ export async function getTicket(
   const { data: comments, error: commentsError } = await supabase
     .from('support_ticket_comments')
     .select(
-      '*, author:profiles!support_ticket_comments_author_id_fkey(id, display_name)'
+      '*, author:profiles!support_ticket_comments_author_id_fkey(id, display_name, avatar, role)'
     )
     .eq('ticket_id', ticketId)
     .order('created_at', { ascending: true });

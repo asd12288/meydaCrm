@@ -1,19 +1,21 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { IconMessageCircle } from '@tabler/icons-react';
 import { TicketCommentBubble } from './ticket-comment-bubble';
-import type { SupportTicketCommentWithAuthor } from '../types';
+import type { SupportTicketCommentWithAuthor, SupportTicketWithDetails } from '../types';
 
 interface TicketConversationProps {
+  ticket: SupportTicketWithDetails;
   comments: SupportTicketCommentWithAuthor[];
   currentUserId: string | null;
 }
 
 /**
  * Conversation thread for ticket messages
+ * Shows the initial ticket description as the first message
  */
 export function TicketConversation({
+  ticket,
   comments,
   currentUserId,
 }: TicketConversationProps) {
@@ -25,20 +27,29 @@ export function TicketConversation({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [comments.length]);
 
-  if (comments.length === 0) {
-    return (
-      <div className="ticket-empty-state h-full">
-        <IconMessageCircle size={40} className="ticket-empty-icon" />
-        <p className="ticket-empty-title">Aucun message</p>
-        <p className="ticket-empty-text">La conversation est vide</p>
-      </div>
-    );
-  }
+  // Handle both camelCase and snake_case for ticket created_at
+  const ticketData = ticket as { createdAt?: Date | string; created_at?: string };
+  const ticketCreatedAt = ticketData.createdAt || ticketData.created_at || new Date();
+
+  // Create a virtual "first message" from the ticket description
+  const initialMessage: SupportTicketCommentWithAuthor = {
+    id: `ticket-desc-${ticket.id}`,
+    ticketId: ticket.id,
+    authorId: ticket.createdBy,
+    body: ticket.description,
+    isInternal: false,
+    createdAt: typeof ticketCreatedAt === 'string' ? new Date(ticketCreatedAt) : ticketCreatedAt,
+    updatedAt: typeof ticketCreatedAt === 'string' ? new Date(ticketCreatedAt) : ticketCreatedAt,
+    author: ticket.createdByProfile,
+  };
+
+  // Combine initial message with comments
+  const allMessages = [initialMessage, ...comments];
 
   return (
     <div ref={scrollRef} className="h-full overflow-y-auto">
       <div className="p-5">
-        {comments.map((comment) => (
+        {allMessages.map((comment) => (
           <TicketCommentBubble
             key={comment.id}
             comment={comment}

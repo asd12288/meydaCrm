@@ -65,11 +65,6 @@ export interface CreateExportResult {
   error?: string;
 }
 
-export interface ExportCountResult {
-  count: number;
-  error?: string;
-}
-
 export interface ExportDownloadResult {
   url: string | null;
   error?: string;

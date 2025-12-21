@@ -72,9 +72,6 @@ function normalizeStatus(rawStatus: string | null, fallback: string): string {
 
   if (allowed.has(mapped)) return mapped;
 
-  console.warn(
-    `[CommitWorker] Unknown status "${rawStatus}", falling back to default "${fallback}"`
-  );
   return fallback;
 }
 
@@ -149,20 +146,9 @@ export async function handleCommitDirectly(
   processingTimeMs: number;
 }> {
   const startTime = Date.now();
-  
-  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  console.log('🔄 [CommitWorker] STARTING COMMIT JOB');
-  console.log(`📋 [CommitWorker] Job ID: ${importJobId}`);
-  console.log(`⚙️ [CommitWorker] Assignment: ${assignment.mode}`);
-  console.log(`⚙️ [CommitWorker] Duplicates: ${duplicates.strategy}`);
-  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-
-  console.log('🔌 [CommitWorker] Creating admin Supabase client...');
   const supabase = createAdminClient();
-  console.log('✅ [CommitWorker] Supabase client created');
 
   // Get the import job
-  console.log('📥 [CommitWorker] Fetching job from database...');
   const { data: job, error: jobError } = await supabase
     .from('import_jobs')
     .select('*')
@@ -170,24 +156,13 @@ export async function handleCommitDirectly(
     .single();
 
   if (jobError || !job) {
-    console.error('❌ [CommitWorker] Job not found:', jobError);
     throw new Error(`Job not found: ${importJobId}`);
   }
 
-  console.log('✅ [CommitWorker] Job loaded:', {
-    fileName: job.file_name,
-    status: job.status,
-    validRows: job.valid_rows,
-    invalidRows: job.invalid_rows,
-  });
-
   // Allow 'ready', 'queued', or 'importing' (importing is set by parse-worker before calling commit)
   if (!['ready', 'queued', 'importing'].includes(job.status)) {
-    console.error(`❌ [CommitWorker] Job status invalid: ${job.status}`);
     throw new Error(`Job is not ready for commit: ${job.status}`);
   }
-
-  console.log(`✅ [CommitWorker] Job status is valid: ${job.status}`);
 
   const actorId = job.created_by;
 
@@ -205,26 +180,14 @@ export async function handleCommitDirectly(
 
   try {
     // Build dedupe set
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('🔍 [CommitWorker] BUILDING DEDUPE SET');
-    console.log(`📋 [CommitWorker] Check fields: ${duplicates.checkFields.join(', ')}`);
-    console.log(`📋 [CommitWorker] Check database: ${duplicates.checkDatabase}`);
-    console.log(`📋 [CommitWorker] Check within file: ${duplicates.checkWithinFile}`);
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    
     const databaseDedupeSet = await buildDedupeSet(supabase, {
       checkFields: duplicates.checkFields as DedupeField[],
       checkDatabase: duplicates.checkDatabase,
       checkWithinFile: false,
     });
 
-    console.log(`✅ [CommitWorker] Dedupe set built: ${databaseDedupeSet.size} entries`);
-
     const fileDedupeSet = new Set<string>();
-    
-    console.log('👥 [CommitWorker] Building assignment context...');
     const assignmentContext = await buildAssignmentContext(supabase, assignment);
-    console.log('✅ [CommitWorker] Assignment context ready');
 
     let importedCount = 0;
     let skippedCount = 0;
@@ -232,15 +195,8 @@ export async function handleCommitDirectly(
     let errorCount = 0;
     let offset = 0;
 
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('📊 [CommitWorker] STARTING BATCH PROCESSING');
-    console.log(`📋 [CommitWorker] Fetch batch size: ${FETCH_BATCH_SIZE}`);
-    console.log(`📋 [CommitWorker] Insert batch size: ${INSERT_BATCH_SIZE}`);
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-
     // Process valid rows in batches
     while (true) {
-      console.log(`📥 [CommitWorker] Fetching batch at offset ${offset}...`);
       const { data: batch, error: batchError } = await supabase
         .from('import_rows')
         .select('*')
@@ -250,16 +206,12 @@ export async function handleCommitDirectly(
         .range(offset, offset + FETCH_BATCH_SIZE - 1);
 
       if (batchError) {
-        console.error('❌ [CommitWorker] Failed to fetch rows:', batchError);
         throw new Error(`Failed to fetch rows: ${batchError.message}`);
       }
 
       if (!batch || batch.length === 0) {
-        console.log('✅ [CommitWorker] No more rows to process');
         break;
       }
-
-      console.log(`📦 [CommitWorker] Processing batch: ${batch.length} rows (offset ${offset})`);
 
       const leadsToInsert: Array<{ data: Record<string, unknown>; rowId: string }> = [];
       const leadsToUpdate: Array<{ leadId: string; data: Record<string, unknown>; rowId: string }> = [];
@@ -360,7 +312,6 @@ export async function handleCommitDirectly(
             .select('id');
 
           if (insertError) {
-            console.error('[CommitWorker] Insert error:', insertError);
             errorCount += insertBatch.length;
             continue;
           }
@@ -473,22 +424,14 @@ export async function handleCommitDirectly(
         })
         .eq('id', importJobId);
 
-      const batchProgress = Math.round((offset / (job.valid_rows || 1)) * 100);
-      console.log(`📊 [CommitWorker] Batch progress: ${batchProgress}% (${importedCount} imported, ${skippedCount} skipped)`);
-
       offset += batch.length;
 
       if (batch.length < FETCH_BATCH_SIZE) {
-        console.log('✅ [CommitWorker] Last batch processed');
         break;
       }
     }
 
     // Mark job as completed
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('🏁 [CommitWorker] ALL BATCHES COMPLETE - Marking as completed');
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    
     await supabase
       .from('import_jobs')
       .update({
@@ -500,18 +443,6 @@ export async function handleCommitDirectly(
       .eq('id', importJobId);
 
     const processingTimeMs = Date.now() - startTime;
-    const duration = (processingTimeMs / 1000).toFixed(1);
-    const speed = Math.round((importedCount + updatedCount) / (processingTimeMs / 1000));
-
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('✅ [CommitWorker] COMMIT SUCCESS');
-    console.log(`📊 [CommitWorker] Imported: ${importedCount.toLocaleString()} leads`);
-    console.log(`📊 [CommitWorker] Updated: ${updatedCount.toLocaleString()} leads`);
-    console.log(`📊 [CommitWorker] Skipped: ${skippedCount.toLocaleString()} leads`);
-    console.log(`❌ [CommitWorker] Errors: ${errorCount.toLocaleString()} leads`);
-    console.log(`⏱️ [CommitWorker] Duration: ${duration}s`);
-    console.log(`⚡ [CommitWorker] Speed: ${speed.toLocaleString()} leads/sec`);
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
     // Send notification to import creator
     if (actorId) {
@@ -533,8 +464,6 @@ export async function handleCommitDirectly(
     };
 
   } catch (error) {
-    console.error(`[CommitWorker] Job ${importJobId} failed:`, error);
-
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
     await supabase

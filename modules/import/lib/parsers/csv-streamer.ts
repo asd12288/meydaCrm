@@ -100,13 +100,6 @@ export async function streamParseCSV(
 
   const startTime = Date.now();
 
-  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  console.log('📖 [CSV Parser] STARTING CSV PARSE');
-  console.log(`📋 [CSV Parser] Mappings: ${mappings.length} columns`);
-  console.log(`📋 [CSV Parser] Start row: ${startRow}`);
-  console.log(`📋 [CSV Parser] Chunk size: ${chunkSize}`);
-  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-
   let rowNumber = 0;
   let chunkNumber = 0;
   let validCount = 0;
@@ -117,52 +110,37 @@ export async function streamParseCSV(
 
   return new Promise(async (resolve, reject) => {
     try {
-      // Get the file content as a stream
+      // Get the file content
       let fileContent: string;
 
       if (typeof source === 'string') {
-        console.log('🌐 [CSV Parser] Fetching file from URL...');
-        console.log(`🔗 [CSV Parser] URL: ${source.substring(0, 80)}...`);
-        // Fetch from URL
         const response = await fetch(source);
         if (!response.ok) {
-          console.error(`❌ [CSV Parser] Fetch failed: ${response.statusText}`);
           throw new Error(`Failed to fetch file: ${response.statusText}`);
         }
         fileContent = await response.text();
-        console.log(`✅ [CSV Parser] File fetched: ${(fileContent.length / 1024 / 1024).toFixed(2)} MB`);
       } else {
-        console.log('📄 [CSV Parser] Reading file from Blob...');
-        // Read from Blob
         fileContent = await source.text();
-        console.log(`✅ [CSV Parser] File read: ${(fileContent.length / 1024 / 1024).toFixed(2)} MB`);
       }
 
       // Parse with papaparse
-      console.log('🔍 [CSV Parser] Parsing CSV with PapaParse...');
       const parseResult = Papa.parse<string[]>(fileContent, {
-        header: false, // We'll handle headers manually for more control
+        header: false,
         skipEmptyLines: true,
-        dynamicTyping: false, // Keep everything as strings
+        dynamicTyping: false,
       });
-
-      console.log(`✅ [CSV Parser] PapaParse complete: ${parseResult.data.length} rows`);
 
       // Handle parse errors
       if (parseResult.errors.length > 0) {
         const firstError = parseResult.errors[0];
-        console.error('❌ [CSV Parser] Parse errors detected:', parseResult.errors);
         const err = new Error(`CSV parse error at row ${firstError.row}: ${firstError.message}`);
         onError?.(err);
         reject(err);
         return;
       }
 
-      console.log('✅ [CSV Parser] No parse errors');
-
       // Process all rows
       const allRows = parseResult.data;
-      console.log(`📊 [CSV Parser] Processing ${allRows.length} rows...`);
 
       try {
         for (let i = 0; i < allRows.length; i++) {
@@ -201,10 +179,8 @@ export async function streamParseCSV(
 
           // Process chunk when full
           if (chunk.length >= chunkSize) {
-            console.log(`📦 [CSV Parser] Chunk ${chunkNumber} full (${chunk.length} rows), processing...`);
             await onChunk(chunk);
             onProgress?.(rowNumber, validCount, invalidCount);
-            console.log(`✅ [CSV Parser] Chunk ${chunkNumber} processed`);
             chunk = [];
             chunkNumber++;
           }
@@ -212,10 +188,8 @@ export async function streamParseCSV(
 
         // Process remaining rows
         if (chunk.length > 0) {
-          console.log(`📦 [CSV Parser] Processing final chunk (${chunk.length} rows)...`);
           await onChunk(chunk);
           onProgress?.(rowNumber, validCount, invalidCount);
-          console.log('✅ [CSV Parser] Final chunk processed');
         }
 
         const stats: ParseStats = {

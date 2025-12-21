@@ -13,7 +13,6 @@ import type {
   ExportFilters,
   ExportJob,
   CreateExportResult,
-  ExportCountResult,
   ExportDownloadResult,
 } from '../types';
 
@@ -94,6 +93,37 @@ export async function createExportJob(
 }
 
 // ============================================================================
+// GET ACTIVE EXPORT JOB
+// ============================================================================
+
+/**
+ * Get any currently active (pending/processing) export job for the user
+ */
+export async function getActiveExportJob(): Promise<{ job: ExportJob | null; error?: string }> {
+  try {
+    const supabase = await createClient();
+
+    const { data: job, error } = await supabase
+      .from('export_jobs')
+      .select('*')
+      .in('status', ['pending', 'processing'])
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      console.error('[Export] Failed to get active job:', error);
+      return { job: null };
+    }
+
+    return { job: job as ExportJob | null };
+  } catch (error) {
+    console.error('[Export] Failed to get active job:', error);
+    return { job: null };
+  }
+}
+
+// ============================================================================
 // GET EXPORT JOB
 // ============================================================================
 
@@ -146,36 +176,6 @@ export async function getExportJobs(limit = 10): Promise<{ jobs: ExportJob[]; er
   } catch (error) {
     console.error('[Export] Failed to get jobs:', error);
     return { jobs: [], error: 'Erreur inattendue' };
-  }
-}
-
-// ============================================================================
-// GET EXPORT COUNT
-// ============================================================================
-
-/**
- * Get count of leads matching filters (for modal preview)
- */
-export async function getExportCount(filters: ExportFilters): Promise<ExportCountResult> {
-  try {
-    const supabase = await createClient();
-
-    // Verify user is authenticated
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      return { count: 0, error: 'Non authentifié' };
-    }
-
-    const { count, error } = await getLeadsCount(supabase, filters);
-
-    if (error) {
-      return { count: 0, error: 'Erreur lors du comptage' };
-    }
-
-    return { count: count ?? 0 };
-  } catch (error) {
-    console.error('[Export] Failed to get count:', error);
-    return { count: 0, error: 'Erreur inattendue' };
   }
 }
 

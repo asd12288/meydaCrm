@@ -3,17 +3,31 @@
 /**
  * Export Modal Component
  *
- * Modal for configuring and triggering background CSV exports.
- * Shows active filters, estimated row count, and limit options.
+ * Two-phase modal:
+ * 1. Config phase: Select limit, see recent exports, start new export
+ * 2. Progress phase: Show status while job runs, download when complete
  */
 
 import { useState, useEffect, useTransition } from 'react';
-import { IconDownload, IconAlertTriangle, IconCheck, IconLoader2 } from '@tabler/icons-react';
+import {
+  IconDownload,
+  IconLoader2,
+  IconCheck,
+  IconX,
+  IconFileSpreadsheet,
+  IconClock,
+} from '@tabler/icons-react';
 import { Modal, useToast } from '@/modules/shared';
 import { Button } from '@/components/ui/button';
-import { createExportJob, getExportCount } from '../lib/actions';
-import { EXPORT_LIMITS, EXPORT_WARNING_THRESHOLD } from '../config/constants';
-import type { ExportFilters } from '../types';
+import {
+  createExportJob,
+  getExportDownloadUrl,
+  getActiveExportJob,
+  getExportJobs,
+} from '../lib/actions';
+import { useExportStatus } from '../hooks/use-export-status';
+import { EXPORT_LIMITS, EXPORT_STATUS_LABELS } from '../config/constants';
+import type { ExportFilters, ExportJob } from '../types';
 
 interface ExportModalProps {
   isOpen: boolean;
@@ -22,33 +36,38 @@ interface ExportModalProps {
 }
 
 export function ExportModal({ isOpen, onClose, filters }: ExportModalProps) {
-  const [estimatedCount, setEstimatedCount] = useState<number | null>(null);
-  const [isLoadingCount, setIsLoadingCount] = useState(false);
-  const [selectedLimit, setSelectedLimit] = useState<number | null>(null);
+  const [selectedLimit, setSelectedLimit] = useState<number | null>(10000);
+  const [activeJobId, setActiveJobId] = useState<string | null>(null);
+  const [isCheckingActiveJob, setIsCheckingActiveJob] = useState(false);
+  const [recentExports, setRecentExports] = useState<ExportJob[]>([]);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [isDownloading, setIsDownloading] = useState(false);
   const { toast } = useToast();
 
-  // Load count when modal opens
+  // Poll job status when we have an active job
+  const { job } = useExportStatus(activeJobId);
+
+  // Check for active job and load recent exports when modal opens
   useEffect(() => {
     if (isOpen) {
-      setIsLoadingCount(true);
-      setEstimatedCount(null);
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional reset when modal opens
+      setSelectedLimit(10000);
+      setIsCheckingActiveJob(true);
 
-      getExportCount(filters).then(({ count, error }) => {
-        if (error) {
-          toast.error(error);
-        } else {
-          setEstimatedCount(count);
+      // Load active job and recent exports in parallel
+      Promise.all([getActiveExportJob(), getExportJobs(5)]).then(
+        ([{ job: activeJob }, { jobs }]) => {
+          if (activeJob) {
+            setActiveJobId(activeJob.id);
+          } else {
+            setActiveJobId(null);
+          }
+          // Filter to only show completed exports
+          setRecentExports(jobs.filter((j) => j.status === 'completed'));
+          setIsCheckingActiveJob(false);
         }
-        setIsLoadingCount(false);
-      });
-    }
-  }, [isOpen, filters, toast]);
-
-  // Reset limit when modal opens
-  useEffect(() => {
-    if (isOpen) {
-      setSelectedLimit(null);
+      );
     }
   }, [isOpen]);
 
@@ -61,171 +80,309 @@ export function ExportModal({ isOpen, onClose, filters }: ExportModalProps) {
         return;
       }
 
-      toast.success('Export lancé ! Vous recevrez une notification lorsqu\'il sera prêt.');
-      onClose();
+      // Switch to progress view
+      if (result.exportJobId) {
+        setActiveJobId(result.exportJobId);
+      }
     });
   };
 
-  const effectiveCount = selectedLimit
-    ? Math.min(selectedLimit, estimatedCount ?? 0)
-    : estimatedCount;
+  const handleDownload = async () => {
+    if (!activeJobId) return;
 
-  const showWarning = effectiveCount !== null && effectiveCount > EXPORT_WARNING_THRESHOLD;
+    setIsDownloading(true);
+    const { url, error } = await getExportDownloadUrl(activeJobId);
+    setIsDownloading(false);
 
-  // Build filter description
-  const filterChips: { label: string; value: string }[] = [];
-  if (filters.search) {
-    filterChips.push({ label: 'Recherche', value: filters.search });
-  }
-  if (filters.status) {
-    filterChips.push({ label: 'Statut', value: filters.status });
-  }
-  if (filters.assignedTo) {
-    filterChips.push({
-      label: 'Commercial',
-      value: filters.assignedTo === 'unassigned' ? 'Non assignés' : filters.assignedTo
-    });
-  }
+    if (error) {
+      toast.error(error);
+      return;
+    }
+
+    if (url) {
+      // Open download in new tab
+      window.open(url, '_blank');
+      toast.success('Téléchargement lancé');
+      onClose();
+    }
+  };
+
+  const handleClose = () => {
+    // Allow closing even during processing (job continues in background)
+    onClose();
+  };
+
+  const handleDownloadRecent = async (jobId: string) => {
+    setDownloadingId(jobId);
+    const { url, error } = await getExportDownloadUrl(jobId);
+    setDownloadingId(null);
+
+    if (error) {
+      toast.error(error);
+      return;
+    }
+
+    if (url) {
+      window.open(url, '_blank');
+      toast.success('Téléchargement lancé');
+    }
+  };
+
+  // Format relative time
+  const formatTimeAgo = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return "À l'instant";
+    if (diffMins < 60) return `Il y a ${diffMins} min`;
+    if (diffHours < 24) return `Il y a ${diffHours}h`;
+    return `Il y a ${diffDays}j`;
+  };
+
+  // Determine current phase
+  const isProgressPhase = activeJobId !== null;
+  const isCompleted = job?.status === 'completed';
+  const isFailed = job?.status === 'failed';
+  const isProcessing = job?.status === 'processing' || job?.status === 'pending';
 
   return (
     <Modal
       isOpen={isOpen}
-      onClose={onClose}
-      title="Exporter les leads"
-      icon={<IconDownload size={20} />}
+      onClose={handleClose}
+      title={isProgressPhase ? 'Export en cours' : 'Exporter les leads'}
+      icon={isProgressPhase ? <IconFileSpreadsheet size={20} /> : <IconDownload size={20} />}
       size="md"
     >
-      <div className="space-y-5 py-2">
-        {/* Active filters */}
-        <div>
-          <h3 className="text-sm font-medium text-darklink mb-2">Filtres actifs</h3>
-          {filterChips.length > 0 ? (
+      {isCheckingActiveJob ? (
+        // =====================================================================
+        // LOADING CHECK
+        // =====================================================================
+        <div className="py-8 flex flex-col items-center justify-center">
+          <IconLoader2 size={32} className="text-primary animate-spin" />
+          <p className="text-sm text-darklink mt-3">Vérification...</p>
+        </div>
+      ) : !isProgressPhase ? (
+        // =====================================================================
+        // CONFIG PHASE
+        // =====================================================================
+        <div className="space-y-5 py-2">
+          {/* Limit selector */}
+          <div>
+            <h3 className="text-sm font-medium text-darklink mb-2">Nombre de leads à exporter</h3>
             <div className="flex flex-wrap gap-2">
-              {filterChips.map((chip, i) => (
-                <span
-                  key={i}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 text-sm bg-lightprimary text-primary rounded-full"
+              {EXPORT_LIMITS.map((option) => (
+                <button
+                  key={option.value ?? 'all'}
+                  type="button"
+                  onClick={() => setSelectedLimit(option.value)}
+                  className={`px-4 py-2 text-sm font-medium rounded-full border transition-colors ${
+                    selectedLimit === option.value
+                      ? 'border-primary bg-primary text-white'
+                      : 'border-ld bg-white dark:bg-darkgray text-ld hover:border-primary hover:text-primary'
+                  }`}
                 >
-                  <span className="text-xs font-medium opacity-70">{chip.label}:</span>
-                  <span className="font-medium truncate max-w-32">{chip.value}</span>
-                </span>
+                  {option.label}
+                </button>
               ))}
             </div>
-          ) : (
-            <p className="text-sm text-darklink italic">Aucun filtre - tous les leads seront exportés</p>
-          )}
-        </div>
+          </div>
 
-        {/* Estimated count */}
-        <div>
-          <h3 className="text-sm font-medium text-darklink mb-2">Leads à exporter</h3>
-          {isLoadingCount ? (
-            <div className="flex items-center gap-2 text-darklink">
-              <IconLoader2 size={16} className="animate-spin" />
-              <span className="text-sm">Calcul en cours...</span>
+          {/* Recent exports */}
+          {recentExports.length > 0 && (
+            <div>
+              <h3 className="text-sm font-medium text-darklink mb-2 flex items-center gap-1.5">
+                <IconClock size={14} />
+                Exports récents
+              </h3>
+              <div className="space-y-2">
+                {recentExports.map((exportJob) => (
+                  <div
+                    key={exportJob.id}
+                    className="flex items-center justify-between p-3 bg-lightgray dark:bg-darkgray rounded-lg"
+                  >
+                    <div className="flex items-center gap-3">
+                      <IconFileSpreadsheet size={20} className="text-success" />
+                      <div>
+                        <p className="text-sm font-medium text-ld">
+                          {exportJob.total_rows?.toLocaleString('fr-FR') || '?'} leads
+                        </p>
+                        <p className="text-xs text-darklink">
+                          {formatTimeAgo(exportJob.completed_at || exportJob.created_at)}
+                          {exportJob.file_size_bytes && (
+                            <span className="ml-2">
+                              ({(exportJob.file_size_bytes / 1024).toFixed(0)} Ko)
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDownloadRecent(exportJob.id)}
+                      disabled={downloadingId === exportJob.id}
+                    >
+                      {downloadingId === exportJob.id ? (
+                        <IconLoader2 size={16} className="animate-spin" />
+                      ) : (
+                        <IconDownload size={16} />
+                      )}
+                    </Button>
+                  </div>
+                ))}
+              </div>
             </div>
-          ) : (
-            <p className="text-2xl font-bold text-ld">
-              {effectiveCount !== null ? (
+          )}
+
+          {/* Actions */}
+          <div className="flex justify-end gap-3 pt-4 border-t border-ld">
+            <Button type="button" variant="outline" onClick={onClose} disabled={isPending}>
+              Annuler
+            </Button>
+            <Button type="button" variant="primary" onClick={handleExport} disabled={isPending}>
+              {isPending ? (
                 <>
-                  ~{effectiveCount.toLocaleString('fr-FR')}
-                  {selectedLimit && estimatedCount && selectedLimit < estimatedCount && (
-                    <span className="text-sm font-normal text-darklink ml-2">
-                      (sur {estimatedCount.toLocaleString('fr-FR')})
-                    </span>
-                  )}
+                  <IconLoader2 size={16} className="animate-spin" />
+                  Création...
                 </>
               ) : (
-                <span className="text-darklink">—</span>
+                <>
+                  <IconDownload size={16} />
+                  Nouvel export
+                </>
               )}
-            </p>
-          )}
-        </div>
-
-        {/* Limit selector */}
-        <div>
-          <h3 className="text-sm font-medium text-darklink mb-2">Limite d&apos;export</h3>
-          <div className="space-y-2">
-            {EXPORT_LIMITS.map((option) => (
-              <label
-                key={option.value ?? 'all'}
-                className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
-                  selectedLimit === option.value
-                    ? 'border-primary bg-lightprimary'
-                    : 'border-ld hover:border-primary hover:bg-lightprimary/50'
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="exportLimit"
-                  value={option.value ?? 'all'}
-                  checked={selectedLimit === option.value}
-                  onChange={() => setSelectedLimit(option.value)}
-                  className="w-4 h-4 text-primary accent-primary"
-                />
-                <span className="text-sm font-medium text-ld">{option.label}</span>
-                {selectedLimit === option.value && (
-                  <IconCheck size={16} className="text-primary ml-auto" />
-                )}
-              </label>
-            ))}
+            </Button>
           </div>
         </div>
-
-        {/* Warning for large exports */}
-        {showWarning && (
-          <div className="flex items-start gap-3 p-3 bg-warning/10 border border-warning/30 rounded-lg">
-            <IconAlertTriangle size={20} className="text-warning shrink-0 mt-0.5" />
-            <div className="text-sm">
-              <p className="font-medium text-warning">Export volumineux</p>
-              <p className="text-darklink mt-1">
-                L&apos;export sera traité en arrière-plan. Vous recevrez une notification
-                lorsqu&apos;il sera prêt au téléchargement.
-              </p>
+      ) : (
+        // =====================================================================
+        // PROGRESS PHASE
+        // =====================================================================
+        <div className="py-4">
+          {/* Status indicator */}
+          <div className="flex flex-col items-center text-center space-y-4">
+            {/* Icon */}
+            <div
+              className={`w-16 h-16 rounded-full flex items-center justify-center ${
+                isCompleted
+                  ? 'bg-success/10'
+                  : isFailed
+                    ? 'bg-error/10'
+                    : 'bg-primary/10'
+              }`}
+            >
+              {isCompleted ? (
+                <IconCheck size={32} className="text-success" />
+              ) : isFailed ? (
+                <IconX size={32} className="text-error" />
+              ) : (
+                <IconLoader2 size={32} className="text-primary animate-spin" />
+              )}
             </div>
-          </div>
-        )}
 
-        {/* Info message */}
-        {!showWarning && (
-          <div className="text-sm text-darklink bg-surface p-3 rounded-lg">
-            <p>
-              L&apos;export sera traité en arrière-plan. Vous recevrez une notification
-              lorsqu&apos;il sera prêt.
-            </p>
-          </div>
-        )}
+            {/* Status text */}
+            <div>
+              <h3 className="text-lg font-semibold text-ld">
+                {isCompleted
+                  ? 'Export terminé !'
+                  : isFailed
+                    ? 'Échec de l\'export'
+                    : EXPORT_STATUS_LABELS[job?.status || 'pending']}
+              </h3>
+              {isProcessing && (
+                <p className="text-sm text-darklink mt-1">
+                  Vous pouvez fermer cette fenêtre.
+                  <br />
+                  <span className="text-primary font-medium">
+                    Une notification vous préviendra quand l&apos;export sera prêt.
+                  </span>
+                </p>
+              )}
+              {isFailed && job?.error_message && (
+                <p className="text-sm text-error mt-1">{job.error_message}</p>
+              )}
+            </div>
 
-        {/* Actions */}
-        <div className="flex justify-end gap-3 pt-2 border-t border-ld">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onClose}
-            disabled={isPending}
-          >
-            Annuler
-          </Button>
-          <Button
-            type="button"
-            variant="primary"
-            onClick={handleExport}
-            disabled={isPending || isLoadingCount || estimatedCount === 0}
-          >
-            {isPending ? (
+            {/* Progress info */}
+            {job && (isProcessing || isCompleted) && (
+              <div className="w-full max-w-xs">
+                {/* Progress bar */}
+                {isProcessing && (
+                  <div className="h-2 bg-lightgray dark:bg-darkborder rounded-full overflow-hidden">
+                    <div className="h-full bg-primary rounded-full animate-pulse w-full" />
+                  </div>
+                )}
+
+                {/* Stats */}
+                {(job.processed_rows || job.total_rows) && (
+                  <p className="text-sm text-darklink mt-2">
+                    {job.processed_rows?.toLocaleString('fr-FR') || 0} leads traités
+                    {job.total_rows && ` sur ${job.total_rows.toLocaleString('fr-FR')}`}
+                  </p>
+                )}
+
+                {/* File size */}
+                {isCompleted && job.file_size_bytes && (
+                  <p className="text-xs text-darklink mt-1">
+                    Taille: {(job.file_size_bytes / 1024).toFixed(1)} Ko
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Actions */}
+          <div className="flex justify-center gap-3 pt-6 mt-4 border-t border-ld">
+            {isCompleted ? (
               <>
-                <IconLoader2 size={16} className="animate-spin" />
-                Export en cours...
+                <Button type="button" variant="outline" onClick={handleClose}>
+                  Fermer
+                </Button>
+                <Button
+                  type="button"
+                  variant="success"
+                  onClick={handleDownload}
+                  disabled={isDownloading}
+                >
+                  {isDownloading ? (
+                    <>
+                      <IconLoader2 size={16} className="animate-spin" />
+                      Téléchargement...
+                    </>
+                  ) : (
+                    <>
+                      <IconDownload size={16} />
+                      Télécharger CSV
+                    </>
+                  )}
+                </Button>
+              </>
+            ) : isFailed ? (
+              <>
+                <Button type="button" variant="outline" onClick={handleClose}>
+                  Fermer
+                </Button>
+                <Button
+                  type="button"
+                  variant="primary"
+                  onClick={() => setActiveJobId(null)}
+                >
+                  Réessayer
+                </Button>
               </>
             ) : (
-              <>
-                <IconDownload size={16} />
-                Exporter
-              </>
+              <Button type="button" variant="primary" onClick={handleClose}>
+                Fermer
+              </Button>
             )}
-          </Button>
+          </div>
         </div>
-      </div>
+      )}
     </Modal>
   );
 }

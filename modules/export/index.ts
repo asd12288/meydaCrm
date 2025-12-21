@@ -11,7 +11,6 @@ export type {
   ExportJob,
   ExportJobPayload,
   CreateExportResult,
-  ExportCountResult,
   ExportDownloadResult,
 } from './types';
 
@@ -34,7 +33,7 @@ export {
   createExportJob,
   getExportJob,
   getExportJobs,
-  getExportCount,
+  getActiveExportJob,
   getExportDownloadUrl,
 } from './lib/actions';
 

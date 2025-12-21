@@ -24,17 +24,13 @@ export async function uploadImportFile(
   formData: FormData
 ): Promise<ImportActionResult<{ importJobId: string; storagePath: string; isDuplicate?: boolean }>> {
   try {
-    console.log('📤 [Upload] Starting file upload...');
     const user = await requireAdmin();
     const supabase = await createClient();
 
     const file = formData.get('file') as File;
     if (!file) {
-      console.error('❌ [Upload] No file provided');
       return { success: false, error: 'Aucun fichier fourni' };
     }
-
-    console.log(`📄 [Upload] File: ${file.name}, Size: ${(file.size / 1024 / 1024).toFixed(2)} MB`);
 
     // Validate file type
     const ext = file.name.toLowerCase().split('.').pop();
@@ -48,17 +44,11 @@ export async function uploadImportFile(
     }
 
     // Calculate file hash for idempotency check
-    console.log('🔐 [Upload] Calculating file hash...');
     const fileBuffer = await file.arrayBuffer();
     const hashBuffer = await crypto.subtle.digest('SHA-256', fileBuffer);
     const fileHash = Array.from(new Uint8Array(hashBuffer))
       .map(b => b.toString(16).padStart(2, '0'))
       .join('');
-
-    console.log(`🔐 [Upload] File hash: ${fileHash.substring(0, 16)}...`);
-
-    // Duplicate check disabled (allow re-import of same file)
-    console.log('🔍 [Upload] Duplicate check: skipped (allowing re-import of same file)');
 
     // Generate unique storage path
     const timestamp = Date.now();
@@ -74,7 +64,6 @@ export async function uploadImportFile(
       });
 
     if (uploadError) {
-      console.error('Storage upload error:', uploadError);
       return {
         success: false,
         error: `Erreur lors du telechargement: ${uploadError.message}`,
@@ -82,7 +71,6 @@ export async function uploadImportFile(
     }
 
     // Create import job record with file hash
-    console.log('💾 [Upload] Creating import job record...');
     const { data: importJob, error: dbError } = await supabase
       .from('import_jobs')
       .insert({
@@ -98,15 +86,12 @@ export async function uploadImportFile(
 
     if (dbError) {
       // Clean up uploaded file if DB insert fails
-      console.error('❌ [Upload] DB insert error:', dbError);
       await supabase.storage.from('imports').remove([storagePath]);
       return {
         success: false,
         error: `Erreur lors de la creation du job: ${dbError.message}`,
       };
     }
-
-    console.log(`✅ [Upload] Import job created: ${importJob.id}`);
 
     return {
       success: true,
@@ -116,7 +101,6 @@ export async function uploadImportFile(
       },
     };
   } catch (error) {
-    console.error('Upload error:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Erreur inconnue',
@@ -334,15 +318,12 @@ export async function startImportParsing(
       .update({ status: 'queued', error_message: null })
       .eq('id', importJobId);
 
-    console.log(`📋 [Parse] Enqueuing parse job: ${importJobId}`);
-
     // Enqueue parse job via QStash
     const messageId = await enqueueParseJob({ importJobId });
 
     revalidatePath('/import');
     return { success: true, data: { messageId } };
   } catch (error) {
-    console.error('Failed to enqueue parse job:', error);
 
     // Try to update status to failed
     try {
@@ -422,8 +403,6 @@ export async function startImportCommit(
       })
       .eq('id', importJobId);
 
-    console.log(`📋 [Commit] Enqueuing commit job: ${importJobId}`);
-
     // Enqueue commit job via QStash
     const messageId = await enqueueCommitJob({
       importJobId,
@@ -436,7 +415,6 @@ export async function startImportCommit(
     revalidatePath('/import');
     return { success: true, data: { messageId } };
   } catch (error) {
-    console.error('Failed to enqueue commit job:', error);
 
     // Try to update status back to ready
     try {
@@ -501,7 +479,6 @@ export async function insertImportRowsBatch(
       .insert(importRows);
 
     if (insertError) {
-      console.error('Insert error:', insertError);
       return { success: false, error: insertError.message };
     }
 

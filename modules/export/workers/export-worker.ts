@@ -14,6 +14,7 @@ import {
   sanitizeSearchTerm,
   isValidSortColumn,
 } from '@/modules/leads/lib/export';
+import { createNotificationForUser } from '@/modules/notifications';
 import { EXPORT_BUCKET_NAME, EXPORT_FILE_EXPIRY_HOURS, EXPORT_CHUNK_SIZE } from '../config/constants';
 import type { ExportFilters } from '../types';
 
@@ -229,6 +230,16 @@ export async function handleExportDirectly(exportJobId: string): Promise<ExportR
       })
       .eq('id', exportJobId);
 
+    // 6. Notify user that export is ready
+    await createNotificationForUser(
+      job.user_id,
+      'import_completed', // Reuse existing type for job completion
+      'Export terminé',
+      `${totalRows.toLocaleString('fr-FR')} leads exportés`,
+      { exportJobId },
+      `/api/export/${exportJobId}/download`
+    );
+
     const processingTimeMs = Date.now() - startTime;
     console.log(
       `[ExportWorker] Completed export job: ${exportJobId}, ` +
@@ -254,6 +265,16 @@ export async function handleExportDirectly(exportJobId: string): Promise<ExportR
         completed_at: new Date().toISOString(),
       })
       .eq('id', exportJobId);
+
+    // Notify user that export failed
+    await createNotificationForUser(
+      job.user_id,
+      'import_failed', // Reuse existing type for job failure
+      'Export échoué',
+      errorMessage,
+      { exportJobId },
+      null
+    );
 
     console.error(`[ExportWorker] Failed export job: ${exportJobId}`, error);
     throw error;

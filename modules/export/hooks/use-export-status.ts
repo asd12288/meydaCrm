@@ -42,6 +42,7 @@ export function useExportStatus(jobId: string | null): UseExportStatusResult {
 
   useEffect(() => {
     if (!jobId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional state clear when jobId changes
       setJob(null);
       setIsPolling(false);
       return;
