@@ -536,6 +536,7 @@ The Notion page contains project management, task tracking, and progress.
 - Add export and reporting
 - Add soft disable user and lead reassignment tools
 - Add full-text search and saved filters
+- Complete privacy compliance and data encryption (RGPD/GDPR, encrypt sensitive fields at rest)
 
 ---
 

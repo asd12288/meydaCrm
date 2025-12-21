@@ -80,7 +80,8 @@
       "Bash(vercel env rm:*)",
       "Bash(xargs ls:*)",
       "Bash(tree:*)",
-      "Bash(git worktree:*)"
+      "Bash(git worktree:*)",
+      "Bash(git pull:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

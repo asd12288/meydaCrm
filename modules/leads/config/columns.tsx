@@ -196,6 +196,19 @@ export function getLeadColumns({ isAdmin, includeSelection, onDelete }: ColumnOp
     })
   );
 
+  // Updated at / Last modified (sortable)
+  columns.push(
+    columnHelper.accessor('updated_at', {
+      header: () => <SortableHeader columnId="updated_at" label={COLUMN_LABELS.updatedAt} />,
+      cell: (info) => (
+        <span className="text-sm text-darklink whitespace-nowrap">
+          {new Date(info.getValue()).toLocaleDateString('fr-FR')}
+        </span>
+      ),
+      size: 90,
+    })
+  );
+
   // Notes/Description (truncated for responsive design)
   columns.push(
     columnHelper.accessor('notes', {
