@@ -17,8 +17,12 @@
 .cursorrule
 
 
+
+
 # Design template (reference only, not part of build)
 /design
+
+/data
 
 # testing
 /coverage
