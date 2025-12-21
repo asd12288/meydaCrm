@@ -33,7 +33,7 @@ export const PLANS: Record<SubscriptionPlan, PlanConfig> = {
       'Sauvegardes automatiques',
       'Export des donnees',
       'Modifications sur demande',
-      'Confidentialite et chiffrement des donnees',
+      'Discretion totale et securite des donnees',
     ],
   },
 };

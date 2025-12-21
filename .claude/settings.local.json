@@ -81,7 +81,8 @@
       "Bash(xargs ls:*)",
       "Bash(tree:*)",
       "Bash(git worktree:*)",
-      "Bash(git pull:*)"
+      "Bash(git pull:*)",
+      "Bash(git merge:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
