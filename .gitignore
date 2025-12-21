@@ -14,7 +14,8 @@
 # AI / Claude Code
 .claude/
 .claude
-.cursorrule
+.cursorrules
+.mcp.json
 
 
 
@@ -53,4 +54,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-nul
+
+# Supabase CLI temp files
+supabase/.temp/

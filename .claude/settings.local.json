@@ -49,7 +49,11 @@
       "Bash(wc:*)",
       "Bash(done)",
       "Bash(npx tsx:*)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "Bash(git -C \"c:\\Users\\ilanc\\Desktop\\crm\" check-ignore .cursorrules .mcp.json tsconfig.tsbuildinfo next-env.d.ts)",
+      "Bash(git -C \"c:\\Users\\ilanc\\Desktop\\crm\" check-ignore .cursorrules)",
+      "Bash(git -C \"c:\\Users\\ilanc\\Desktop\\crm\" ls-files:*)",
+      "Bash(git -C:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
