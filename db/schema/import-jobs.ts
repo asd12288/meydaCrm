@@ -29,15 +29,6 @@ export interface DuplicateConfig {
   checkWithinFile: boolean;
 }
 
-// Type for checkpoint data
-export interface ImportCheckpoint {
-  chunkNumber: number;
-  rowNumber: number;
-  validCount: number;
-  invalidCount: number;
-  timestamp: string;
-}
-
 // Type for UI state (leave-and-return support)
 export interface ImportUIState {
   currentStep: number;
@@ -89,12 +80,6 @@ export const importJobs = pgTable(
 
     // Actual processed row count (not estimated)
     processedRows: integer('processed_rows').default(0),
-
-    // Checkpoint for resume capability
-    lastCheckpoint: jsonb('last_checkpoint').$type<ImportCheckpoint>(),
-
-    // Path to error report CSV in Storage
-    errorReportPath: text('error_report_path'),
 
     // Assignment configuration
     assignmentConfig: jsonb('assignment_config').$type<AssignmentConfig>(),

@@ -104,24 +104,11 @@ export async function getAccountStats(): Promise<AccountStats | null> {
 
   if (!user) return null;
 
-  // Get user's profile to check role
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single();
-
   // Get leads count and status breakdown
-  let leadsQuery = supabase
+  // RLS automatically filters: sales users see only assigned leads, admins see all
+  const { data: leads, count: totalLeads } = await supabase
     .from('leads')
     .select('status', { count: 'exact' });
-
-  // Sales users only see their assigned leads
-  if (profile?.role === 'sales') {
-    leadsQuery = leadsQuery.eq('assigned_to', user.id);
-  }
-
-  const { data: leads, count: totalLeads } = await leadsQuery;
 
   // Calculate status breakdown
   const byStatus: Record<string, number> = {};

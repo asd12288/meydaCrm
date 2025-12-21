@@ -298,54 +298,9 @@ export async function startImportParsing(
       .update({ status: 'queued', error_message: null })
       .eq('id', importJobId);
 
-    // Check if running locally (no public URL for QStash)
-    const isLocal = typeof window === 'undefined' && 
-      (!process.env.VERCEL_URL && !process.env.APP_URL);
+    console.log(`📋 [Parse] Enqueuing parse job: ${importJobId}`);
 
-    if (isLocal) {
-      // Use direct processing for local development
-      console.log('🏠 [Parse] LOCAL MODE DETECTED - Using direct parse processing');
-      console.log(`📋 [Parse] Job ID: ${importJobId}`);
-      
-      try {
-        // Import the parse handler and call it directly
-        console.log('📦 [Parse] Loading parse worker module...');
-        const { handleParseDirectly } = await import('../workers/parse-worker');
-        
-        console.log('🚀 [Parse] Starting direct parse worker...');
-        const result = await handleParseDirectly(importJobId);
-        
-        console.log('✅ [Parse] Parse completed successfully:', result);
-
-        revalidatePath('/import');
-        return { success: true, data: { messageId: 'direct-local' } };
-      } catch (error) {
-        console.error('❌ [Parse] Direct parse error:', error);
-        console.error('📊 [Parse] Error details:', {
-          message: error instanceof Error ? error.message : String(error),
-          stack: error instanceof Error ? error.stack : undefined,
-        });
-        
-        // Update job to failed
-        await supabase
-          .from('import_jobs')
-          .update({
-            status: 'failed',
-            error_message: error instanceof Error ? error.message : 'Erreur de parsing',
-          })
-          .eq('id', importJobId);
-
-        return {
-          success: false,
-          error: error instanceof Error ? error.message : 'Erreur de parsing direct',
-        };
-      }
-    }
-
-    console.log('☁️ [Parse] PRODUCTION MODE - Using QStash queue');
-    console.log(`📋 [Parse] Job ID: ${importJobId}`);
-
-    // Enqueue parse job via QStash (production)
+    // Enqueue parse job via QStash
     const messageId = await enqueueParseJob({ importJobId });
 
     revalidatePath('/import');
@@ -431,65 +386,9 @@ export async function startImportCommit(
       })
       .eq('id', importJobId);
 
-    // Check if running locally
-    const isLocal = typeof window === 'undefined' && 
-      (!process.env.VERCEL_URL && !process.env.APP_URL);
+    console.log(`📋 [Commit] Enqueuing commit job: ${importJobId}`);
 
-    if (isLocal) {
-      // Use direct processing for local development
-      console.log('🏠 [Commit] LOCAL MODE DETECTED - Using direct commit processing');
-      console.log(`📋 [Commit] Job ID: ${importJobId}`);
-      console.log('⚙️ [Commit] Config:', {
-        assignment: config.assignment.mode,
-        duplicates: config.duplicates.strategy,
-        validRows: job.valid_rows,
-      });
-      
-      try {
-        // Import the commit handler and call it directly
-        console.log('📦 [Commit] Loading commit worker module...');
-        const { handleCommitDirectly } = await import('../workers/commit-worker');
-        
-        console.log('🚀 [Commit] Starting direct commit worker...');
-        const result = await handleCommitDirectly(
-          importJobId,
-          config.assignment,
-          config.duplicates,
-          config.defaultStatus,
-          config.defaultSource
-        );
-
-        console.log('✅ [Commit] Commit completed successfully:', result);
-
-        revalidatePath('/import');
-        return { success: true, data: { messageId: 'direct-local' } };
-      } catch (error) {
-        console.error('❌ [Commit] Direct commit error:', error);
-        console.error('📊 [Commit] Error details:', {
-          message: error instanceof Error ? error.message : String(error),
-          stack: error instanceof Error ? error.stack : undefined,
-        });
-        
-        // Update job to failed
-        await supabase
-          .from('import_jobs')
-          .update({
-            status: 'failed',
-            error_message: error instanceof Error ? error.message : 'Erreur de commit',
-          })
-          .eq('id', importJobId);
-
-        return {
-          success: false,
-          error: error instanceof Error ? error.message : 'Erreur de commit direct',
-        };
-      }
-    }
-
-    console.log('☁️ [Commit] PRODUCTION MODE - Using QStash queue');
-    console.log(`📋 [Commit] Job ID: ${importJobId}`);
-
-    // Enqueue commit job via QStash (production)
+    // Enqueue commit job via QStash
     const messageId = await enqueueCommitJob({
       importJobId,
       assignment: config.assignment,
@@ -854,89 +753,6 @@ export async function pollImportJobStatus(
         completedAt: job.completed_at,
       },
     };
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Erreur inconnue',
-    };
-  }
-}
-
-/**
- * Generate error report for an import job
- */
-export async function generateErrorReport(
-  importJobId: string
-): Promise<ImportActionResult<{ reportPath: string }>> {
-  try {
-    await requireAdmin();
-    const supabase = await createClient();
-
-    // Get the job to verify it has errors
-    const { data: job, error: jobError } = await supabase
-      .from('import_jobs')
-      .select('invalid_rows, error_report_path')
-      .eq('id', importJobId)
-      .single();
-
-    if (jobError || !job) {
-      return { success: false, error: 'Job non trouvé' };
-    }
-
-    if (!job.invalid_rows || job.invalid_rows === 0) {
-      return { success: false, error: 'Aucune erreur à signaler' };
-    }
-
-    // If report already exists, return it
-    if (job.error_report_path) {
-      return { success: true, data: { reportPath: job.error_report_path } };
-    }
-
-    // Enqueue error report generation
-    const { enqueueErrorReportJob } = await import('./queue');
-    const messageId = await enqueueErrorReportJob({ importJobId });
-
-    console.log(`[ErrorReport] Enqueued for job ${importJobId}: ${messageId}`);
-
-    return { success: true, data: { reportPath: '' } };
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Erreur inconnue',
-    };
-  }
-}
-
-/**
- * Get error report download URL
- */
-export async function getErrorReportUrl(
-  importJobId: string
-): Promise<ImportActionResult<{ url: string }>> {
-  try {
-    await requireAdmin();
-    const supabase = await createClient();
-
-    const { data: job } = await supabase
-      .from('import_jobs')
-      .select('error_report_path')
-      .eq('id', importJobId)
-      .single();
-
-    if (!job?.error_report_path) {
-      return { success: false, error: 'Rapport non disponible' };
-    }
-
-    // Get signed URL for download
-    const { data: urlData, error: urlError } = await supabase.storage
-      .from('imports')
-      .createSignedUrl(job.error_report_path, 3600); // 1 hour expiry
-
-    if (urlError || !urlData?.signedUrl) {
-      return { success: false, error: 'Erreur lors de la génération du lien' };
-    }
-
-    return { success: true, data: { url: urlData.signedUrl } };
   } catch (error) {
     return {
       success: false,

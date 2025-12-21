@@ -114,22 +114,8 @@ export async function handleParseDirectly(importJobId: string): Promise<{
 
     console.log(`✅ [ParseWorker] Found ${mappingConfig.mappings.length} column mappings`);
 
-    // Calculate start row from checkpoint
-    const checkpoint = job.last_checkpoint as { rowNumber?: number } | null;
-    const startRow = checkpoint?.rowNumber ? checkpoint.rowNumber + 1 : 1;
-
-    // Clear rows after checkpoint if resuming
-    if (startRow > 1) {
-      console.log(`🔄 [ParseWorker] Resuming from row ${startRow}, clearing subsequent rows...`);
-      await supabase
-        .from('import_rows')
-        .delete()
-        .eq('import_job_id', importJobId)
-        .gte('row_number', startRow);
-      console.log('✅ [ParseWorker] Old rows cleared');
-    } else {
-      console.log('🆕 [ParseWorker] Starting fresh parse (row 1)');
-    }
+    // Always start fresh (resume functionality removed)
+    console.log('🆕 [ParseWorker] Starting fresh parse');
 
     // Counters
     let totalRows = 0;
@@ -149,7 +135,7 @@ export async function handleParseDirectly(importJobId: string): Promise<{
       job.file_type as 'csv' | 'xlsx',
       {
         mappings: mappingConfig.mappings as ColumnMapping[],
-        startRow,
+        startRow: 1,
         chunkSize: INSERT_BATCH_SIZE,
         sheetName: mappingConfig.sheetName,
 
@@ -189,16 +175,8 @@ export async function handleParseDirectly(importJobId: string): Promise<{
             }
           }
 
-          // Save checkpoint
-          const checkpointData = {
-            chunkNumber: currentChunk,
-            rowNumber: rows[rows.length - 1].rowNumber,
-            validCount: validRows,
-            invalidCount: invalidRows,
-            timestamp: new Date().toISOString(),
-          };
-
-          console.log(`💾 [ParseWorker] Saving checkpoint...`);
+          // Save progress
+          console.log(`💾 [ParseWorker] Saving progress...`);
           await supabase
             .from('import_jobs')
             .update({
@@ -206,7 +184,6 @@ export async function handleParseDirectly(importJobId: string): Promise<{
               processed_rows: totalRows,
               valid_rows: validRows,
               invalid_rows: invalidRows,
-              last_checkpoint: checkpointData,
             })
             .eq('id', importJobId);
 
@@ -215,13 +192,6 @@ export async function handleParseDirectly(importJobId: string): Promise<{
           );
 
           currentChunk++;
-
-          // Small delay in local mode to allow SSE to poll for updates
-          // This prevents the progress from jumping 0→100% instantly
-          const isLocalMode = !process.env.VERCEL_URL && !process.env.APP_URL;
-          if (isLocalMode) {
-            await new Promise((resolve) => setTimeout(resolve, 50));
-          }
         },
 
         onError: async (error: Error) => {
@@ -311,49 +281,16 @@ export async function handleParseDirectly(importJobId: string): Promise<{
       })
       .eq('id', importJobId);
 
-    // Check if running locally (no QStash)
-    const isLocal = !process.env.VERCEL_URL && !process.env.APP_URL;
-
-    if (isLocal) {
-      // Run commit as background task for local development
-      // This allows the parse response to return immediately while commit continues
-      console.log('🏠 [ParseWorker] LOCAL MODE - Starting commit as background task');
-
-      // Import the commit worker
-      const { handleCommitDirectly } = await import('./commit-worker');
-
-      // Spawn background task (don't await)
-      setImmediate(async () => {
-        console.log('🚀 [Background] Commit worker starting...');
-        try {
-          await handleCommitDirectly(
-            importJobId,
-            finalAssignment,
-            finalDuplicates,
-            'new', // defaultStatus
-            `Import ${job.file_name}` // defaultSource
-          );
-          console.log('✅ [Background] Commit completed successfully');
-        } catch (commitError) {
-          console.error('❌ [Background] Commit failed:', commitError);
-          // Error is logged but doesn't affect parse response
-          // The job status will be updated by the commit worker
-        }
-      });
-
-      console.log('✅ [ParseWorker] Commit spawned in background');
-    } else {
-      // Queue commit job via QStash for production
-      console.log('☁️ [ParseWorker] PRODUCTION MODE - Queuing commit job via QStash');
-      const commitMessageId = await enqueueCommitJob({
-        importJobId,
-        assignment: finalAssignment,
-        duplicates: finalDuplicates,
-        defaultStatus: 'new',
-        defaultSource: `Import ${job.file_name}`,
-      });
-      console.log(`✅ [ParseWorker] Commit job queued: ${commitMessageId}`);
-    }
+    // Queue commit job via QStash
+    console.log('☁️ [ParseWorker] Queuing commit job via QStash');
+    const commitMessageId = await enqueueCommitJob({
+      importJobId,
+      assignment: finalAssignment,
+      duplicates: finalDuplicates,
+      defaultStatus: 'new',
+      defaultSource: `Import ${job.file_name}`,
+    });
+    console.log(`✅ [ParseWorker] Commit job queued: ${commitMessageId}`);
 
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('✅ [ParseWorker] PARSE → COMMIT CHAIN COMPLETE');

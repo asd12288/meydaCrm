@@ -30,10 +30,6 @@ export interface CommitJobPayload {
   defaultSource?: string;
 }
 
-export interface ErrorReportJobPayload {
-  importJobId: string;
-}
-
 // ============================================================================
 // QUEUE CONFIGURATION
 // ============================================================================
@@ -49,11 +45,6 @@ const QUEUE_CONFIG = {
     path: '/api/import/commit',
     retries: 3,
     backoff: 'exponential' as const,
-  },
-  errorReport: {
-    path: '/api/import/error-report',
-    retries: 2,
-    backoff: 'fixed' as const,
   },
 };
 
@@ -125,39 +116,6 @@ export async function enqueueCommitJob(
 
   console.log(
     `[QStash] Enqueued commit job for ${payload.importJobId}: ${result.messageId}`
-  );
-
-  return result.messageId;
-}
-
-/**
- * Enqueue an error report generation job
- *
- * This job will:
- * 1. Read invalid rows from import_rows
- * 2. Generate a CSV with errors
- * 3. Upload to Supabase Storage
- * 4. Update import_job with report path
- */
-export async function enqueueErrorReportJob(
-  payload: ErrorReportJobPayload
-): Promise<string> {
-  const client = getQStashClient();
-  const appUrl = getAppUrl();
-  const config = QUEUE_CONFIG.errorReport;
-
-  const result = await client.publishJSON({
-    url: `${appUrl}${config.path}`,
-    body: payload,
-    retries: config.retries,
-    headers: {
-      'X-Import-Job-Id': payload.importJobId,
-      'X-Job-Type': 'error-report',
-    },
-  });
-
-  console.log(
-    `[QStash] Enqueued error report job for ${payload.importJobId}: ${result.messageId}`
   );
 
   return result.messageId;

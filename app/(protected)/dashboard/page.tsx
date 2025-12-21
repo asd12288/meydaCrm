@@ -26,11 +26,9 @@ export default async function DashboardPage() {
     redirect('/login');
   }
 
-  // Get user info - Supabase returns snake_case (display_name, avatar)
-  // This is the only data fetched at page level - fast!
-  const profile = user.profile as Record<string, unknown> | null;
-  const userName = (profile?.display_name as string) || (profile?.displayName as string) || 'Utilisateur';
-  const userAvatar = (profile?.avatar as string) || null;
+  // Get user info (normalized to camelCase by getCurrentUser)
+  const userName = user.profile?.displayName || 'Utilisateur';
+  const userAvatar = user.profile?.avatar || null;
   const isAdmin = user.profile?.role === 'admin';
 
   // Render streaming dashboard based on role

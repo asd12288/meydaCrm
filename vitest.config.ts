@@ -9,7 +9,7 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./tests/setup.ts'],
     globalSetup: ['./tests/global-teardown.ts'],
-    include: ['tests/**/*.test.ts', 'modules/**/__tests__/*.test.{ts,tsx}'],
+    include: ['tests/**/*.test.ts', 'modules/**/__tests__/*.test.{ts,tsx}', 'lib/**/__tests__/*.test.{ts,tsx}'],
     exclude: ['node_modules', 'design', 'tests/integration/import.test.ts'], // Skip import tests for now
     testTimeout: 60000, // Increased timeout for integration tests
     hookTimeout: 60000,

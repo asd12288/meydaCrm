@@ -4,7 +4,6 @@ import {
   IconCheck,
   IconAlertTriangle,
   IconX,
-  IconDownload,
   IconExternalLink,
   IconRefresh,
   IconFileSpreadsheet,
@@ -19,8 +18,6 @@ interface ResultsStepProps {
   fileName: string;
   /** Import job ID for navigation */
   importJobId: string;
-  /** Callback to download error report */
-  onDownloadErrorReport?: () => void;
   /** Callback to view imported leads */
   onViewLeads?: () => void;
   /** Callback to start a new import */
@@ -35,7 +32,6 @@ export function ResultsStep({
   progress,
   fileName,
   importJobId,
-  onDownloadErrorReport,
   onViewLeads,
   onNewImport,
 }: ResultsStepProps) {
@@ -47,8 +43,6 @@ export function ResultsStep({
   const skippedCount = progress.skippedRows || 0;
   const invalidCount = progress.invalidRows || 0;
   const totalProcessed = progress.processedRows || 0;
-
-  const hasErrors = invalidCount > 0 || skippedCount > 0;
 
   // Calculate duration
   const getDuration = () => {
@@ -157,17 +151,6 @@ export function ResultsStep({
           >
             <IconExternalLink size={16} />
             Voir les leads
-          </button>
-        )}
-
-        {/* Download error report */}
-        {hasErrors && onDownloadErrorReport && (
-          <button
-            onClick={onDownloadErrorReport}
-            className="flex items-center gap-2 px-4 py-2 bg-muted text-ld border border-border rounded-lg hover:bg-muted/80 transition-colors text-sm font-medium"
-          >
-            <IconDownload size={16} />
-            Rapport d&apos;erreurs
           </button>
         )}
 

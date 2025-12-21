@@ -2,32 +2,24 @@
 
 import { useState, useTransition } from 'react';
 import { CardBox, UserAvatar, useToast } from '@/modules/shared';
+import { Button } from '@/components/ui/button';
 import { IconEdit, IconCheck, IconX, IconCamera } from '@tabler/icons-react';
-import type { Profile } from '@/db/types';
+import type { NormalizedProfile } from '@/lib/auth';
 import { getRoleLabel } from '@/lib/constants';
 import { updateProfile } from '../lib/actions';
 import { AvatarPickerModal } from './avatar-picker-modal';
 
 interface ProfileInfoCardProps {
-  profile: Profile;
+  profile: NormalizedProfile;
   email: string;
 }
 
 export function ProfileInfoCard({ profile, email }: ProfileInfoCardProps) {
-  // Handle snake_case from Supabase vs camelCase from types
-  const profileDisplayName =
-    ((profile as Record<string, unknown>).display_name as string) ||
-    profile.displayName;
-  const initialAvatar =
-    ((profile as Record<string, unknown>).avatar as string | null) ||
-    profile.avatar ||
-    null;
-
   const [isEditing, setIsEditing] = useState(false);
   const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
-  const [displayName, setDisplayName] = useState(profileDisplayName);
+  const [displayName, setDisplayName] = useState(profile.displayName);
   const [currentAvatar, setCurrentAvatar] = useState<string | null>(
-    initialAvatar
+    profile.avatar
   );
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
@@ -35,18 +27,16 @@ export function ProfileInfoCard({ profile, email }: ProfileInfoCardProps) {
   // Extract username from email (before @crm.local)
   const username = email.split('@')[0];
 
-  // Format date - Supabase returns snake_case, handle both cases
-  const createdAtValue =
-    (profile as Record<string, unknown>).created_at || profile.createdAt;
-  const memberSince = createdAtValue
-    ? new Date(createdAtValue as string).toLocaleDateString('fr-FR', {
+  // Format date
+  const memberSince = profile.createdAt
+    ? new Date(profile.createdAt).toLocaleDateString('fr-FR', {
         month: 'long',
         year: 'numeric',
       })
     : 'Inconnu';
 
   const handleSave = () => {
-    const previousName = profileDisplayName;
+    const previousName = profile.displayName;
     const newName = displayName;
 
     // Exit edit mode immediately (optimistic)
@@ -66,7 +56,7 @@ export function ProfileInfoCard({ profile, email }: ProfileInfoCardProps) {
   };
 
   const handleCancel = () => {
-    setDisplayName(profileDisplayName);
+    setDisplayName(profile.displayName);
     setIsEditing(false);
   };
 
@@ -80,25 +70,27 @@ export function ProfileInfoCard({ profile, email }: ProfileInfoCardProps) {
         <div className="flex items-center justify-between mb-6">
           <h3 className="card-title">Informations du profil</h3>
           {!isEditing && (
-            <button
+            <Button
+              variant="circleHover"
+              size="circleSm"
               onClick={() => setIsEditing(true)}
-              className="btn-circle-hover"
               title="Modifier"
             >
               <IconEdit size={18} />
-            </button>
+            </Button>
           )}
         </div>
 
         <div className="flex items-start gap-4">
           {/* Clickable Avatar */}
-          <button
+          <Button
+            variant="ghost"
             onClick={() => setIsAvatarModalOpen(true)}
-            className="relative group shrink-0"
+            className="relative group shrink-0 p-0 h-auto"
             title="Changer l'avatar"
           >
             <UserAvatar
-              name={profileDisplayName}
+              name={profile.displayName}
               avatar={currentAvatar}
               size="xl"
             />
@@ -106,7 +98,7 @@ export function ProfileInfoCard({ profile, email }: ProfileInfoCardProps) {
             <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
               <IconCamera size={24} className="text-white" />
             </div>
-          </button>
+          </Button>
 
           {/* Info */}
           <div className="flex-1 space-y-4">
@@ -124,22 +116,26 @@ export function ProfileInfoCard({ profile, email }: ProfileInfoCardProps) {
                     className="form-control-input flex-1"
                     autoFocus
                   />
-                  <button
+                  <Button
+                    variant="circleHover"
+                    size="circleSm"
                     onClick={handleSave}
                     disabled={isPending}
-                    className="btn-circle text-success hover:bg-lightsuccess"
+                    className="text-success hover:bg-lightsuccess"
                     title="Enregistrer"
                   >
                     <IconCheck size={18} />
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    variant="circleHover"
+                    size="circleSm"
                     onClick={handleCancel}
                     disabled={isPending}
-                    className="btn-circle text-error hover:bg-lighterror"
+                    className="text-error hover:bg-lighterror"
                     title="Annuler"
                   >
                     <IconX size={18} />
-                  </button>
+                  </Button>
                 </div>
               ) : (
                 <p className="text-ld font-medium">{displayName}</p>

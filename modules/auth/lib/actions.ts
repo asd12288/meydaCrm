@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { usernameSchema, extractValidationError } from '@/lib/validation';
 import { loginRateLimiter } from '@/lib/rate-limit';
+import { normalizeProfile, type SupabaseProfile } from '@/lib/auth';
 import type { AuthUser } from '../types';
 
 // Login validation schema
@@ -79,8 +80,8 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
 
   return {
     id: user.id,
-    email: user.email!,
-    profile,
+    email: user.email ?? '',
+    profile: profile ? normalizeProfile(profile as SupabaseProfile) : null,
   };
 }
 
@@ -112,21 +113,4 @@ export async function requireDeveloper(): Promise<AuthUser> {
     redirect('/dashboard');
   }
   return user;
-}
-
-
-export async function changePassword(formData: FormData) {
-  const supabase = await createClient();
-
-  const newPassword = formData.get('newPassword') as string;
-
-  const { error } = await supabase.auth.updateUser({
-    password: newPassword,
-  });
-
-  if (error) {
-    return { error: 'Erreur lors du changement de mot de passe' };
-  }
-
-  return { success: true };
 }

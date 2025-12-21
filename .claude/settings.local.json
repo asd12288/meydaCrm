@@ -38,7 +38,11 @@
       "Bash(npx supabase functions list:*)",
       "Bash(echo:*)",
       "Bash(npx eslint --fix .)",
-      "Bash(npx eslint:*)"
+      "Bash(npx eslint:*)",
+      "Bash(powershell -Command:*)",
+      "Bash(cmd /c \"for %d in (mapping options start cancel resume error-report) do rmdir /s /q %d 2>nul\")",
+      "Bash(cmd /c \"del route.ts 2>nul\")",
+      "Bash(node -e:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

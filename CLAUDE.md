@@ -85,10 +85,22 @@ We are replacing an old CRM with a simpler, more reliable CRM.
 
 ### Authorization
 
+**Roles:**
+- **admin**: Full access to everything. Creates users, manages leads, imports, support tickets.
+- **sales**: Access only to their assigned leads and related comments/history.
+- **developer** (internal): Secret role for support ticket responders. Not exposed in user creation UI.
+
+**Role permissions:**
 - Admin can read/write everything.
 - Sales can only read/write:
   - leads where `assigned_to = auth.uid()`
   - comments/history linked to those leads
+- Developer can:
+  - View all support tickets and comments
+  - Add comments/replies to tickets
+  - Edit their own comments
+  - Receive notifications for ticket activity
+  - Cannot create tickets, change status, or delete anything
 
 ### Data integrity
 

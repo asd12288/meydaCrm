@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useFormStatus } from 'react-dom';
+import { Button } from '@/components/ui/button';
 import { PasswordInput, FormErrorAlert } from '@/modules/shared';
 import { login } from '../lib/actions';
 
@@ -9,13 +10,14 @@ function SubmitButton() {
   const { pending } = useFormStatus();
 
   return (
-    <button
+    <Button
       type="submit"
       disabled={pending}
-      className="w-full py-3 px-4 bg-primary text-white rounded-md font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+      variant="primary"
+      className="w-full"
     >
       {pending ? 'Connexion...' : 'Se connecter'}
-    </button>
+    </Button>
   );
 }
 

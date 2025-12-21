@@ -1,6 +1,5 @@
 // Types
-export type { LoginFormData, AuthUser, AuthState } from './types';
-export { loginSchema } from './types';
+export type { AuthUser } from './types';
 
 // Server actions
 export {
@@ -11,7 +10,6 @@ export {
   requireAdmin,
   requireAdminOrDeveloper,
   requireDeveloper,
-  changePassword,
 } from './lib/actions';
 
 // Utility functions (non-server actions)

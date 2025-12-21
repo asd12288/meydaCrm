@@ -100,7 +100,7 @@ export const LeadsTable = memo(function LeadsTable({
         <table className="w-full">
           <thead className="bg-lightgray dark:bg-darkgray sticky top-0 z-10">
             {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id} className="relative">
+              <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
                   <th
                     key={header.id}

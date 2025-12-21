@@ -36,8 +36,6 @@ import type { ImportWizardStep } from '../config/constants';
 interface ImportWizardV2Props {
   salesUsers: SalesUser[];
   onImportComplete?: (importJobId: string) => void;
-  /** Resume from an existing import job */
-  resumeJobId?: string;
 }
 
 /**
@@ -45,7 +43,7 @@ interface ImportWizardV2Props {
  * 6-step wizard with SSE real-time updates
  * Steps: upload -> mapping -> options -> preview -> progress -> results
  */
-export function ImportWizardV2({ salesUsers, onImportComplete, resumeJobId }: ImportWizardV2Props) {
+export function ImportWizardV2({ salesUsers, onImportComplete }: ImportWizardV2Props) {
   const wizard = useImportWizard();
 
   // Local state
