@@ -11,8 +11,8 @@ export async function SalesQuickStatsSection() {
   return (
     <SalesQuickStats
       totalLeads={data.totalLeads}
-      comments={data.commentsCount}
-      activeLeads={data.activeLeads}
+      newLeads={data.newLeads}
+      callbackLeads={data.callbackLeads}
       wonLeads={data.wonLeads}
     />
   );

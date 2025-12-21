@@ -10,6 +10,8 @@ import type {
   TeamPerformanceItem,
   ImportActivityItem,
   LeadsTrendPoint,
+  MonthlyTrendPoint,
+  TrendYearsData,
 } from '../types';
 
 // =============================================================================
@@ -29,13 +31,6 @@ async function checkIsAdmin(): Promise<boolean> {
 // =============================================================================
 // DATE HELPERS
 // =============================================================================
-
-// Helper to get date 7 days ago
-function getSevenDaysAgo(): string {
-  const date = new Date();
-  date.setDate(date.getDate() - 7);
-  return date.toISOString();
-}
 
 // Helper to get date 30 days ago
 function getThirtyDaysAgo(): string {
@@ -99,7 +94,7 @@ export async function getAdminWelcomeData(): Promise<WelcomeData> {
  */
 export interface AdminQuickStatsData {
   totalUsers: number;
-  recentImports: number;
+  unassignedLeads: number;
   activeSales: number;
   wonLeads: number;
 }
@@ -107,31 +102,26 @@ export interface AdminQuickStatsData {
 export async function getAdminQuickStatsData(): Promise<AdminQuickStatsData> {
   // Security: Only admins can see global stats
   if (!(await checkIsAdmin())) {
-    return { totalUsers: 0, recentImports: 0, activeSales: 0, wonLeads: 0 };
+    return { totalUsers: 0, unassignedLeads: 0, activeSales: 0, wonLeads: 0 };
   }
 
   const supabase = await createClient();
-  const sevenDaysAgo = getSevenDaysAgo();
 
-  const [usersResult, importsResult, statsResult] = await Promise.all([
+  const [usersResult, statsResult] = await Promise.all([
     supabase
       .from('profiles')
       .select('*', { count: 'exact', head: true })
       .eq('role', 'sales'),
-    supabase
-      .from('import_jobs')
-      .select('*', { count: 'exact', head: true })
-      .gte('created_at', sevenDaysAgo),
     supabase.rpc('get_leads_stats'),
   ]);
 
-  const stats = statsResult.data as { activeSalesCount?: number; leadsByStatus?: Record<string, number> } | null;
+  const stats = statsResult.data as { activeSalesCount?: number; unassignedCount?: number; leadsByStatus?: Record<string, number> } | null;
 
   return {
     totalUsers: usersResult.count || 0,
-    recentImports: importsResult.count || 0,
+    unassignedLeads: stats?.unassignedCount || 0,
     activeSales: stats?.activeSalesCount || 0,
-    wonLeads: stats?.leadsByStatus?.['won'] || 0,
+    wonLeads: stats?.leadsByStatus?.['deposit'] || 0,
   };
 }
 
@@ -294,6 +284,72 @@ export async function getAdminTrendData(): Promise<LeadsTrendPoint[]> {
 }
 
 /**
+ * Monthly trend data grouped by year
+ * Returns all available years and monthly data for each year
+ * Uses database function for efficient aggregation
+ */
+export async function getMonthlyTrendData(): Promise<TrendYearsData> {
+  // Security: Only admins can see global trend data
+  if (!(await checkIsAdmin())) {
+    return { years: [], monthlyData: {} };
+  }
+
+  const supabase = await createClient();
+
+  // Use database function for efficient aggregation
+  const { data, error } = await supabase.rpc('get_monthly_leads_trend');
+
+  if (error || !data) {
+    console.error('Error fetching monthly trend data:', error);
+    return { years: [], monthlyData: {} };
+  }
+
+  // Group data by year
+  const monthlyData: Record<number, MonthlyTrendPoint[]> = {};
+  const yearsSet = new Set<number>();
+
+  for (const row of data as { year: number; month: number; created: number; assigned: number }[]) {
+    const year = Number(row.year);
+    const month = Number(row.month);
+    yearsSet.add(year);
+
+    if (!monthlyData[year]) {
+      monthlyData[year] = [];
+    }
+
+    monthlyData[year].push({
+      year,
+      month,
+      created: Number(row.created),
+      updated: 0,
+      assigned: Number(row.assigned),
+    });
+  }
+
+  // Sort monthly data within each year and fill missing months
+  const years = Array.from(yearsSet).sort((a, b) => b - a); // Descending order
+
+  for (const year of years) {
+    // Create full 12-month array
+    const fullYear: MonthlyTrendPoint[] = [];
+    const existingData = new Map(monthlyData[year].map((d) => [d.month, d]));
+
+    for (let month = 1; month <= 12; month++) {
+      const existing = existingData.get(month);
+      if (existing) {
+        fullYear.push(existing);
+      } else {
+        fullYear.push({ year, month, created: 0, updated: 0, assigned: 0 });
+      }
+    }
+
+    monthlyData[year] = fullYear;
+  }
+
+  return { years, monthlyData };
+}
+
+/**
  * Recent activity data for admin dashboard
  */
 export async function getAdminRecentActivityData(): Promise<ActivityItem[]> {
@@ -363,8 +419,8 @@ export async function getSalesWelcomeData(): Promise<WelcomeData> {
  */
 export interface SalesQuickStatsData {
   totalLeads: number;
-  commentsCount: number;
-  activeLeads: number;
+  newLeads: number;
+  callbackLeads: number;
   wonLeads: number;
 }
 
@@ -374,22 +430,17 @@ export async function getSalesQuickStatsData(): Promise<SalesQuickStatsData> {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) return { totalLeads: 0, commentsCount: 0, activeLeads: 0, wonLeads: 0 };
+  if (!user) return { totalLeads: 0, newLeads: 0, callbackLeads: 0, wonLeads: 0 };
 
   const result = await supabase.rpc('get_user_leads_stats', { target_user_id: user.id });
   const stats = result.data as { totalLeads?: number; leadsByStatus?: Record<string, number> } | null;
   const leadsByStatus = stats?.leadsByStatus || {};
 
-  const activeLeads =
-    (leadsByStatus['rdv'] || 0) +
-    (leadsByStatus['contacted'] || 0) +
-    (leadsByStatus['qualified'] || 0);
-
   return {
     totalLeads: stats?.totalLeads || 0,
-    commentsCount: 0,
-    activeLeads,
-    wonLeads: leadsByStatus['won'] || 0,
+    newLeads: leadsByStatus['new'] || 0,
+    callbackLeads: (leadsByStatus['callback'] || 0) + (leadsByStatus['relance'] || 0),
+    wonLeads: leadsByStatus['deposit'] || 0,
   };
 }
 

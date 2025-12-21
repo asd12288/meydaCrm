@@ -11,7 +11,7 @@ export async function AdminQuickStatsSection() {
   return (
     <AdminQuickStats
       totalUsers={data.totalUsers}
-      recentImports={data.recentImports}
+      unassignedLeads={data.unassignedLeads}
       activeSales={data.activeSales}
       wonLeads={data.wonLeads}
     />

@@ -4,11 +4,11 @@ import React from 'react';
 import { CardBox } from '@/modules/shared';
 import {
   IconUsers,
-  IconMessage,
   IconTrophy,
-  IconCalendar,
-  IconFileUpload,
   IconUserCheck,
+  IconUserQuestion,
+  IconSparkles,
+  IconPhoneCall,
 } from '@tabler/icons-react';
 
 interface QuickStat {
@@ -47,35 +47,35 @@ export function QuickStatsRow({ stats }: QuickStatsRowProps) {
 // Pre-configured stats for Sales Dashboard
 export function SalesQuickStats({
   totalLeads,
-  comments,
-  activeLeads,
+  newLeads,
+  callbackLeads,
   wonLeads,
 }: {
   totalLeads: number;
-  comments: number;
-  activeLeads: number;
+  newLeads: number;
+  callbackLeads: number;
   wonLeads: number;
 }) {
   const stats: QuickStat[] = [
     {
+      label: 'Nouveaux leads',
+      value: newLeads,
+      icon: <IconSparkles size={28} />,
+    },
+    {
+      label: 'À rappeler',
+      value: callbackLeads,
+      icon: <IconPhoneCall size={28} />,
+    },
+    {
       label: 'Leads assignés',
       value: totalLeads,
-      icon: <IconUsers size={22} />,
-    },
-    {
-      label: 'Commentaires',
-      value: comments,
-      icon: <IconMessage size={22} />,
-    },
-    {
-      label: 'Leads actifs',
-      value: activeLeads,
-      icon: <IconCalendar size={22} />,
+      icon: <IconUsers size={28} />,
     },
     {
       label: 'Leads gagnés',
       value: wonLeads,
-      icon: <IconTrophy size={22} />,
+      icon: <IconTrophy size={28} />,
     },
   ];
 
@@ -85,35 +85,35 @@ export function SalesQuickStats({
 // Pre-configured stats for Admin Dashboard
 export function AdminQuickStats({
   totalUsers,
-  recentImports,
+  unassignedLeads,
   activeSales,
   wonLeads,
 }: {
   totalUsers: number;
-  recentImports: number;
+  unassignedLeads: number;
   activeSales: number;
   wonLeads: number;
 }) {
   const stats: QuickStat[] = [
     {
-      label: 'Utilisateurs',
-      value: totalUsers,
-      icon: <IconUserCheck size={22} />,
+      label: 'Non assignés',
+      value: unassignedLeads,
+      icon: <IconUserQuestion size={28} />,
     },
     {
-      label: 'Imports (7j)',
-      value: recentImports,
-      icon: <IconFileUpload size={22} />,
+      label: 'Utilisateurs',
+      value: totalUsers,
+      icon: <IconUserCheck size={28} />,
     },
     {
       label: 'Vendeurs actifs',
       value: activeSales,
-      icon: <IconUsers size={22} />,
+      icon: <IconUsers size={28} />,
     },
     {
       label: 'Leads gagnés',
       value: wonLeads,
-      icon: <IconTrophy size={22} />,
+      icon: <IconTrophy size={28} />,
     },
   ];
 

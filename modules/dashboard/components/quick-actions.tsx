@@ -8,7 +8,6 @@ import {
   IconUsers,
   IconUserPlus,
   IconTableExport,
-  IconArrowRight,
 } from '@tabler/icons-react';
 
 interface QuickAction {
@@ -49,15 +48,15 @@ export function QuickActions() {
   return (
     <CardBox className="h-full">
       <h5 className="card-title mb-4">Actions rapides</h5>
-      
+
       <div className="space-y-2">
         {actions.map((action, index) => (
           <Link
             key={index}
             href={action.href}
-            className="flex items-center gap-3 p-3 rounded-lg hover:bg-lightgray dark:hover:bg-darkborder/50 transition-colors duration-150 group"
+            className="flex items-center gap-3 p-3 rounded-xl border border-border dark:border-darkborder hover:bg-lightgray dark:hover:bg-darkborder/50 hover:border-primary/30 transition-all duration-150 group"
           >
-            <span className="dashboard-action-icon">
+            <span className="dashboard-action-icon group-hover:scale-110 transition-transform">
               {action.icon}
             </span>
 
@@ -67,11 +66,6 @@ export function QuickActions() {
               </p>
               <p className="text-xs text-darklink">{action.description}</p>
             </div>
-
-            <IconArrowRight
-              size={16}
-              className="text-darklink opacity-0 group-hover:opacity-100 transition-opacity duration-150 shrink-0"
-            />
           </Link>
         ))}
       </div>
