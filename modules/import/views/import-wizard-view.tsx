@@ -9,7 +9,7 @@ interface ImportWizardViewProps {
 }
 
 export function ImportWizardView({ salesUsers }: ImportWizardViewProps) {
-  const handleImportComplete = (_importJobId: string) => {
+  const handleImportComplete = () => {
     // Could show toast notification or redirect
   };
 

@@ -21,7 +21,7 @@ interface KanbanBoardProps {
 
 // French screen reader announcements
 const frenchAnnouncements = {
-  onDragStart(_activeId: string) {
+  onDragStart() {
     return `Lead sélectionné pour déplacement.`;
   },
   onDragOver(_activeId: string, overId?: string) {
@@ -36,7 +36,7 @@ const frenchAnnouncements = {
     }
     return `Lead déposé.`;
   },
-  onDragCancel(_activeId: string) {
+  onDragCancel() {
     return `Déplacement annulé.`;
   },
 };

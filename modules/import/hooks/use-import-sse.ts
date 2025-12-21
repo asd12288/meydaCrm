@@ -233,7 +233,7 @@ export function useImportSSE(options: UseImportSSEOptions): UseImportSSEReturn {
           if (data.status === 'completed') state.onComplete?.(progressData);
           if (data.status === 'failed') state.onError?.(data.errorMessage || 'Import échoué');
         }
-      } catch (err) {
+      } catch {
         if (!state.isMounted) return;
         setError('Erreur de connexion');
       } finally {

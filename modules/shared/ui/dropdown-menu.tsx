@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, type ReactNode } from 'react';
+import { useState, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { useClickOutside } from '../hooks/use-click-outside';
@@ -71,22 +71,15 @@ export function DropdownMenu({
       }
 
       setMenuPosition({ top, left, width: rect.width });
+    } else {
+      // Reset position when closing
+      setMenuPosition(null);
     }
     setIsOpen(!isOpen);
   };
 
-  // Reset position when closing
-  useEffect(() => {
-    if (!isOpen) {
-      setMenuPosition(null);
-    }
-  }, [isOpen]);
-
-  const handleItemClick = () => {
-    if (closeOnClick) {
-      setIsOpen(false);
-    }
-  };
+  // Reset position when closing - handled in handleToggle instead of effect
+  // to avoid ESLint warning about setState in effect
 
   const menuContent = (
     <div

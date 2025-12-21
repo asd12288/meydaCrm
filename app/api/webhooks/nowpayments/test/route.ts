@@ -275,7 +275,7 @@ export async function GET() {
         curl: 'curl -X POST http://localhost:3000/api/webhooks/nowpayments/test -H "Content-Type: application/json" -d \'{"orderId": "crm-pay-xxx", "status": "finished"}\'',
       },
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json({
       endpoint: 'POST /api/webhooks/nowpayments/test',
       description: 'Simulate NOWPayments webhook callbacks for testing',

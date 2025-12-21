@@ -88,8 +88,13 @@ export function WelcomeCard({ userName, userAvatar }: WelcomeCardProps) {
 
   useEffect(() => {
     // Update to time-based greeting after hydration
+    // Using requestAnimationFrame to defer the update and satisfy ESLint
     const seed = Math.floor(Date.now() / 60000);
-    setGreeting(getTimeGreeting(seed));
+    const timeGreeting = getTimeGreeting(seed);
+    const rafId = requestAnimationFrame(() => {
+      setGreeting(timeGreeting);
+    });
+    return () => cancelAnimationFrame(rafId);
   }, []);
 
   const { text: greetingText, emoji, subtitle } = greeting;

@@ -35,7 +35,6 @@ async function main() {
   console.log(`📍 Base URL: ${BASE_URL}\n`);
 
   let iteration = 0;
-  let totalImported = 0;
 
   while (true) {
     iteration++;
@@ -80,7 +79,6 @@ async function main() {
     // Resume processing
     console.log(`\n⏳ Processing next batch...`);
     const startTime = Date.now();
-    const importedBefore = job.imported_rows || 0;
 
     try {
       const result = await resume();
@@ -96,7 +94,6 @@ async function main() {
 
       if (result.result) {
         const batchImported = result.result.importedCount || 0;
-        totalImported += batchImported;
 
         console.log(`✅ Batch complete in ${duration}s`);
         console.log(`   Imported this batch: ${batchImported.toLocaleString()}`);
