@@ -9,7 +9,7 @@ export interface AvatarOption {
 }
 
 /**
- * Available avatars - 15 unique characters + 15 professions
+ * Available avatars - 54 unique characters and professions
  */
 export const AVATARS: AvatarOption[] = [
   // Unique Characters (1-15)
@@ -44,6 +44,33 @@ export const AVATARS: AvatarOption[] = [
   { id: 'avatar-28', label: 'Policier' },
   { id: 'avatar-29', label: 'Enseignant' },
   { id: 'avatar-30', label: 'Agriculteur' },
+  // Additional Characters (31-42)
+  { id: 'avatar-31', label: 'Paul McCartney' },
+  { id: 'avatar-32', label: 'Wes Anderson' },
+  { id: 'avatar-33', label: 'Marilyn Monroe' },
+  { id: 'avatar-34', label: 'LeBron James' },
+  { id: 'avatar-35', label: 'Taylor Swift' },
+  { id: 'avatar-36', label: 'Lionel Messi' },
+  { id: 'avatar-37', label: 'Angela Merkel' },
+  { id: 'avatar-38', label: 'Hideo Kojima' },
+  { id: 'avatar-39', label: 'Malala Yousafzai' },
+  { id: 'avatar-40', label: 'Pape François' },
+  { id: 'avatar-41', label: 'Daft Punk 1' },
+  { id: 'avatar-42', label: 'Daft Punk 2' },
+  // Additional Professions (43-50)
+  { id: 'avatar-43', label: 'Militaire' },
+  { id: 'avatar-44', label: 'Astronaute 2' },
+  { id: 'avatar-45', label: 'Archéologue' },
+  { id: 'avatar-46', label: 'Marin' },
+  { id: 'avatar-47', label: 'Scientifique F' },
+  { id: 'avatar-48', label: 'Programmeuse' },
+  { id: 'avatar-49', label: 'Médecin F' },
+  { id: 'avatar-50', label: 'Policière' },
+  // General Characters (51-54)
+  { id: 'avatar-51', label: 'Personnage Bleu' },
+  { id: 'avatar-52', label: 'Personnage Vert' },
+  { id: 'avatar-53', label: 'Personnage Violet' },
+  { id: 'avatar-54', label: 'Personnage Rouge' },
 ];
 
 /**
@@ -72,3 +99,23 @@ export function getAvatarLabel(id: string): string {
 export function getAvatarPath(id: string): string {
   return `/avatars/${id}.png`;
 }
+
+/**
+ * Get a random avatar ID from the available avatars
+ * Optionally exclude avatars that are already in use
+ */
+export function getRandomAvatarId(excludeIds?: string[]): string {
+  const available = excludeIds
+    ? AVATARS.filter((a) => !excludeIds.includes(a.id))
+    : AVATARS;
+
+  // If all avatars are in use, just pick any random one
+  const pool = available.length > 0 ? available : AVATARS;
+  const randomIndex = Math.floor(Math.random() * pool.length);
+  return pool[randomIndex].id;
+}
+
+/**
+ * Total number of available avatars
+ */
+export const AVATAR_COUNT = AVATARS.length;

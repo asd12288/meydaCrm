@@ -41,7 +41,7 @@ export interface ModalProps {
 
 /**
  * Reusable Modal component using shadcn Dialog (Radix UI)
- * Only renders when open to prevent infinite re-render loops
+ * Uses controlled open state to allow proper close animation
  */
 export function Modal({
   isOpen,
@@ -54,11 +54,6 @@ export function Modal({
   closeOnBackdrop = true,
   closeOnEscape = true,
 }: ModalProps) {
-  // Don't render anything when closed - prevents infinite re-render loops
-  if (!isOpen) {
-    return null;
-  }
-
   const handleOpenChange = (open: boolean) => {
     if (!open) {
       onClose();
@@ -66,7 +61,7 @@ export function Modal({
   };
 
   return (
-    <Dialog open={true} onOpenChange={handleOpenChange}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent
         className={`${sizeClasses[size]} bg-white dark:bg-dark border-ld`}
         showCloseButton={showCloseButton}

@@ -114,11 +114,10 @@ export function ExpiryWarningBanner({
     }
   }
 
-  // Use red/error for grace period, warning/orange for approaching expiry
-  // Solid backgrounds (not transparent)
-  const bgClass = isGrace ? 'bg-error border-error' : 'bg-warning border-warning';
-  const textClass = 'text-white';
-  const hoverClass = isGrace ? 'hover:bg-error/80' : 'hover:bg-warning/80';
+  // Use red/error for grace period, subtle amber for approaching expiry
+  const bgClass = isGrace ? 'bg-error border-error' : 'bg-amber-400 border-amber-500';
+  const textClass = isGrace ? 'text-white' : 'text-amber-900';
+  const hoverClass = isGrace ? 'hover:bg-error/80' : 'hover:bg-amber-300';
 
   return (
     <div className={`${bgClass} border-b px-4 py-3`}>

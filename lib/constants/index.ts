@@ -42,8 +42,10 @@ export {
 export {
   AVATARS,
   AVATAR_IDS,
+  AVATAR_COUNT,
   isValidAvatarId,
   getAvatarLabel,
   getAvatarPath,
+  getRandomAvatarId,
   type AvatarOption,
 } from './avatars';
