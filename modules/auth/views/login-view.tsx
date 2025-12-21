@@ -1,5 +1,5 @@
 import { LoginForm } from '../ui/login-form';
-import { ThemeSwitcher, Logo } from '@/modules/shared';
+import { ThemeSwitcher, Logo, HoverVideo } from '@/modules/shared';
 
 export function LoginView() {
   return (
@@ -13,7 +13,14 @@ export function LoginView() {
       <div className="flex min-h-screen items-center justify-center px-4">
         <div className="w-full max-w-95">
           {/* Logo centered above the card */}
-          <div className="flex justify-center mb-6">
+          <div className="flex items-center justify-center gap-1 mb-6">
+            <HoverVideo
+              src="/pulse-logo.webm"
+              width={80}
+              height={80}
+              alt="Pulse CRM Animation"
+              className="rounded"
+            />
             <Logo size="xl" />
           </div>
 
