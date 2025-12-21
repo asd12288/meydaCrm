@@ -9,18 +9,27 @@ import { useClickOutside } from '@/modules/shared/hooks/use-click-outside';
 /**
  * Notification bell component with unread badge
  * Shows dropdown on click with all notifications
+ * Clears unread count immediately when opened
  */
 export function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false);
   const bellRef = useRef<HTMLDivElement>(null);
-  const { unreadCount } = useNotifications({ enabled: true });
+  const { unreadCount, markAllAsRead } = useNotifications({ enabled: true });
 
   useClickOutside(bellRef, () => setIsOpen(false), isOpen);
+
+  const handleClick = () => {
+    if (!isOpen && unreadCount > 0) {
+      // Clear badge immediately when opening (optimistic)
+      markAllAsRead();
+    }
+    setIsOpen(!isOpen);
+  };
 
   return (
     <div className="relative" ref={bellRef}>
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={handleClick}
         className="relative p-2 rounded-lg hover:bg-lightgray dark:hover:bg-darkgray transition-all duration-150 cursor-pointer group active:scale-95"
         aria-label="Notifications"
       >

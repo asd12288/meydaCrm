@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useRef, type ReactNode } from 'react';
+import { useState, useRef, useEffect, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { useClickOutside } from '../hooks/use-click-outside';
 
@@ -17,14 +18,13 @@ export interface DropdownMenuProps {
   className?: string;
   /** Close on item click */
   closeOnClick?: boolean;
+  /** Z-index class (default: z-50, use z-[100] for modals) */
+  zIndexClass?: string;
+  /** Tight spacing for select-like dropdowns */
+  tight?: boolean;
+  /** Use portal to render outside parent (for modals) */
+  portal?: boolean;
 }
-
-const POSITION_CLASSES = {
-  'bottom-left': 'top-full left-0 mt-2',
-  'bottom-right': 'top-full right-0 mt-2',
-  'top-left': 'bottom-full left-0 mb-2',
-  'top-right': 'bottom-full right-0 mb-2',
-};
 
 /**
  * Generic dropdown menu container
@@ -37,34 +37,129 @@ export function DropdownMenu({
   widthClass = 'w-56',
   className = '',
   closeOnClick = true,
+  zIndexClass = 'z-50',
+  tight = false,
+  portal = false,
 }: DropdownMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [menuPosition, setMenuPosition] = useState<{ top: number; left: number; width: number } | null>(null);
+  const triggerRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
-  useClickOutside(dropdownRef, () => setIsOpen(false), isOpen);
+  // Combined ref for click outside detection
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  const handleContentClick = () => {
+  useClickOutside(containerRef, () => setIsOpen(false), isOpen && !portal);
+
+  // Calculate position for portal mode immediately when opening
+  const handleToggle = () => {
+    if (!isOpen && portal && triggerRef.current) {
+      // Calculate position synchronously before opening
+      const rect = triggerRef.current.getBoundingClientRect();
+      const gap = tight ? 4 : 8;
+
+      let top = rect.bottom + gap;
+      let left = rect.left;
+
+      if (position === 'bottom-right') {
+        left = rect.right - rect.width; // Use trigger width initially
+      } else if (position === 'top-left' || position === 'top-right') {
+        top = rect.top - gap - 200; // Estimate height
+        if (position === 'top-right') {
+          left = rect.right - rect.width;
+        }
+      }
+
+      setMenuPosition({ top, left, width: rect.width });
+    }
+    setIsOpen(!isOpen);
+  };
+
+  // Reset position when closing
+  useEffect(() => {
+    if (!isOpen) {
+      setMenuPosition(null);
+    }
+  }, [isOpen]);
+
+  const handleItemClick = () => {
     if (closeOnClick) {
       setIsOpen(false);
     }
   };
 
+  const menuContent = (
+    <div
+      ref={menuRef}
+      className={`${widthClass} ${!portal ? zIndexClass : ''} bg-white dark:bg-dark rounded-xl border border-border shadow-lg overflow-hidden ${portal ? 'animate-in fade-in duration-150' : 'animate-in fade-in slide-in-from-top-2 duration-200'}`}
+      style={
+        portal && menuPosition
+          ? {
+              position: 'fixed',
+              top: menuPosition.top,
+              left: menuPosition.left,
+              minWidth: menuPosition.width || 200,
+              zIndex: 10000,
+              pointerEvents: 'auto',
+            }
+          : undefined
+      }
+      onClick={(e) => {
+        // Only close if clicking on a menu item (has data-menu-item attribute)
+        const target = e.target as HTMLElement;
+        if (target.closest('[data-menu-item]') && closeOnClick) {
+          setIsOpen(false);
+        }
+      }}
+    >
+      {children}
+    </div>
+  );
+
+  // Non-portal mode: relative positioning
+  if (!portal) {
+    const positionClasses = {
+      'bottom-left': `top-full left-0 ${tight ? 'mt-1' : 'mt-2'}`,
+      'bottom-right': `top-full right-0 ${tight ? 'mt-1' : 'mt-2'}`,
+      'top-left': `bottom-full left-0 ${tight ? 'mb-1' : 'mb-2'}`,
+      'top-right': `bottom-full right-0 ${tight ? 'mb-1' : 'mb-2'}`,
+    };
+
+    return (
+      <div ref={containerRef} className={`relative ${className}`}>
+        <div ref={triggerRef} onClick={handleToggle}>
+          {typeof trigger === 'function' ? trigger(isOpen) : trigger}
+        </div>
+        {isOpen && (
+          <div className={`absolute ${positionClasses[position]}`}>
+            {menuContent}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Portal mode: fixed positioning via portal with backdrop
   return (
-    <div ref={dropdownRef} className={`relative ${className}`}>
-      {/* Trigger */}
-      <div onClick={() => setIsOpen(!isOpen)}>
+    <div ref={containerRef} className={`relative ${className}`}>
+      <div ref={triggerRef} onClick={handleToggle}>
         {typeof trigger === 'function' ? trigger(isOpen) : trigger}
       </div>
-
-      {/* Menu */}
-      {isOpen && (
-        <div
-          className={`absolute ${POSITION_CLASSES[position]} ${widthClass} z-50 bg-white dark:bg-dark rounded-xl border border-border shadow-lg overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200`}
-          onClick={handleContentClick}
-        >
-          {children}
-        </div>
-      )}
+      {isOpen &&
+        menuPosition &&
+        createPortal(
+          <>
+            {/* Invisible backdrop to catch outside clicks */}
+            <div
+              className="fixed inset-0"
+              style={{ zIndex: 9999 }}
+              onClick={() => setIsOpen(false)}
+            />
+            {/* Menu content above backdrop */}
+            {menuContent}
+          </>,
+          document.body
+        )}
     </div>
   );
 }
@@ -104,7 +199,7 @@ export function DropdownMenuContent({
 }: DropdownMenuContentProps) {
   return (
     <div
-      className={`py-2 ${maxHeight ? `max-h-[${maxHeight}] overflow-y-auto` : ''} ${className}`}
+      className={`py-2 ${maxHeight ? 'overflow-y-auto' : ''} ${className}`}
       style={maxHeight ? { maxHeight } : undefined}
     >
       {children}
@@ -153,7 +248,7 @@ export function DropdownMenuItem({
 
   if (href && !disabled) {
     return (
-      <Link href={href} className={baseClasses}>
+      <Link href={href} className={baseClasses} data-menu-item>
         {icon && <span className="text-darklink">{icon}</span>}
         {children}
       </Link>
@@ -166,6 +261,7 @@ export function DropdownMenuItem({
       onClick={disabled ? undefined : onClick}
       disabled={disabled}
       className={baseClasses}
+      data-menu-item
     >
       {icon && <span className={variant === 'danger' ? '' : 'text-darklink'}>{icon}</span>}
       {children}

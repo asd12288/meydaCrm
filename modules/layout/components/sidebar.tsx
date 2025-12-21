@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { navigationItems, navGroups } from "../config/navigation";
-import { Logo, HoverVideo } from "@/modules/shared";
+import { Logo } from "@/modules/shared";
 import { useSidebar } from "../context/sidebar-context";
 import type { UserRole } from "@/db/types";
 
@@ -48,14 +48,7 @@ export function Sidebar({ userRole }: SidebarProps) {
         }`}
       >
         {!isCollapsed && (
-          <Link href="/dashboard" className="flex items-center gap-1">
-            <HoverVideo
-              src="/pulse-logo.webm"
-              width={64}
-              height={64}
-              alt="Pulse CRM Animation"
-              className="rounded"
-            />
+          <Link href="/dashboard" className="flex items-center">
             <Logo size="md" />
           </Link>
         )}

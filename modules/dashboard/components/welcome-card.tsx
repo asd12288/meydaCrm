@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 
 // Random subtitles for each time period
@@ -82,17 +82,15 @@ interface WelcomeCardProps {
 }
 
 export function WelcomeCard({ userName, userAvatar }: WelcomeCardProps) {
-  // Use lazy initializer to compute greeting once on mount
-  // The initializer function is only called once during first render
-  const [greeting] = useState<GreetingData>(() => {
-    // Check if we're on the client (window exists)
-    if (typeof window === 'undefined') {
-      return DEFAULT_GREETING;
-    }
-    // Uses current minute as seed for consistent subtitle within the same minute
+  // Start with default greeting to avoid hydration mismatch
+  // Time-based greeting is set after mount in useEffect
+  const [greeting, setGreeting] = useState<GreetingData>(DEFAULT_GREETING);
+
+  useEffect(() => {
+    // Update to time-based greeting after hydration
     const seed = Math.floor(Date.now() / 60000);
-    return getTimeGreeting(seed);
-  });
+    setGreeting(getTimeGreeting(seed));
+  }, []);
 
   const { text: greetingText, emoji, subtitle } = greeting;
 
