@@ -47,7 +47,6 @@ export function NoteForm({ note, onSuccess, onCancel }: NoteFormProps) {
       content: note?.content || '',
       color: note?.color || 'yellow',
       leadId: note?.lead_id || null,
-      isPinned: note?.is_pinned || false,
     },
   });
 

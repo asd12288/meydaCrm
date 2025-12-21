@@ -61,7 +61,7 @@ export function NoteGrid({ notes: initialNotes }: NoteGridProps) {
   }, []);
 
   const handleDrop = useCallback(
-    (e: React.DragEvent, targetId: string, isPinnedSection: boolean) => {
+    (e: React.DragEvent, targetId: string) => {
       e.preventDefault();
       const draggedNoteId = e.dataTransfer.getData('text/plain');
 
@@ -70,7 +70,6 @@ export function NoteGrid({ notes: initialNotes }: NoteGridProps) {
       // Find the dragged note
       const draggedNote = optimisticNotes.find((n) => n.id === draggedNoteId);
       if (!draggedNote) return;
-
 
       const fromIndex = optimisticNotes.findIndex((n) => n.id === draggedNoteId);
       const toIndex = optimisticNotes.findIndex((n) => n.id === targetId);
@@ -136,63 +135,25 @@ export function NoteGrid({ notes: initialNotes }: NoteGridProps) {
 
   return (
     <div className="space-y-6">
-      {/* Pinned notes section */}
-      {pinnedNotes.length > 0 && (
-        <section>
-          <h2 className="flex items-center gap-2 text-sm font-semibold text-darklink mb-3">
-            <IconPin size={16} />
-            Épinglées
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {pinnedNotes.map((note) => (
-              <div
-                key={note.id}
-                draggable
-                onDragStart={(e) => handleDragStart(e, note.id)}
-                onDragEnd={handleDragEnd}
-                onDragOver={handleDragOver}
-                onDrop={(e) => handleDrop(e, note.id, true)}
-              >
-                <NoteCard
-                  note={note}
-                  onEdit={handleEditNote}
-                  isDragging={draggedId === note.id}
-                />
-              </div>
-            ))}
+      {/* Notes grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {optimisticNotes.map((note) => (
+          <div
+            key={note.id}
+            draggable
+            onDragStart={(e) => handleDragStart(e, note.id)}
+            onDragEnd={handleDragEnd}
+            onDragOver={handleDragOver}
+            onDrop={(e) => handleDrop(e, note.id)}
+          >
+            <NoteCard
+              note={note}
+              onEdit={handleEditNote}
+              isDragging={draggedId === note.id}
+            />
           </div>
-        </section>
-      )}
-
-      {/* Regular notes section */}
-      {unpinnedNotes.length > 0 && (
-        <section>
-          {pinnedNotes.length > 0 && (
-            <h2 className="flex items-center gap-2 text-sm font-semibold text-darklink mb-3">
-              <IconNote size={16} />
-              Notes
-            </h2>
-          )}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {unpinnedNotes.map((note) => (
-              <div
-                key={note.id}
-                draggable
-                onDragStart={(e) => handleDragStart(e, note.id)}
-                onDragEnd={handleDragEnd}
-                onDragOver={handleDragOver}
-                onDrop={(e) => handleDrop(e, note.id, false)}
-              >
-                <NoteCard
-                  note={note}
-                  onEdit={handleEditNote}
-                  isDragging={draggedId === note.id}
-                />
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+        ))}
+      </div>
 
       {/* Edit modal */}
       <Modal

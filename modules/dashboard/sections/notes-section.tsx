@@ -2,12 +2,12 @@ import Link from 'next/link';
 import { IconNote, IconChevronRight, IconUser } from '@tabler/icons-react';
 import { CardBox } from '@/modules/shared';
 import { getRecentNotes } from '@/modules/notes/lib/actions';
-import { getNoteColorClasses } from '@/modules/notes/config/constants';
+import { getNoteColorClasses, renderMarkdown } from '@/modules/notes';
 import type { NoteWithLead } from '@/modules/notes/types';
 
 /**
  * Mini note card for dashboard widget
- * Compact display with color, title/content preview, and linked lead
+ * Matches the design of NoteCard on the notes page, but compact
  */
 function MiniNoteCard({ note }: { note: NoteWithLead }) {
   const colorClasses = getNoteColorClasses(note.color);
@@ -18,36 +18,40 @@ function MiniNoteCard({ note }: { note: NoteWithLead }) {
     return parts.length > 0 ? parts.join(' ') : 'Sans nom';
   };
 
-  const getPreview = () => {
-    if (note.title) return note.title;
-    // Strip markdown and truncate
-    const plainText = note.content.replace(/[#*_~`]/g, '').trim();
-    return plainText.length > 50 ? plainText.slice(0, 50) + '...' : plainText;
-  };
-
   return (
     <Link
       href="/notes"
-      className={`block rounded-lg border-2 p-3 transition-all hover:shadow-md ${colorClasses.bg} ${colorClasses.border}`}
+      className={`block rounded-lg border-2 p-4 transition-all hover:shadow-md group ${colorClasses.bg} ${colorClasses.border}`}
     >
-      <p className="text-sm font-medium text-ld line-clamp-2 mb-2">
-        {getPreview()}
-      </p>
-      <div className="flex items-center justify-between text-xs text-darklink">
-        {note.lead ? (
-          <span className="flex items-center gap-1">
-            <IconUser size={12} />
-            {getLeadDisplayName()}
-          </span>
-        ) : (
-          <span />
-        )}
-        <span>
-          {new Date(note.updated_at).toLocaleDateString('fr-FR', {
-            day: 'numeric',
-            month: 'short',
-          })}
+      {/* Title */}
+      {note.title && (
+        <h3 className="font-semibold text-ld mb-2 line-clamp-1">
+          {note.title}
+        </h3>
+      )}
+
+      {/* Note content with markdown */}
+      <div
+        className="text-sm text-darklink prose prose-sm dark:prose-invert max-w-none line-clamp-3"
+        dangerouslySetInnerHTML={{ __html: renderMarkdown(note.content) }}
+      />
+
+      {/* Lead badge */}
+      {note.lead && (
+        <span className="mt-3 inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-white/50 dark:bg-dark/50 text-xs font-medium text-darklink">
+          <IconUser size={12} />
+          {getLeadDisplayName()}
         </span>
+      )}
+
+      {/* Timestamp */}
+      <div className="mt-3 text-xs text-darklink/60">
+        {new Date(note.updated_at).toLocaleDateString('fr-FR', {
+          day: 'numeric',
+          month: 'short',
+          hour: '2-digit',
+          minute: '2-digit',
+        })}
       </div>
     </Link>
   );

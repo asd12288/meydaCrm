@@ -10,7 +10,6 @@ export {
   createNote,
   updateNote,
   deleteNote,
-  toggleNotePin,
   reorderNotes,
   searchLeadsForNotes,
 } from './lib/actions';
