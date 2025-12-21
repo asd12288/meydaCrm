@@ -373,6 +373,13 @@ When working in this repo:
 - `APP_URL` - Full application URL (e.g., https://your-app.vercel.app)
 - Auto-detected from `VERCEL_URL` if not set
 
+### Vercel Deployment Protection (for QStash callbacks)
+
+- `VERCEL_AUTOMATION_BYPASS_SECRET` - Bypass secret for Vercel Deployment Protection
+  - Required when Deployment Protection is enabled on production
+  - Get from Vercel Dashboard → Settings → Deployment Protection → Protection Bypass for Automation
+  - Allows QStash to call API routes without SSO authentication
+
 ### Supabase Edge Functions (server-only)
 
 - `SUPABASE_SERVICE_ROLE_KEY` (in Supabase secrets)

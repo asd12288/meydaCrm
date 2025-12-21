@@ -48,6 +48,21 @@ const QUEUE_CONFIG = {
   },
 };
 
+/**
+ * Get headers for Vercel Protection Bypass
+ * Required when Vercel Deployment Protection is enabled
+ * @see https://vercel.com/docs/deployment-protection/methods-to-bypass-deployment-protection/protection-bypass-automation
+ */
+function getBypassHeaders(): Record<string, string> {
+  const bypassSecret = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+  if (bypassSecret) {
+    return {
+      'x-vercel-protection-bypass': bypassSecret,
+    };
+  }
+  return {};
+}
+
 // ============================================================================
 // ENQUEUE FUNCTIONS
 // ============================================================================
@@ -76,6 +91,7 @@ export async function enqueueParseJob(
     headers: {
       'X-Import-Job-Id': payload.importJobId,
       'X-Job-Type': 'parse',
+      ...getBypassHeaders(),
     },
   });
 
@@ -111,6 +127,7 @@ export async function enqueueCommitJob(
     headers: {
       'X-Import-Job-Id': payload.importJobId,
       'X-Job-Type': 'commit',
+      ...getBypassHeaders(),
     },
   });
 

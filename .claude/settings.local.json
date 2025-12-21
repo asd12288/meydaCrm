@@ -53,7 +53,12 @@
       "Bash(git -C \"c:\\Users\\ilanc\\Desktop\\crm\" check-ignore .cursorrules .mcp.json tsconfig.tsbuildinfo next-env.d.ts)",
       "Bash(git -C \"c:\\Users\\ilanc\\Desktop\\crm\" check-ignore .cursorrules)",
       "Bash(git -C \"c:\\Users\\ilanc\\Desktop\\crm\" ls-files:*)",
-      "Bash(git -C:*)"
+      "Bash(git -C:*)",
+      "Bash(vercel --version:*)",
+      "Bash(vercel logs:*)",
+      "Bash(vercel list:*)",
+      "Bash(vercel project ls:*)",
+      "Bash(vercel inspect:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
