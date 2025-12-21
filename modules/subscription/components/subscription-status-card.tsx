@@ -34,7 +34,8 @@ export function SubscriptionStatusCard({
   }
 
   const planConfig = PLANS[subscription.plan];
-  const periodConfig = PERIODS[subscription.period];
+  // Handle legacy periods - default to 6_months if period not found
+  const periodConfig = PERIODS[subscription.period as keyof typeof PERIODS] || PERIODS['6_months'];
 
   const formatDate = (date: Date | string | null) => {
     if (!date) return '-';

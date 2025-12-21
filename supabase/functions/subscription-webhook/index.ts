@@ -3,8 +3,7 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 
 // Period configuration for calculating end date
 const PERIODS = {
-  "1_month": { months: 1 },
-  "3_months": { months: 3 },
+  "6_months": { months: 6 },
   "12_months": { months: 12 },
 } as const;
 

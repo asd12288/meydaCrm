@@ -27,7 +27,7 @@ import { calculateSubscriptionEndDate } from '@/lib/subscription-helpers';
 export const maxDuration = 60; // 1 minute max
 export const dynamic = 'force-dynamic';
 
-type PeriodId = '1_month' | '3_months' | '12_months';
+type PeriodId = '6_months' | '12_months';
 
 // NOWPayments IPN payload interface
 interface IPNPayload {

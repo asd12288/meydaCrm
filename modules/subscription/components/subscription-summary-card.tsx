@@ -37,7 +37,9 @@ export function SubscriptionSummaryCard({
   // Calculate progress percentage for days remaining
   const getProgressPercentage = () => {
     if (!subscription || !daysRemaining) return 0;
-    const periodMonths = PERIODS[subscription.period].months;
+    // Handle legacy periods that may no longer exist in PERIODS config
+    const periodConfig = PERIODS[subscription.period as keyof typeof PERIODS];
+    const periodMonths = periodConfig?.months || 6; // Default to 6 months if period not found
     const totalDays = periodMonths * 30; // Approximate
     const percentage = (daysRemaining / totalDays) * 100;
     return Math.min(100, Math.max(0, percentage));

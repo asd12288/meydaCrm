@@ -15,7 +15,8 @@ export function PlanCard({ plan, period, isSelected, onSelect }: PlanCardProps) 
   const planConfig = PLANS[plan];
   const totalPrice = calculatePrice(plan, period);
   const monthlyPrice = getMonthlyPrice(plan, period);
-  const periodConfig = PERIODS[period];
+  // Handle legacy periods - default to 6_months if period not found
+  const periodConfig = PERIODS[period as keyof typeof PERIODS] || PERIODS['6_months'];
   const isPopular = plan === 'pro';
 
   return (

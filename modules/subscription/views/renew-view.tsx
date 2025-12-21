@@ -9,7 +9,7 @@ import { calculatePrice } from '../config/constants';
 
 export function RenewView() {
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan>('pro');
-  const [selectedPeriod, setSelectedPeriod] = useState<SubscriptionPeriod>('1_month');
+  const [selectedPeriod, setSelectedPeriod] = useState<SubscriptionPeriod>('6_months');
 
   const handlePlanSelect = (plan: SubscriptionPlan, period: SubscriptionPeriod) => {
     setSelectedPlan(plan);

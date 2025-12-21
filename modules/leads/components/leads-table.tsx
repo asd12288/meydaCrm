@@ -1,21 +1,17 @@
 'use client';
 
-import { useState, useMemo, useRef, memo, useCallback } from 'react';
+import { useState, useMemo, memo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   useReactTable,
   getCoreRowModel,
   flexRender,
 } from '@tanstack/react-table';
-import { useVirtualizer } from '@tanstack/react-virtual';
 import { TableEmptyState, ConfirmDialog, useToast } from '@/modules/shared';
 import { getLeadColumns } from '../config/columns';
 import { BulkActionsBar } from './bulk-actions-bar';
 import { deleteLead } from '../lib/actions';
 import type { LeadWithAssignee, SalesUser } from '../types';
-
-// Row height for virtualization (must match CSS)
-const ROW_HEIGHT = 45;
 
 interface LeadsTableProps {
   leads: LeadWithAssignee[];
@@ -24,18 +20,20 @@ interface LeadsTableProps {
 }
 
 /**
- * LeadsTable component with virtualization and memoization
- * Optimized: Wrapped with React.memo to prevent unnecessary re-renders
- * when parent state changes but leads/isAdmin/salesUsers props remain the same
+ * LeadsTable component - simple table with TanStack React Table
+ * No virtualization needed since we use server-side pagination
  */
-export const LeadsTable = memo(function LeadsTable({ leads, isAdmin, salesUsers }: LeadsTableProps) {
+export const LeadsTable = memo(function LeadsTable({
+  leads,
+  isAdmin,
+  salesUsers,
+}: LeadsTableProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
   const [deleteLeadId, setDeleteLeadId] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
 
-  // Memoized callbacks to prevent unnecessary re-renders
   const handleDeleteClick = useCallback((leadId: string) => {
     setDeleteLeadId(leadId);
   }, []);
@@ -44,7 +42,7 @@ export const LeadsTable = memo(function LeadsTable({ leads, isAdmin, salesUsers 
     if (!deleteLeadId || isPending) return;
 
     const idToDelete = deleteLeadId;
-    setDeleteLeadId(null); // Close dialog immediately
+    setDeleteLeadId(null);
     setIsPending(true);
 
     try {
@@ -96,33 +94,17 @@ export const LeadsTable = memo(function LeadsTable({ leads, isAdmin, salesUsers 
     setRowSelection({});
   }, []);
 
-  // Virtualization setup
-  const tableContainerRef = useRef<HTMLDivElement>(null);
-  const { rows } = table.getRowModel();
-
-  const rowVirtualizer = useVirtualizer({
-    count: rows.length,
-    estimateSize: () => ROW_HEIGHT,
-    getScrollElement: () => tableContainerRef.current,
-    overscan: 5, // Render 5 extra rows above/below viewport for smooth scrolling
-  });
-
   return (
     <>
-      {/* Table container with virtualization */}
-      <div
-        ref={tableContainerRef}
-        className="border rounded-md border-ld overflow-auto max-h-[calc(100vh-320px)]"
-      >
-        <table className="w-full table-auto">
-          <thead className="bg-lightgray dark:bg-darkgray sticky top-0 z-10 shadow-sm">
+      <div className="border rounded-md border-ld overflow-auto max-h-[calc(100vh-320px)]">
+        <table className="w-full">
+          <thead className="bg-lightgray dark:bg-darkgray sticky top-0 z-10">
             {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id}>
+              <tr key={headerGroup.id} className="relative">
                 {headerGroup.headers.map((header) => (
                   <th
                     key={header.id}
                     className="px-3 py-2.5 text-left text-xs font-semibold text-darklink uppercase tracking-wider border-b border-ld"
-                    style={{ width: header.getSize() }}
                   >
                     {header.isPlaceholder
                       ? null
@@ -136,60 +118,33 @@ export const LeadsTable = memo(function LeadsTable({ leads, isAdmin, salesUsers 
             ))}
           </thead>
           <tbody className="bg-white dark:bg-dark">
-            {rows.length === 0 ? (
+            {table.getRowModel().rows.length === 0 ? (
               <TableEmptyState
                 colSpan={columns.length}
-                message="Aucun lead trouve"
+                message="Aucun lead trouvé"
                 className="px-3"
               />
             ) : (
-              <>
-                {/* Spacer for virtualization - pushes content to correct position */}
-                {rowVirtualizer.getVirtualItems().length > 0 && (
-                  <tr style={{ height: rowVirtualizer.getVirtualItems()[0]?.start || 0 }}>
-                    <td colSpan={columns.length} />
-                  </tr>
-                )}
-                {/* Virtualized rows - only render visible rows */}
-                {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-                  const row = rows[virtualRow.index];
-                  return (
-                    <tr
-                      key={row.id}
-                      data-index={virtualRow.index}
-                      ref={(node) => rowVirtualizer.measureElement(node)}
-                      className={`border-b border-ld last:border-b-0 table-row-animated ${
-                        row.getIsSelected() ? 'table-row-selected' : ''
-                      }`}
+              table.getRowModel().rows.map((row) => (
+                <tr
+                  key={row.id}
+                  className={`border-b border-ld last:border-b-0 hover:bg-lightgray dark:hover:bg-darkgray ${
+                    row.getIsSelected() ? 'bg-lightprimary dark:bg-darkborder' : ''
+                  }`}
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <td
+                      key={cell.id}
+                      className="px-3 py-2.5 whitespace-nowrap text-sm text-left"
                     >
-                      {row.getVisibleCells().map((cell) => (
-                        <td
-                          key={cell.id}
-                          className="px-3 py-2.5 whitespace-nowrap text-sm"
-                          style={{ width: cell.column.getSize() }}
-                        >
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext()
-                          )}
-                        </td>
-                      ))}
-                    </tr>
-                  );
-                })}
-                {/* Bottom spacer for virtualization */}
-                {rowVirtualizer.getVirtualItems().length > 0 && (
-                  <tr
-                    style={{
-                      height:
-                        rowVirtualizer.getTotalSize() -
-                        (rowVirtualizer.getVirtualItems()[rowVirtualizer.getVirtualItems().length - 1]?.end || 0),
-                    }}
-                  >
-                    <td colSpan={columns.length} />
-                  </tr>
-                )}
-              </>
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
+                    </td>
+                  ))}
+                </tr>
+              ))
             )}
           </tbody>
         </table>

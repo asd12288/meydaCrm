@@ -31,7 +31,7 @@ export function SubscriptionView({
     subscription?.plan || 'pro'
   );
   const [selectedPeriod, setSelectedPeriod] = useState<SubscriptionPeriod>(
-    subscription?.period || '1_month'
+    subscription?.period || '6_months'
   );
   const [showSuccess, setShowSuccess] = useState(false);
   const [showCancelled, setShowCancelled] = useState(false);

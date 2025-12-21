@@ -122,17 +122,16 @@ export async function cleanupExpiredPayments(
 /**
  * Calculate subscription end date, optionally extending from existing end date
  *
- * @param period - Subscription period ('1_month', '3_months', '12_months')
+ * @param period - Subscription period ('6_months', '12_months')
  * @param fromDate - Optional existing end date to extend from
  * @returns Calculated end date
  */
 export function calculateSubscriptionEndDate(
-  period: '1_month' | '3_months' | '12_months',
+  period: '6_months' | '12_months',
   fromDate?: Date | string | null
 ): Date {
   const periodMonths: Record<string, number> = {
-    '1_month': 1,
-    '3_months': 3,
+    '6_months': 6,
     '12_months': 12,
   };
 

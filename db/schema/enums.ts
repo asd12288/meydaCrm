@@ -66,8 +66,7 @@ export const subscriptionPlanEnum = pgEnum('subscription_plan', [
 
 // Subscription period options
 export const subscriptionPeriodEnum = pgEnum('subscription_period', [
-  '1_month',
-  '3_months',
+  '6_months',
   '12_months',
 ]);
 

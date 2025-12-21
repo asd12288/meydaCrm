@@ -114,12 +114,13 @@ export function getLeadColumns({ isAdmin, includeSelection, onDelete }: ColumnOp
         cell: (info) => (
           <Link
             href={`/leads/${info.row.original.id}`}
-            className="text-primary hover:underline font-medium"
+            className="text-primary hover:underline font-medium truncate block max-w-32"
+            title={info.getValue()}
           >
             {info.getValue()}
           </Link>
         ),
-        size: 150,
+        size: 120,
       }
     )
   );

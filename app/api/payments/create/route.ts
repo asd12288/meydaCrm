@@ -23,14 +23,13 @@ export const dynamic = 'force-dynamic';
 
 // Plan pricing configuration
 const PLANS = {
-  standard: { basePrice: 99 },
-  pro: { basePrice: 199 },
+  standard: { basePrice: 180 },
+  pro: { basePrice: 220 },
 } as const;
 
 const PERIODS = {
-  '1_month': { months: 1, discount: 0 },
-  '3_months': { months: 3, discount: 0.1 },
-  '12_months': { months: 12, discount: 0.15 },
+  '6_months': { months: 6, discount: 0 },
+  '12_months': { months: 12, discount: 0.08 },
 } as const;
 
 type PlanId = keyof typeof PLANS;

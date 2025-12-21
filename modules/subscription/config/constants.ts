@@ -12,10 +12,11 @@ export interface PlanConfig {
 export const PLANS: Record<SubscriptionPlan, PlanConfig> = {
   standard: {
     id: 'standard',
-    name: 'Standard',
-    basePrice: 10,
+    name: 'Basic',
+    basePrice: 180,
     leads: 10000,
     features: [
+      '10 utilisateurs maximum',
       '10 000 leads maximum',
       'Support par email (48h)',
     ],
@@ -23,12 +24,14 @@ export const PLANS: Record<SubscriptionPlan, PlanConfig> = {
   pro: {
     id: 'pro',
     name: 'Pro',
-    basePrice: 10,
+    basePrice: 220,
     leads: Infinity,
     features: [
+      'Utilisateurs illimites',
       'Leads illimites',
       'Support prioritaire (24h)',
       'Sauvegardes automatiques',
+      'Export des donnees',
       'Modifications sur demande',
     ],
   },
@@ -44,25 +47,18 @@ export interface PeriodConfig {
 }
 
 export const PERIODS: Record<SubscriptionPeriod, PeriodConfig> = {
-  '1_month': {
-    id: '1_month',
-    months: 1,
+  '6_months': {
+    id: '6_months',
+    months: 6,
     discount: 0,
-    label: '1 Mois',
-    shortLabel: '1 mois',
-  },
-  '3_months': {
-    id: '3_months',
-    months: 3,
-    discount: 0.10,
-    label: '3 Mois (-10%)',
-    shortLabel: '3 mois',
+    label: '6 Mois',
+    shortLabel: '6 mois',
   },
   '12_months': {
     id: '12_months',
     months: 12,
-    discount: 0.15,
-    label: '12 Mois (-15%)',
+    discount: 0.08,
+    label: '12 Mois (-8%)',
     shortLabel: '12 mois',
   },
 };
@@ -70,24 +66,26 @@ export const PERIODS: Record<SubscriptionPeriod, PeriodConfig> = {
 // Calculate price for a plan and period
 export function calculatePrice(plan: SubscriptionPlan, period: SubscriptionPeriod): number {
   const planConfig = PLANS[plan];
-  const periodConfig = PERIODS[period];
-  
+  // Handle legacy periods - default to 6_months if period not found
+  const periodConfig = PERIODS[period as keyof typeof PERIODS] || PERIODS['6_months'];
+
   const totalBeforeDiscount = planConfig.basePrice * periodConfig.months;
   const discountAmount = totalBeforeDiscount * periodConfig.discount;
-  
+
   return Math.round(totalBeforeDiscount - discountAmount);
 }
 
 // Get monthly price for display
 export function getMonthlyPrice(plan: SubscriptionPlan, period: SubscriptionPeriod): number {
   const total = calculatePrice(plan, period);
-  const months = PERIODS[period].months;
-  return Math.round(total / months);
+  // Handle legacy periods - default to 6_months if period not found
+  const periodConfig = PERIODS[period as keyof typeof PERIODS] || PERIODS['6_months'];
+  return Math.round(total / periodConfig.months);
 }
 
 // Pre-calculated prices for reference
-// Standard: $99 (1mo), $267 (3mo, ~$89/mo), $1,010 (12mo, ~$84/mo)
-// Pro: $199 (1mo), $537 (3mo, ~$179/mo), $2,030 (12mo, ~$169/mo)
+// Basic: $1,080 (6mo, $180/mo), $1,987 (12mo, ~$166/mo with 8% off)
+// Pro: $1,320 (6mo, $220/mo), $2,429 (12mo, ~$202/mo with 8% off)
 
 // Grace period in days after subscription expires before full block
 export const GRACE_PERIOD_DAYS = 7;

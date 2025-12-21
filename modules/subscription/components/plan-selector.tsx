@@ -17,7 +17,7 @@ interface PlanSelectorProps {
 export function PlanSelector({
   onSelect,
   defaultPlan = 'standard',
-  defaultPeriod = '1_month',
+  defaultPeriod = '6_months',
   disabled = false,
 }: PlanSelectorProps) {
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan>(defaultPlan);
