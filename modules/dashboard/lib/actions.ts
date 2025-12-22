@@ -369,7 +369,7 @@ export async function getAdminRecentActivityData(): Promise<ActivityItem[]> {
       lead_id,
       actor_id,
       leads!inner(id, first_name, last_name, status),
-      profiles!lead_history_actor_id_profiles_id_fk(id, display_name)
+      profiles!lead_history_actor_id_fkey(id, display_name)
     `)
     .order('created_at', { ascending: false })
     .limit(20);

@@ -243,7 +243,7 @@ describe('Import System - Get Import Job', () => {
 
     const { data, error } = await client
       .from('import_jobs')
-      .select('*, creator:profiles!import_jobs_created_by_profiles_id_fk(id, display_name)')
+      .select('*, creator:profiles!import_jobs_created_by_fkey(id, display_name)')
       .eq('id', importJobId)
       .single()
 
@@ -320,7 +320,7 @@ describe('Import System - Get Import Jobs', () => {
 
     const { data, error } = await client
       .from('import_jobs')
-      .select('*, creator:profiles!import_jobs_created_by_profiles_id_fk(id, display_name)')
+      .select('*, creator:profiles!import_jobs_created_by_fkey(id, display_name)')
       .order('created_at', { ascending: false })
       .limit(50)
 

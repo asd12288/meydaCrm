@@ -35,7 +35,7 @@ async function fetchLeadsChunk(
 ) {
   let query = supabase
     .from('leads')
-    .select('*, assignee:profiles!leads_assigned_to_profiles_id_fk(id, display_name)')
+    .select('*, assignee:profiles!leads_assigned_to_fkey(id, display_name)')
     .is('deleted_at', null);
 
   // Apply search filter (min 3 chars for performance, sanitized for security)
