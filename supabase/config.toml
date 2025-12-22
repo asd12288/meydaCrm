@@ -127,6 +127,7 @@ enabled = false
 # =============================================================================
 # Edge Functions Configuration
 # =============================================================================
+# Functions declared here are automatically deployed to preview branches.
 
 # Admin user creation - requires admin JWT
 [functions.admin-create-user]
