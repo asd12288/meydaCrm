@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import Link from 'next/link';
 import {
   IconPlus,
   IconCheck,
@@ -10,12 +9,12 @@ import {
   IconLoader2,
   IconRefresh,
   IconTrash,
-  IconChevronRight,
+  IconDownload,
   IconFileSpreadsheet,
 } from '@tabler/icons-react';
-import { CardBox, ConfirmDialog, FormErrorAlert } from '@/modules/shared';
+import { CardBox, ConfirmDialog, FormErrorAlert, Pagination } from '@/modules/shared';
 import { Button } from '@/components/ui/button';
-import { retryImportJob, deleteImportJob, getRecentImportJobs } from '../lib/actions';
+import { retryImportJob, deleteImportJob, getPaginatedImportJobs, downloadImportFile } from '../lib/actions';
 import type { ImportJobWithStats } from '../types';
 
 // Polling interval in ms (3 seconds)
@@ -72,6 +71,8 @@ function calculateProgress(job: ImportJobWithStats): { percentage: number; isInd
   return { percentage: 0, isIndeterminate: false };
 }
 
+const PAGE_SIZE = 10;
+
 interface RecentHistoryCardProps {
   initialJobs: ImportJobWithStats[];
   initialTotal: number;
@@ -85,6 +86,8 @@ export function RecentHistoryCard({
 }: RecentHistoryCardProps) {
   const [jobs, setJobs] = useState<ImportJobWithStats[]>(initialJobs);
   const [total, setTotal] = useState(initialTotal);
+  const [totalPages, setTotalPages] = useState(Math.ceil(initialTotal / PAGE_SIZE));
+  const [page, setPage] = useState(1);
   const [actionInProgress, setActionInProgress] = useState<string | null>(null);
   const [confirmDialog, setConfirmDialog] = useState<{
     type: 'retry' | 'delete';
@@ -92,13 +95,14 @@ export function RecentHistoryCard({
   } | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
-  const refreshJobs = useCallback(async () => {
-    const result = await getRecentImportJobs(10);
+  const refreshJobs = useCallback(async (targetPage: number = page) => {
+    const result = await getPaginatedImportJobs(targetPage, PAGE_SIZE);
     if (result.success && result.data) {
       setJobs(result.data.jobs);
       setTotal(result.data.total);
+      setTotalPages(result.data.totalPages);
     }
-  }, []);
+  }, [page]);
 
   // Check if there are any active jobs that need polling
   const hasActiveJobs = jobs.some((job) => ACTIVE_STATUSES.includes(job.status));
@@ -166,6 +170,33 @@ export function RecentHistoryCard({
 
   const handleConfirmCancel = () => {
     setConfirmDialog(null);
+  };
+
+  const handlePageChange = async (newPage: number) => {
+    setPage(newPage);
+    await refreshJobs(newPage);
+  };
+
+  const handleDownload = async (jobId: string) => {
+    setActionError(null);
+    setActionInProgress(jobId);
+    try {
+      const result = await downloadImportFile(jobId);
+      if (result.success && result.data) {
+        const link = document.createElement('a');
+        link.href = result.data.url;
+        link.download = result.data.fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else {
+        setActionError(result.error || 'Erreur lors du téléchargement');
+      }
+    } catch {
+      setActionError('Erreur lors du téléchargement');
+    } finally {
+      setActionInProgress(null);
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -302,6 +333,15 @@ export function RecentHistoryCard({
                       </td>
                       <td className="px-4 py-2.5">
                         <div className="flex items-center justify-end gap-1">
+                          <Button
+                            variant="circleHover"
+                            size="iconSm"
+                            onClick={() => handleDownload(job.id)}
+                            disabled={actionInProgress === job.id}
+                            title="Télécharger le fichier"
+                          >
+                            <IconDownload className="w-4 h-4" />
+                          </Button>
                           {canRetry && (
                             <Button
                               variant="circleHover"
@@ -334,19 +374,16 @@ export function RecentHistoryCard({
             </table>
           </div>
 
-          {/* Footer */}
-          {total > jobs.length && (
-            <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
-              <p className="text-sm text-darklink">
-                Affichage {jobs.length} sur {total} imports
-              </p>
-              <Link
-                href="/import/history"
-                className="flex items-center gap-1 text-sm text-primary hover:underline"
-              >
-                Voir tout l&apos;historique
-                <IconChevronRight className="w-4 h-4" />
-              </Link>
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="mt-4">
+              <Pagination
+                total={total}
+                page={page}
+                pageSize={PAGE_SIZE}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+              />
             </div>
           )}
         </>

@@ -85,6 +85,7 @@ export {
   getImportJob,
   getImportJobs,
   getRecentImportJobs,
+  getPaginatedImportJobs,
   updateImportJobMapping,
   updateImportJobOptions,
   startImportParsing,
@@ -92,6 +93,7 @@ export {
   cancelImportJob,
   getImportRows,
   deleteImportJob,
+  downloadImportFile,
 } from './lib/actions';
 
 // Hooks
@@ -100,7 +102,6 @@ export { useImportSSE, useImportProgress } from './hooks/use-import-sse';
 
 // Views
 export { ImportWizardView } from './views/import-wizard-view';
-export { ImportHistoryView } from './views/import-history-view';
 export { ImportDashboardView } from './views/import-dashboard-view';
 
 // Components (6-step wizard V2)
