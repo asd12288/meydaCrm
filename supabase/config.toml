@@ -134,17 +134,23 @@ enabled = false
 # =============================================================================
 # Edge Functions Configuration
 # =============================================================================
-# NOTE: Edge Functions are deployed via GitHub Actions (.github/workflows/supabase-preview.yml)
-# We removed the [functions.*] declarations here because:
-# 1. Supabase auto-deployment from config.toml was failing on preview branches
-# 2. Our GitHub Action deploys functions via CLI with explicit --no-verify-jwt flags
-# 3. This prevents the "FUNCTIONS_FAILED" status on Supabase Preview checks
+# Declaring functions here enables automatic deployment on preview branches
+# via the Supabase GitHub Integration.
 #
-# Function JWT settings (enforced via CLI deployment):
-# - admin-create-user: verify_jwt = true
-# - admin-reset-password: verify_jwt = true
-# - admin-delete-user: verify_jwt = true
-# - subscription-webhook: verify_jwt = false
+# The deployment pipeline runs: Configure → Migrate → Seed → Deploy
+# Functions declared here are automatically deployed to preview branches.
+
+[functions.admin-create-user]
+verify_jwt = true
+
+[functions.admin-reset-password]
+verify_jwt = true
+
+[functions.admin-delete-user]
+verify_jwt = true
+
+[functions.subscription-webhook]
+verify_jwt = false
 # =============================================================================
 # Production Remote Configuration
 # =============================================================================
