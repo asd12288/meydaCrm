@@ -1,3 +1,0 @@
--- Migration: add_profile_trigger_and_storage
--- Applied directly to production via Supabase MCP
--- Placeholder for branching compatibility

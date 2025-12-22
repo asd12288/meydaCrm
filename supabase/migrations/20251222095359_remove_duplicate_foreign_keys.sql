@@ -1,3 +1,0 @@
--- Migration: remove_duplicate_foreign_keys
--- Applied directly to production via Supabase MCP
--- Placeholder for branching compatibility

@@ -1,3 +1,0 @@
--- Migration: add_system_banners
--- Applied directly to production via Supabase MCP
--- Placeholder for branching compatibility

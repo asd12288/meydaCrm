@@ -1,3 +1,0 @@
--- Migration: optimize_leads_rls_for_performance
--- Applied directly to production via Supabase MCP
--- Placeholder for branching compatibility

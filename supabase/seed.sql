@@ -34,7 +34,7 @@ INSERT INTO auth.users (
   '00000000-0000-0000-0000-000000000001',
   '00000000-0000-0000-0000-000000000000',
   'admin@crm.local',
-  crypt('123456', gen_salt('bf')),
+  extensions.crypt('123456', extensions.gen_salt('bf')),
   now(),
   '{"username": "admin", "display_name": "Admin Test", "role": "admin"}'::jsonb,
   now(),
@@ -67,7 +67,7 @@ INSERT INTO auth.users (
   '00000000-0000-0000-0000-000000000002',
   '00000000-0000-0000-0000-000000000000',
   'marie@crm.local',
-  crypt('123456', gen_salt('bf')),
+  extensions.crypt('123456', extensions.gen_salt('bf')),
   now(),
   '{"username": "marie", "display_name": "Marie Dupont", "role": "sales"}'::jsonb,
   now(),
@@ -100,7 +100,7 @@ INSERT INTO auth.users (
   '00000000-0000-0000-0000-000000000003',
   '00000000-0000-0000-0000-000000000000',
   'jean@crm.local',
-  crypt('123456', gen_salt('bf')),
+  extensions.crypt('123456', extensions.gen_salt('bf')),
   now(),
   '{"username": "jean", "display_name": "Jean Martin", "role": "sales"}'::jsonb,
   now(),
@@ -133,7 +133,7 @@ INSERT INTO auth.users (
   '00000000-0000-0000-0000-000000000004',
   '00000000-0000-0000-0000-000000000000',
   'sophie@crm.local',
-  crypt('123456', gen_salt('bf')),
+  extensions.crypt('123456', extensions.gen_salt('bf')),
   now(),
   '{"username": "sophie", "display_name": "Sophie Bernard", "role": "sales"}'::jsonb,
   now(),
@@ -147,21 +147,20 @@ INSERT INTO auth.users (
 ) ON CONFLICT (id) DO NOTHING;
 
 -- =============================================================================
--- SECTION 2: Update Profiles with Correct Roles
+-- SECTION 2: Create Profiles Directly (trigger doesn't fire during seed)
 -- =============================================================================
--- The trigger creates profiles, but we need to ensure correct roles
 
-UPDATE public.profiles SET role = 'admin', display_name = 'Admin Test', avatar = 'avatar-01'
-WHERE id = '00000000-0000-0000-0000-000000000001';
-
-UPDATE public.profiles SET role = 'sales', display_name = 'Marie Dupont', avatar = 'avatar-02'
-WHERE id = '00000000-0000-0000-0000-000000000002';
-
-UPDATE public.profiles SET role = 'sales', display_name = 'Jean Martin', avatar = 'avatar-03'
-WHERE id = '00000000-0000-0000-0000-000000000003';
-
-UPDATE public.profiles SET role = 'sales', display_name = 'Sophie Bernard', avatar = 'avatar-04'
-WHERE id = '00000000-0000-0000-0000-000000000004';
+INSERT INTO public.profiles (id, role, display_name, avatar, created_at, updated_at)
+VALUES
+  ('00000000-0000-0000-0000-000000000001', 'admin', 'Admin Test', 'avatar-01', now(), now()),
+  ('00000000-0000-0000-0000-000000000002', 'sales', 'Marie Dupont', 'avatar-02', now(), now()),
+  ('00000000-0000-0000-0000-000000000003', 'sales', 'Jean Martin', 'avatar-03', now(), now()),
+  ('00000000-0000-0000-0000-000000000004', 'sales', 'Sophie Bernard', 'avatar-04', now(), now())
+ON CONFLICT (id) DO UPDATE SET
+  role = EXCLUDED.role,
+  display_name = EXCLUDED.display_name,
+  avatar = EXCLUDED.avatar,
+  updated_at = now();
 
 -- =============================================================================
 -- SECTION 3: Sample Leads (50 leads with various statuses)

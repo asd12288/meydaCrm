@@ -1,3 +1,0 @@
--- Migration: import_system_v3
--- Applied directly to production via Supabase MCP
--- Placeholder for branching compatibility

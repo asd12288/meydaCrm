@@ -1,3 +1,0 @@
--- Migration: leads_search_indexes_v2
--- Applied directly to production via Supabase MCP
--- Placeholder for branching compatibility

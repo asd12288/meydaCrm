@@ -1,3 +1,0 @@
--- Migration: fix_notifications_broadcast_trigger
--- Applied directly to production via Supabase MCP
--- Placeholder for branching compatibility

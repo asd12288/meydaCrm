@@ -1,3 +1,0 @@
--- Migration: add_freeform_note_positions
--- Applied directly to production via Supabase MCP
--- Placeholder for branching compatibility

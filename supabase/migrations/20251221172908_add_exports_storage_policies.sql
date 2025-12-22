@@ -1,3 +1,0 @@
--- Migration: add_exports_storage_policies
--- Applied directly to production via Supabase MCP
--- Placeholder for branching compatibility

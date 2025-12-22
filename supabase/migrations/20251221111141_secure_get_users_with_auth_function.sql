@@ -1,3 +1,0 @@
--- Migration: secure_get_users_with_auth_function
--- Applied directly to production via Supabase MCP
--- Placeholder for branching compatibility

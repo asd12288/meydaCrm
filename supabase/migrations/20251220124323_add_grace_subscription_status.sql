@@ -1,3 +1,0 @@
--- Migration: add_grace_subscription_status
--- Applied directly to production via Supabase MCP
--- Placeholder for branching compatibility

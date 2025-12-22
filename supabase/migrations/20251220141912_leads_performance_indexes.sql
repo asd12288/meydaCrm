@@ -1,3 +1,0 @@
--- Migration: leads_performance_indexes
--- Applied directly to production via Supabase MCP
--- Placeholder for branching compatibility

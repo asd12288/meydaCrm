@@ -1,3 +1,0 @@
--- Migration: update_get_users_with_auth_include_avatar_v2
--- Applied directly to production via Supabase MCP
--- Placeholder for branching compatibility

@@ -1,3 +1,0 @@
--- Migration: add_user_leads_stats_function
--- Applied directly to production via Supabase MCP
--- Placeholder for branching compatibility

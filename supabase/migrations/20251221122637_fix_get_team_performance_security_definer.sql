@@ -1,3 +1,0 @@
--- Migration: fix_get_team_performance_security_definer
--- Applied directly to production via Supabase MCP
--- Placeholder for branching compatibility

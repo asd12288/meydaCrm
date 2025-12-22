@@ -1,3 +1,0 @@
--- Migration: migrate_lead_status_data
--- Applied directly to production via Supabase MCP
--- Placeholder for branching compatibility
