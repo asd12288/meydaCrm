@@ -7,6 +7,8 @@
     "dev:prod": "next dev",
     "dev:branch": "node -e \"require('dotenv').config({path:'.env.development'})\" && next dev",
     "dev:webhook": "node scripts/dev-webhook.mjs",
+    "dev:local": "concurrently -n \"supabase,next,webhook\" -c \"magenta,cyan,yellow\" \"npx supabase start\" \"next dev\" \"node scripts/dev-webhook.mjs\"",
+    "dev:all": "concurrently -n \"next,webhook\" -c \"cyan,yellow\" \"next dev\" \"node scripts/dev-webhook.mjs\"",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",

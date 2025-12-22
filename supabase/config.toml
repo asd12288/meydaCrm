@@ -78,6 +78,11 @@ public = true
 file_size_limit = "5MiB"
 allowed_mime_types = ["image/jpeg", "image/png", "image/gif", "image/webp"]
 
+[storage.buckets.exports]
+public = false
+file_size_limit = "100MiB"
+allowed_mime_types = ["text/csv", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"]
+
 # =============================================================================
 # Auth Configuration
 # =============================================================================
@@ -93,9 +98,11 @@ enable_anonymous_sign_ins = false
 minimum_password_length = 6
 
 [auth.email]
+# enable_signup enables email/password LOGIN (not just signup)
+# We still control public signup via [auth].enable_signup = false
+enable_signup = true
 enable_confirmations = false
 double_confirm_changes = false
-enable_signup = false
 
 [auth.sms]
 enable_signup = false

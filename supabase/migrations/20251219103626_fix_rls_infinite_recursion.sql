@@ -1,3 +1,3 @@
 -- Migration: fix_rls_infinite_recursion
--- Applied directly to production via Supabase MCP
--- Placeholder for branching compatibility
+-- Content moved to initial_schema_with_rls.sql for local dev compatibility
+-- Production already has this applied

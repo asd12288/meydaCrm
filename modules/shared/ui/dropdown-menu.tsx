@@ -84,7 +84,7 @@ export function DropdownMenu({
   const menuContent = (
     <div
       ref={menuRef}
-      className={`${widthClass} ${!portal ? zIndexClass : ''} bg-white dark:bg-dark rounded-xl border border-border shadow-lg overflow-hidden ${portal ? 'animate-in fade-in duration-150' : 'animate-in fade-in slide-in-from-top-2 duration-200'}`}
+      className={`${widthClass} bg-white dark:bg-dark rounded-xl border border-border shadow-lg overflow-hidden ${portal ? 'animate-in fade-in duration-150' : 'animate-in fade-in slide-in-from-top-2 duration-200'}`}
       style={
         portal && menuPosition
           ? {
@@ -124,7 +124,7 @@ export function DropdownMenu({
           {typeof trigger === 'function' ? trigger(isOpen) : trigger}
         </div>
         {isOpen && (
-          <div className={`absolute ${positionClasses[position]}`}>
+          <div className={`absolute ${positionClasses[position]} ${zIndexClass}`}>
             {menuContent}
           </div>
         )}

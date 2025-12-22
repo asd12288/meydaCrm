@@ -14,122 +14,234 @@
 -- Note: In preview branches, we insert directly into auth.users.
 -- The profile trigger will automatically create corresponding profiles.
 
--- Admin user (password: TestAdmin123!)
+-- Admin user (password: 123456)
 INSERT INTO auth.users (
   id,
   instance_id,
   email,
   encrypted_password,
   email_confirmed_at,
+  raw_app_meta_data,
   raw_user_meta_data,
   created_at,
   updated_at,
   role,
-  aud
+  aud,
+  confirmation_token,
+  recovery_token,
+  email_change_token_new,
+  email_change_token_current,
+  email_change,
+  reauthentication_token
 ) VALUES (
   '00000000-0000-0000-0000-000000000001',
   '00000000-0000-0000-0000-000000000000',
   'admin@crm.local',
-  crypt('TestAdmin123!', gen_salt('bf')),
+  extensions.crypt('123456', extensions.gen_salt('bf', 10)),
   now(),
+  '{"provider": "email", "providers": ["email"]}'::jsonb,
   '{"username": "admin", "display_name": "Admin Test", "role": "admin"}'::jsonb,
   now(),
   now(),
   'authenticated',
-  'authenticated'
+  'authenticated',
+  '',
+  '',
+  '',
+  '',
+  '',
+  ''
 ) ON CONFLICT (id) DO NOTHING;
 
--- Sales user 1: Marie (password: TestSales123!)
+-- Sales user 1: Marie (password: 123456)
 INSERT INTO auth.users (
   id,
   instance_id,
   email,
   encrypted_password,
   email_confirmed_at,
+  raw_app_meta_data,
   raw_user_meta_data,
   created_at,
   updated_at,
   role,
-  aud
+  aud,
+  confirmation_token,
+  recovery_token,
+  email_change_token_new,
+  email_change_token_current,
+  email_change,
+  reauthentication_token
 ) VALUES (
   '00000000-0000-0000-0000-000000000002',
   '00000000-0000-0000-0000-000000000000',
   'marie@crm.local',
-  crypt('TestSales123!', gen_salt('bf')),
+  extensions.crypt('123456', extensions.gen_salt('bf', 10)),
   now(),
+  '{"provider": "email", "providers": ["email"]}'::jsonb,
   '{"username": "marie", "display_name": "Marie Dupont", "role": "sales"}'::jsonb,
   now(),
   now(),
   'authenticated',
-  'authenticated'
+  'authenticated',
+  '',
+  '',
+  '',
+  '',
+  '',
+  ''
 ) ON CONFLICT (id) DO NOTHING;
 
--- Sales user 2: Jean (password: TestSales123!)
+-- Sales user 2: Jean (password: 123456)
 INSERT INTO auth.users (
   id,
   instance_id,
   email,
   encrypted_password,
   email_confirmed_at,
+  raw_app_meta_data,
   raw_user_meta_data,
   created_at,
   updated_at,
   role,
-  aud
+  aud,
+  confirmation_token,
+  recovery_token,
+  email_change_token_new,
+  email_change_token_current,
+  email_change,
+  reauthentication_token
 ) VALUES (
   '00000000-0000-0000-0000-000000000003',
   '00000000-0000-0000-0000-000000000000',
   'jean@crm.local',
-  crypt('TestSales123!', gen_salt('bf')),
+  extensions.crypt('123456', extensions.gen_salt('bf', 10)),
   now(),
+  '{"provider": "email", "providers": ["email"]}'::jsonb,
   '{"username": "jean", "display_name": "Jean Martin", "role": "sales"}'::jsonb,
   now(),
   now(),
   'authenticated',
-  'authenticated'
+  'authenticated',
+  '',
+  '',
+  '',
+  '',
+  '',
+  ''
 ) ON CONFLICT (id) DO NOTHING;
 
--- Sales user 3: Sophie (password: TestSales123!)
+-- Sales user 3: Sophie (password: 123456)
 INSERT INTO auth.users (
   id,
   instance_id,
   email,
   encrypted_password,
   email_confirmed_at,
+  raw_app_meta_data,
   raw_user_meta_data,
   created_at,
   updated_at,
   role,
-  aud
+  aud,
+  confirmation_token,
+  recovery_token,
+  email_change_token_new,
+  email_change_token_current,
+  email_change,
+  reauthentication_token
 ) VALUES (
   '00000000-0000-0000-0000-000000000004',
   '00000000-0000-0000-0000-000000000000',
   'sophie@crm.local',
-  crypt('TestSales123!', gen_salt('bf')),
+  extensions.crypt('123456', extensions.gen_salt('bf', 10)),
   now(),
+  '{"provider": "email", "providers": ["email"]}'::jsonb,
   '{"username": "sophie", "display_name": "Sophie Bernard", "role": "sales"}'::jsonb,
   now(),
   now(),
   'authenticated',
-  'authenticated'
+  'authenticated',
+  '',
+  '',
+  '',
+  '',
+  '',
+  ''
 ) ON CONFLICT (id) DO NOTHING;
 
 -- =============================================================================
--- SECTION 2: Update Profiles with Correct Roles
+-- SECTION 1b: Create Auth Identities (required for login)
 -- =============================================================================
--- The trigger creates profiles, but we need to ensure correct roles
+-- Supabase Auth requires an identity record for each user to enable login
 
-UPDATE public.profiles SET role = 'admin', display_name = 'Admin Test', avatar = 'avatar-01'
-WHERE id = '00000000-0000-0000-0000-000000000001';
+INSERT INTO auth.identities (
+  id,
+  user_id,
+  provider_id,
+  provider,
+  identity_data,
+  last_sign_in_at,
+  created_at,
+  updated_at
+) VALUES
+  (
+    '00000000-0000-0000-0000-000000000001',
+    '00000000-0000-0000-0000-000000000001',
+    '00000000-0000-0000-0000-000000000001',
+    'email',
+    '{"sub": "00000000-0000-0000-0000-000000000001", "email": "admin@crm.local", "email_verified": false, "phone_verified": false}'::jsonb,
+    now(),
+    now(),
+    now()
+  ),
+  (
+    '00000000-0000-0000-0000-000000000002',
+    '00000000-0000-0000-0000-000000000002',
+    '00000000-0000-0000-0000-000000000002',
+    'email',
+    '{"sub": "00000000-0000-0000-0000-000000000002", "email": "marie@crm.local", "email_verified": false, "phone_verified": false}'::jsonb,
+    now(),
+    now(),
+    now()
+  ),
+  (
+    '00000000-0000-0000-0000-000000000003',
+    '00000000-0000-0000-0000-000000000003',
+    '00000000-0000-0000-0000-000000000003',
+    'email',
+    '{"sub": "00000000-0000-0000-0000-000000000003", "email": "jean@crm.local", "email_verified": false, "phone_verified": false}'::jsonb,
+    now(),
+    now(),
+    now()
+  ),
+  (
+    '00000000-0000-0000-0000-000000000004',
+    '00000000-0000-0000-0000-000000000004',
+    '00000000-0000-0000-0000-000000000004',
+    'email',
+    '{"sub": "00000000-0000-0000-0000-000000000004", "email": "sophie@crm.local", "email_verified": false, "phone_verified": false}'::jsonb,
+    now(),
+    now(),
+    now()
+  )
+ON CONFLICT (id) DO NOTHING;
 
-UPDATE public.profiles SET role = 'sales', display_name = 'Marie Dupont', avatar = 'avatar-02'
-WHERE id = '00000000-0000-0000-0000-000000000002';
+-- =============================================================================
+-- SECTION 2: Create Profiles Explicitly
+-- =============================================================================
+-- Insert profiles directly (trigger may not fire reliably in local dev)
 
-UPDATE public.profiles SET role = 'sales', display_name = 'Jean Martin', avatar = 'avatar-03'
-WHERE id = '00000000-0000-0000-0000-000000000003';
-
-UPDATE public.profiles SET role = 'sales', display_name = 'Sophie Bernard', avatar = 'avatar-04'
-WHERE id = '00000000-0000-0000-0000-000000000004';
+INSERT INTO public.profiles (id, role, display_name, avatar, created_at, updated_at)
+VALUES
+  ('00000000-0000-0000-0000-000000000001', 'admin', 'Admin Test', 'avatar-01', now(), now()),
+  ('00000000-0000-0000-0000-000000000002', 'sales', 'Marie Dupont', 'avatar-02', now(), now()),
+  ('00000000-0000-0000-0000-000000000003', 'sales', 'Jean Martin', 'avatar-03', now(), now()),
+  ('00000000-0000-0000-0000-000000000004', 'sales', 'Sophie Bernard', 'avatar-04', now(), now())
+ON CONFLICT (id) DO UPDATE SET
+  role = EXCLUDED.role,
+  display_name = EXCLUDED.display_name,
+  avatar = EXCLUDED.avatar;
 
 -- =============================================================================
 -- SECTION 3: Sample Leads (50 leads with various statuses)
@@ -267,9 +379,9 @@ VALUES (
 -- =============================================================================
 -- SEED COMPLETE
 -- =============================================================================
--- Test credentials (Preview Branches Only):
--- Admin: admin@crm.local / TestAdmin123!
--- Sales: marie@crm.local / TestSales123!
--- Sales: jean@crm.local / TestSales123!
--- Sales: sophie@crm.local / TestSales123!
+-- Test credentials (Local/Preview Branches):
+-- Admin: admin@crm.local / 123456
+-- Sales: marie@crm.local / 123456
+-- Sales: jean@crm.local / 123456
+-- Sales: sophie@crm.local / 123456
 -- =============================================================================
