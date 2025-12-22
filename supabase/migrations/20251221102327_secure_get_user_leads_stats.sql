@@ -1,0 +1,3 @@
+-- Migration: secure_get_user_leads_stats
+-- Applied directly to production via Supabase MCP
+-- Placeholder for branching compatibility

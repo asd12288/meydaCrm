@@ -1,0 +1,3 @@
+-- Migration: fix_rls_infinite_recursion
+-- Applied directly to production via Supabase MCP
+-- Placeholder for branching compatibility

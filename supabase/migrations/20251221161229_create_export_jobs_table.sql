@@ -1,0 +1,3 @@
+-- Migration: create_export_jobs_table
+-- Applied directly to production via Supabase MCP
+-- Placeholder for branching compatibility

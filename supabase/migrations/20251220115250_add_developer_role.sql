@@ -1,0 +1,3 @@
+-- Migration: add_developer_role
+-- Applied directly to production via Supabase MCP
+-- Placeholder for branching compatibility

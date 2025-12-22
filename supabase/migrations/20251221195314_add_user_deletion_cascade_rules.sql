@@ -1,0 +1,3 @@
+-- Migration: add_user_deletion_cascade_rules
+-- Applied directly to production via Supabase MCP
+-- Placeholder for branching compatibility

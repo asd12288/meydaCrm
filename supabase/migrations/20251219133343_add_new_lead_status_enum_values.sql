@@ -1,0 +1,3 @@
+-- Migration: add_new_lead_status_enum_values
+-- Applied directly to production via Supabase MCP
+-- Placeholder for branching compatibility

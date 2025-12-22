@@ -1,0 +1,3 @@
+-- Migration: fix_profile_trigger
+-- Applied directly to production via Supabase MCP
+-- Placeholder for branching compatibility
