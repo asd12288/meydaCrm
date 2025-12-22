@@ -1127,34 +1127,47 @@ import { FormSelectDropdown } from '@/modules/shared';
 
 ---
 
-## 17) Development Workflow
+## 17) Development Workflow (Supabase Branching)
 
-### Branch Strategy
+### How Branching Works
 
-| Environment | Supabase Project | Git Branch | Vercel Environment |
-|-------------|------------------|------------|-------------------|
-| **Production** | `owwyxrxojltmupqrvqcp` | `main` | Production |
-| **Preview/Dev** | `wdtzyhtmrpbsrxycsqrf` | feature branches | Preview |
+Supabase Branching creates **ephemeral preview branches** automatically when you open a PR:
 
-### Supabase Branches
+| Environment | Supabase | Git Branch | Vercel |
+|-------------|----------|------------|--------|
+| **Production** | `owwyxrxojltmupqrvqcp` (main) | `main` | Production |
+| **Preview** | Auto-created branch | feature branches | Preview (auto-synced) |
 
-- **Production**: `owwyxrxojltmupqrvqcp` - NEVER modify directly without explicit user confirmation
-- **Development**: `wdtzyhtmrpbsrxycsqrf` - Use for all testing and development
+**The flow:**
+1. **Create PR** → Supabase creates a preview branch with your migrations
+2. **Seeded Data** → Preview branch runs `supabase/seed.sql` (sample users + leads)
+3. **Vercel Sync** → Vercel preview deployment automatically uses preview branch credentials
+4. **Merge PR** → Migrations are applied to production
+5. **Cleanup** → Preview branch is automatically deleted
+
+### Test Credentials (Preview Branches Only)
+
+| Role | Email | Password |
+|------|-------|----------|
+| Admin | admin@crm.local | TestAdmin123! |
+| Sales | marie@crm.local | TestSales123! |
+| Sales | jean@crm.local | TestSales123! |
+| Sales | sophie@crm.local | TestSales123! |
 
 ### Safety Rules (MUST follow)
 
-1. **NEVER** run DELETE/DROP/TRUNCATE on production without explicit user confirmation
-2. **ALWAYS** verify `project_id` before executing SQL via MCP tools:
+1. **NEVER** modify production directly - always use PRs
+2. **ALWAYS** wait for Supabase Preview status check before merging
+3. **NEVER** run DELETE/DROP/TRUNCATE on production without explicit user confirmation
+4. **ALWAYS** verify `project_id` before executing SQL via MCP tools:
    - Production: `owwyxrxojltmupqrvqcp`
-   - Development: `wdtzyhtmrpbsrxycsqrf`
-3. **Test migrations on develop branch first** before applying to production
-4. **Never push directly to main** - Always use feature branches + PRs
+5. **NEVER** put real/sensitive data in `supabase/seed.sql`
 
 ### GitHub Branch Protection
 
 The `main` branch has protection rules enabled:
 - Requires pull request before merging
-- Requires status checks to pass (build)
+- Requires status checks to pass (build + Supabase Preview)
 - No direct pushes allowed
 
 ### Workflow for New Features
@@ -1163,33 +1176,40 @@ The `main` branch has protection rules enabled:
 # 1. Create feature branch
 git checkout -b feature/my-feature
 
-# 2. Develop and test against develop Supabase branch
-# Use SUPABASE_DEV_URL and SUPABASE_DEV_SERVICE_KEY from .env.local
+# 2. Make changes (code + migrations if needed)
+# Add new migration: supabase/migrations/XXXX_description.sql
 
 # 3. Push and create PR
 git push -u origin feature/my-feature
 gh pr create --title "Feature: My feature" --body "Description"
 
-# 4. After PR merge, verify production
+# 4. Wait for status checks:
+#    - CI (build, lint, typecheck)
+#    - Supabase Preview (migrations applied successfully)
+
+# 5. Test on Vercel preview URL with seeded data
+
+# 6. Get approval and merge
+# Migrations auto-apply to production on merge
 ```
 
-### Environment Variables (.env.local)
+### Configuration Files
 
-```bash
-# Production (default for app)
-NEXT_PUBLIC_SUPABASE_URL="https://owwyxrxojltmupqrvqcp.supabase.co"
+| File | Purpose |
+|------|---------|
+| `supabase/config.toml` | Branching, auth, storage, Edge Functions config |
+| `supabase/seed.sql` | Sample data for preview branches |
+| `supabase/migrations/*.sql` | Database migrations |
+| `supabase/functions/` | Edge Functions (deployed per branch) |
 
-# Development branch (for scripts)
-SUPABASE_DEV_URL="https://wdtzyhtmrpbsrxycsqrf.supabase.co"
-SUPABASE_DEV_SERVICE_KEY="[from Supabase dashboard]"
-```
+### Troubleshooting
 
-### Vercel Environment Configuration
-
-| Environment | Supabase URL | Use Case |
-|-------------|--------------|----------|
-| Production | `owwyxrxojltmupqrvqcp` | Live site |
-| Preview | `wdtzyhtmrpbsrxycsqrf` | PR previews |
+| Issue | Solution |
+|-------|----------|
+| Migration failed | Check Supabase dashboard → Branches → View logs |
+| Seed data missing | Delete branch in dashboard, reopen PR |
+| Wrong credentials | Supabase integration auto-syncs, wait 1-2 min |
+| Schema drift | Rebase your feature branch from main |
 
 ### Scripts for Data Management
 
@@ -1197,7 +1217,6 @@ SUPABASE_DEV_SERVICE_KEY="[from Supabase dashboard]"
 |--------|---------|
 | `scripts/clear-production-leads.ts` | Clear all leads (requires --confirm) |
 | `scripts/import-all-leads.ts` | Import XLSX + CSV leads |
-| `scripts/seed-develop-branch.ts` | Seed develop with users + leads |
 
 ---
 

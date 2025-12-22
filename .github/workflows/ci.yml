@@ -33,3 +33,25 @@ jobs:
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+
+  # Monitor Supabase Preview branch status on PRs
+  supabase-preview:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Wait for Supabase Preview
+        uses: fountainhead/action-wait-for-check@v1.2.0
+        id: wait-for-supabase
+        with:
+          checkName: Supabase Preview
+          ref: ${{ github.event.pull_request.head.sha }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          timeoutSeconds: 300
+          intervalSeconds: 10
+        continue-on-error: true
+
+      - name: Check Supabase Preview Status
+        if: steps.wait-for-supabase.outputs.conclusion == 'failure'
+        run: |
+          echo "::warning::Supabase Preview branch failed. Check migration files in Supabase dashboard."
+          exit 1
