@@ -89,7 +89,10 @@
       "Bash(git checkout:*)",
       "Bash(ffmpeg:*)",
       "Bash(ffprobe:*)",
-      "Bash(node scripts/reset-roland-password.mjs:*)"
+      "Bash(node scripts/reset-roland-password.mjs:*)",
+      "Bash(gh pr merge:*)",
+      "Bash(gh pr checks:*)",
+      "Bash(git branch:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

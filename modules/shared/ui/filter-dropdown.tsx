@@ -101,9 +101,9 @@ export function FilterDropdown({
 
       {/* Dropdown menu */}
       {isOpen && (
-        <div className={`absolute top-full left-0 mt-1 min-w-full w-max ${menuMaxWidth} z-9999 bg-white dark:bg-darkgray border border-ld rounded-md shadow-lg dark:shadow-dark-md animate-in fade-in slide-in-from-top-1 duration-150`}>
+        <div className={`absolute top-full left-0 mt-1 min-w-full w-max ${menuMaxWidth} z-9999 bg-white dark:bg-zinc-900 border border-border dark:border-darkborder rounded-md shadow-lg dark:shadow-dark-md`}>
           {/* Clear option - sticky at top */}
-          <div className="py-1 border-b border-ld">
+          <div className="py-1 border-b border-border dark:border-darkborder">
             <Button
               type="button"
               variant="ghost"

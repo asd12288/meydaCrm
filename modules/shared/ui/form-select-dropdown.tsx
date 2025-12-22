@@ -105,7 +105,7 @@ export function FormSelectDropdown({
 
         {/* Dropdown menu */}
         {isOpen && (
-          <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-white dark:bg-dark rounded-lg border border-ld shadow-lg overflow-hidden animate-in fade-in slide-in-from-top-1 duration-150">
+          <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-white dark:bg-zinc-900 rounded-lg border border-border dark:border-darkborder shadow-lg overflow-hidden">
             <div className="py-1 max-h-60 overflow-y-auto">
               {options.map((option) => {
                 const isSelected = option.value === value;
@@ -117,9 +117,9 @@ export function FormSelectDropdown({
                     className={`
                       w-full px-3 py-2 flex items-center gap-2 text-sm text-left
                       transition-colors
-                      ${isSelected 
-                        ? 'text-primary font-medium bg-lightprimary/50 dark:bg-primary/10' 
-                        : 'text-ld hover:bg-lightgray dark:hover:bg-darkgray'
+                      ${isSelected
+                        ? 'text-primary font-medium bg-lightprimary/50 dark:bg-primary/10'
+                        : 'text-ld hover:bg-lightgray dark:hover:bg-darkmuted'
                       }
                     `}
                   >

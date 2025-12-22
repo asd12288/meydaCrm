@@ -130,7 +130,7 @@ export async function notifyImportCompleted(
       ? `Import de "${fileName || 'fichier'}" terminé: ${importedCount} leads importés`
       : `Import de "${fileName || 'fichier'}" terminé avec succès`;
   const metadata = { importJobId, fileName, importedCount };
-  const actionUrl = '/import/history';
+  const actionUrl = '/import';
 
   await createNotificationForUser(
     userId,
@@ -156,7 +156,7 @@ export async function notifyImportFailed(
     ? `L'import de "${fileName || 'fichier'}" a échoué: ${errorMessage}`
     : `L'import de "${fileName || 'fichier'}" a échoué`;
   const metadata = { importJobId, fileName, errorMessage };
-  const actionUrl = '/import/history';
+  const actionUrl = '/import';
 
   await createNotificationForUser(
     userId,

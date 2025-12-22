@@ -40,7 +40,7 @@ export function ImportActivityTable({ imports }: ImportActivityTableProps) {
     <CardBox className="h-full">
       <div className="flex items-center justify-between mb-4">
         <h5 className="card-title">Imports récents</h5>
-        <Link href="/import/history" className="text-sm text-primary hover:underline">
+        <Link href="/import" className="text-sm text-primary hover:underline">
           Voir tout
         </Link>
       </div>

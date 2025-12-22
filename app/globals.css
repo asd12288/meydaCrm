@@ -912,6 +912,15 @@ button.bg-info:hover,
   transition: opacity 100ms ease-out, transform 100ms ease-out;
 }
 
+/* Dropdown menu background - ensures solid opaque background */
+.dropdown-menu-bg {
+  background-color: #ffffff;
+}
+
+.dark .dropdown-menu-bg {
+  background-color: #1a1a1f;
+}
+
 /* Dropdown item stagger animation */
 @keyframes dropdown-item-enter {
   from {

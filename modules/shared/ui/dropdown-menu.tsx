@@ -84,7 +84,7 @@ export function DropdownMenu({
   const menuContent = (
     <div
       ref={menuRef}
-      className={`${widthClass} ${!portal ? zIndexClass : ''} bg-white dark:bg-dark rounded-xl border border-border shadow-lg overflow-hidden ${portal ? 'animate-in fade-in duration-150' : 'animate-in fade-in slide-in-from-top-2 duration-200'}`}
+      className={`${widthClass} ${!portal ? zIndexClass : ''} bg-white dark:bg-zinc-900 rounded-xl border border-border dark:border-darkborder shadow-lg overflow-hidden`}
       style={
         portal && menuPosition
           ? {
@@ -124,8 +124,17 @@ export function DropdownMenu({
           {typeof trigger === 'function' ? trigger(isOpen) : trigger}
         </div>
         {isOpen && (
-          <div className={`absolute ${positionClasses[position]}`}>
-            {menuContent}
+          <div
+            ref={menuRef}
+            className={`absolute ${positionClasses[position]} ${widthClass} ${zIndexClass} bg-white dark:bg-zinc-900 rounded-xl border border-border dark:border-darkborder shadow-lg overflow-hidden`}
+            onClick={(e) => {
+              const target = e.target as HTMLElement;
+              if (target.closest('[data-menu-item]') && closeOnClick) {
+                setIsOpen(false);
+              }
+            }}
+          >
+            {children}
           </div>
         )}
       </div>
@@ -228,7 +237,7 @@ export function DropdownMenuItem({
   className = '',
 }: DropdownMenuItemProps) {
   const variantClasses = {
-    default: 'text-ld hover:bg-lightgray dark:hover:bg-darkgray hover:pl-5',
+    default: 'text-ld hover:bg-lightgray dark:hover:bg-darkmuted hover:pl-5',
     danger: 'text-error hover:bg-error/5 hover:pl-5',
   };
 
@@ -270,7 +279,7 @@ export interface DropdownMenuDividerProps {
  * Dropdown menu divider
  */
 export function DropdownMenuDivider({ className = '' }: DropdownMenuDividerProps) {
-  return <div className={`my-2 border-t border-border ${className}`} />;
+  return <div className={`my-2 border-t border-border dark:border-darkborder ${className}`} />;
 }
 
 export interface DropdownMenuFooterProps {
