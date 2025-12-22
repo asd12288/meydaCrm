@@ -12,9 +12,10 @@
 -- SECTION 1: Create Test Users via auth.users
 -- =============================================================================
 -- Note: In preview branches, we insert directly into auth.users.
--- The profile trigger will automatically create corresponding profiles.
+-- GoTrue requires ALL token fields to be non-null strings (empty string OK).
+-- We also need to create auth.identities entries for email provider.
 
--- Admin user (password: TestAdmin123!)
+-- Admin user (password: 123456)
 INSERT INTO auth.users (
   id,
   instance_id,
@@ -27,12 +28,20 @@ INSERT INTO auth.users (
   created_at,
   updated_at,
   role,
-  aud
+  aud,
+  confirmation_token,
+  recovery_token,
+  email_change_token_new,
+  email_change,
+  email_change_token_current,
+  phone_change_token,
+  phone_change,
+  reauthentication_token
 ) VALUES (
   '00000000-0000-0000-0000-000000000001',
   '00000000-0000-0000-0000-000000000000',
   'admin@crm.local',
-  crypt('TestAdmin123!', gen_salt('bf')),
+  crypt('123456', gen_salt('bf')),
   now(),
   '{"username": "admin", "display_name": "Admin Test", "role": "admin"}'::jsonb,
   '{"provider": "email", "providers": ["email"]}'::jsonb,
@@ -40,15 +49,31 @@ INSERT INTO auth.users (
   now(),
   now(),
   'authenticated',
-  'authenticated'
+  'authenticated',
+  '',
+  '',
+  '',
+  '',
+  '',
+  '',
+  '',
+  ''
 ) ON CONFLICT (id) DO UPDATE SET
   encrypted_password = EXCLUDED.encrypted_password,
   raw_app_meta_data = EXCLUDED.raw_app_meta_data,
   raw_user_meta_data = EXCLUDED.raw_user_meta_data,
   email_confirmed_at = EXCLUDED.email_confirmed_at,
+  confirmation_token = EXCLUDED.confirmation_token,
+  recovery_token = EXCLUDED.recovery_token,
+  email_change_token_new = EXCLUDED.email_change_token_new,
+  email_change = EXCLUDED.email_change,
+  email_change_token_current = EXCLUDED.email_change_token_current,
+  phone_change_token = EXCLUDED.phone_change_token,
+  phone_change = EXCLUDED.phone_change,
+  reauthentication_token = EXCLUDED.reauthentication_token,
   updated_at = now();
 
--- Sales user 1: Marie (password: TestSales123!)
+-- Sales user 1: Marie (password: 123456)
 INSERT INTO auth.users (
   id,
   instance_id,
@@ -61,12 +86,20 @@ INSERT INTO auth.users (
   created_at,
   updated_at,
   role,
-  aud
+  aud,
+  confirmation_token,
+  recovery_token,
+  email_change_token_new,
+  email_change,
+  email_change_token_current,
+  phone_change_token,
+  phone_change,
+  reauthentication_token
 ) VALUES (
   '00000000-0000-0000-0000-000000000002',
   '00000000-0000-0000-0000-000000000000',
   'marie@crm.local',
-  crypt('TestSales123!', gen_salt('bf')),
+  crypt('123456', gen_salt('bf')),
   now(),
   '{"username": "marie", "display_name": "Marie Dupont", "role": "sales"}'::jsonb,
   '{"provider": "email", "providers": ["email"]}'::jsonb,
@@ -74,15 +107,31 @@ INSERT INTO auth.users (
   now(),
   now(),
   'authenticated',
-  'authenticated'
+  'authenticated',
+  '',
+  '',
+  '',
+  '',
+  '',
+  '',
+  '',
+  ''
 ) ON CONFLICT (id) DO UPDATE SET
   encrypted_password = EXCLUDED.encrypted_password,
   raw_app_meta_data = EXCLUDED.raw_app_meta_data,
   raw_user_meta_data = EXCLUDED.raw_user_meta_data,
   email_confirmed_at = EXCLUDED.email_confirmed_at,
+  confirmation_token = EXCLUDED.confirmation_token,
+  recovery_token = EXCLUDED.recovery_token,
+  email_change_token_new = EXCLUDED.email_change_token_new,
+  email_change = EXCLUDED.email_change,
+  email_change_token_current = EXCLUDED.email_change_token_current,
+  phone_change_token = EXCLUDED.phone_change_token,
+  phone_change = EXCLUDED.phone_change,
+  reauthentication_token = EXCLUDED.reauthentication_token,
   updated_at = now();
 
--- Sales user 2: Jean (password: TestSales123!)
+-- Sales user 2: Jean (password: 123456)
 INSERT INTO auth.users (
   id,
   instance_id,
@@ -95,12 +144,20 @@ INSERT INTO auth.users (
   created_at,
   updated_at,
   role,
-  aud
+  aud,
+  confirmation_token,
+  recovery_token,
+  email_change_token_new,
+  email_change,
+  email_change_token_current,
+  phone_change_token,
+  phone_change,
+  reauthentication_token
 ) VALUES (
   '00000000-0000-0000-0000-000000000003',
   '00000000-0000-0000-0000-000000000000',
   'jean@crm.local',
-  crypt('TestSales123!', gen_salt('bf')),
+  crypt('123456', gen_salt('bf')),
   now(),
   '{"username": "jean", "display_name": "Jean Martin", "role": "sales"}'::jsonb,
   '{"provider": "email", "providers": ["email"]}'::jsonb,
@@ -108,15 +165,31 @@ INSERT INTO auth.users (
   now(),
   now(),
   'authenticated',
-  'authenticated'
+  'authenticated',
+  '',
+  '',
+  '',
+  '',
+  '',
+  '',
+  '',
+  ''
 ) ON CONFLICT (id) DO UPDATE SET
   encrypted_password = EXCLUDED.encrypted_password,
   raw_app_meta_data = EXCLUDED.raw_app_meta_data,
   raw_user_meta_data = EXCLUDED.raw_user_meta_data,
   email_confirmed_at = EXCLUDED.email_confirmed_at,
+  confirmation_token = EXCLUDED.confirmation_token,
+  recovery_token = EXCLUDED.recovery_token,
+  email_change_token_new = EXCLUDED.email_change_token_new,
+  email_change = EXCLUDED.email_change,
+  email_change_token_current = EXCLUDED.email_change_token_current,
+  phone_change_token = EXCLUDED.phone_change_token,
+  phone_change = EXCLUDED.phone_change,
+  reauthentication_token = EXCLUDED.reauthentication_token,
   updated_at = now();
 
--- Sales user 3: Sophie (password: TestSales123!)
+-- Sales user 3: Sophie (password: 123456)
 INSERT INTO auth.users (
   id,
   instance_id,
@@ -129,12 +202,20 @@ INSERT INTO auth.users (
   created_at,
   updated_at,
   role,
-  aud
+  aud,
+  confirmation_token,
+  recovery_token,
+  email_change_token_new,
+  email_change,
+  email_change_token_current,
+  phone_change_token,
+  phone_change,
+  reauthentication_token
 ) VALUES (
   '00000000-0000-0000-0000-000000000004',
   '00000000-0000-0000-0000-000000000000',
   'sophie@crm.local',
-  crypt('TestSales123!', gen_salt('bf')),
+  crypt('123456', gen_salt('bf')),
   now(),
   '{"username": "sophie", "display_name": "Sophie Bernard", "role": "sales"}'::jsonb,
   '{"provider": "email", "providers": ["email"]}'::jsonb,
@@ -142,12 +223,88 @@ INSERT INTO auth.users (
   now(),
   now(),
   'authenticated',
-  'authenticated'
+  'authenticated',
+  '',
+  '',
+  '',
+  '',
+  '',
+  '',
+  '',
+  ''
 ) ON CONFLICT (id) DO UPDATE SET
   encrypted_password = EXCLUDED.encrypted_password,
   raw_app_meta_data = EXCLUDED.raw_app_meta_data,
   raw_user_meta_data = EXCLUDED.raw_user_meta_data,
   email_confirmed_at = EXCLUDED.email_confirmed_at,
+  confirmation_token = EXCLUDED.confirmation_token,
+  recovery_token = EXCLUDED.recovery_token,
+  email_change_token_new = EXCLUDED.email_change_token_new,
+  email_change = EXCLUDED.email_change,
+  email_change_token_current = EXCLUDED.email_change_token_current,
+  phone_change_token = EXCLUDED.phone_change_token,
+  phone_change = EXCLUDED.phone_change,
+  reauthentication_token = EXCLUDED.reauthentication_token,
+  updated_at = now();
+
+-- =============================================================================
+-- SECTION 1b: Create auth.identities (required for email login)
+-- =============================================================================
+-- GoTrue requires identity records to authenticate users via email provider.
+
+INSERT INTO auth.identities (
+  id,
+  user_id,
+  identity_data,
+  provider,
+  provider_id,
+  last_sign_in_at,
+  created_at,
+  updated_at
+) VALUES
+  (
+    '00000000-0000-0000-0000-000000000001',
+    '00000000-0000-0000-0000-000000000001',
+    '{"sub": "00000000-0000-0000-0000-000000000001", "email": "admin@crm.local", "email_verified": true}'::jsonb,
+    'email',
+    'admin@crm.local',
+    now(),
+    now(),
+    now()
+  ),
+  (
+    '00000000-0000-0000-0000-000000000002',
+    '00000000-0000-0000-0000-000000000002',
+    '{"sub": "00000000-0000-0000-0000-000000000002", "email": "marie@crm.local", "email_verified": true}'::jsonb,
+    'email',
+    'marie@crm.local',
+    now(),
+    now(),
+    now()
+  ),
+  (
+    '00000000-0000-0000-0000-000000000003',
+    '00000000-0000-0000-0000-000000000003',
+    '{"sub": "00000000-0000-0000-0000-000000000003", "email": "jean@crm.local", "email_verified": true}'::jsonb,
+    'email',
+    'jean@crm.local',
+    now(),
+    now(),
+    now()
+  ),
+  (
+    '00000000-0000-0000-0000-000000000004',
+    '00000000-0000-0000-0000-000000000004',
+    '{"sub": "00000000-0000-0000-0000-000000000004", "email": "sophie@crm.local", "email_verified": true}'::jsonb,
+    'email',
+    'sophie@crm.local',
+    now(),
+    now(),
+    now()
+  )
+ON CONFLICT (provider, provider_id) DO UPDATE SET
+  identity_data = EXCLUDED.identity_data,
+  last_sign_in_at = now(),
   updated_at = now();
 
 -- =============================================================================
@@ -304,8 +461,10 @@ VALUES (
 -- SEED COMPLETE
 -- =============================================================================
 -- Test credentials (Preview Branches Only):
--- Admin: admin@crm.local / TestAdmin123!
--- Sales: marie@crm.local / TestSales123!
--- Sales: jean@crm.local / TestSales123!
--- Sales: sophie@crm.local / TestSales123!
+-- Login with USERNAME (not email), password: 123456
+--
+-- Admin: admin / 123456
+-- Sales: marie / 123456
+-- Sales: jean / 123456
+-- Sales: sophie / 123456
 -- =============================================================================

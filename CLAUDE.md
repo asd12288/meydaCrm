@@ -1164,12 +1164,12 @@ npm run dev
 
 **Local Test Credentials:**
 
-| Role | Email | Password |
-|------|-------|----------|
-| Admin | admin@crm.local | TestAdmin123! |
-| Sales | marie@crm.local | TestSales123! |
-| Sales | jean@crm.local | TestSales123! |
-| Sales | sophie@crm.local | TestSales123! |
+| Role | Username | Password |
+|------|----------|----------|
+| Admin | admin | 123456 |
+| Sales | marie | 123456 |
+| Sales | jean | 123456 |
+| Sales | sophie | 123456 |
 
 **Local Commands:**
 ```bash
