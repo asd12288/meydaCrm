@@ -21,7 +21,8 @@ ALTER SCHEMA "public" OWNER TO "pg_database_owner";
 
 COMMENT ON SCHEMA "public" IS 'standard public schema';
 
-
+-- Enable required extensions
+CREATE EXTENSION IF NOT EXISTS "pg_trgm" WITH SCHEMA "public";
 
 CREATE TYPE "public"."banner_target" AS ENUM (
     'all',
