@@ -14,7 +14,7 @@
 -- Note: In preview branches, we insert directly into auth.users.
 -- The profile trigger will automatically create corresponding profiles.
 
--- Admin user (password: TestAdmin123!)
+-- Admin user (password: 123456)
 INSERT INTO auth.users (
   id,
   instance_id,
@@ -25,21 +25,29 @@ INSERT INTO auth.users (
   created_at,
   updated_at,
   role,
-  aud
+  aud,
+  confirmation_token,
+  recovery_token,
+  email_change_token_new,
+  email_change
 ) VALUES (
   '00000000-0000-0000-0000-000000000001',
   '00000000-0000-0000-0000-000000000000',
   'admin@crm.local',
-  crypt('TestAdmin123!', gen_salt('bf')),
+  crypt('123456', gen_salt('bf')),
   now(),
   '{"username": "admin", "display_name": "Admin Test", "role": "admin"}'::jsonb,
   now(),
   now(),
   'authenticated',
-  'authenticated'
+  'authenticated',
+  '',
+  '',
+  '',
+  ''
 ) ON CONFLICT (id) DO NOTHING;
 
--- Sales user 1: Marie (password: TestSales123!)
+-- Sales user 1: Marie (password: 123456)
 INSERT INTO auth.users (
   id,
   instance_id,
@@ -50,21 +58,29 @@ INSERT INTO auth.users (
   created_at,
   updated_at,
   role,
-  aud
+  aud,
+  confirmation_token,
+  recovery_token,
+  email_change_token_new,
+  email_change
 ) VALUES (
   '00000000-0000-0000-0000-000000000002',
   '00000000-0000-0000-0000-000000000000',
   'marie@crm.local',
-  crypt('TestSales123!', gen_salt('bf')),
+  crypt('123456', gen_salt('bf')),
   now(),
   '{"username": "marie", "display_name": "Marie Dupont", "role": "sales"}'::jsonb,
   now(),
   now(),
   'authenticated',
-  'authenticated'
+  'authenticated',
+  '',
+  '',
+  '',
+  ''
 ) ON CONFLICT (id) DO NOTHING;
 
--- Sales user 2: Jean (password: TestSales123!)
+-- Sales user 2: Jean (password: 123456)
 INSERT INTO auth.users (
   id,
   instance_id,
@@ -75,21 +91,29 @@ INSERT INTO auth.users (
   created_at,
   updated_at,
   role,
-  aud
+  aud,
+  confirmation_token,
+  recovery_token,
+  email_change_token_new,
+  email_change
 ) VALUES (
   '00000000-0000-0000-0000-000000000003',
   '00000000-0000-0000-0000-000000000000',
   'jean@crm.local',
-  crypt('TestSales123!', gen_salt('bf')),
+  crypt('123456', gen_salt('bf')),
   now(),
   '{"username": "jean", "display_name": "Jean Martin", "role": "sales"}'::jsonb,
   now(),
   now(),
   'authenticated',
-  'authenticated'
+  'authenticated',
+  '',
+  '',
+  '',
+  ''
 ) ON CONFLICT (id) DO NOTHING;
 
--- Sales user 3: Sophie (password: TestSales123!)
+-- Sales user 3: Sophie (password: 123456)
 INSERT INTO auth.users (
   id,
   instance_id,
@@ -100,18 +124,26 @@ INSERT INTO auth.users (
   created_at,
   updated_at,
   role,
-  aud
+  aud,
+  confirmation_token,
+  recovery_token,
+  email_change_token_new,
+  email_change
 ) VALUES (
   '00000000-0000-0000-0000-000000000004',
   '00000000-0000-0000-0000-000000000000',
   'sophie@crm.local',
-  crypt('TestSales123!', gen_salt('bf')),
+  crypt('123456', gen_salt('bf')),
   now(),
   '{"username": "sophie", "display_name": "Sophie Bernard", "role": "sales"}'::jsonb,
   now(),
   now(),
   'authenticated',
-  'authenticated'
+  'authenticated',
+  '',
+  '',
+  '',
+  ''
 ) ON CONFLICT (id) DO NOTHING;
 
 -- =============================================================================
@@ -268,8 +300,9 @@ VALUES (
 -- SEED COMPLETE
 -- =============================================================================
 -- Test credentials (Preview Branches Only):
--- Admin: admin@crm.local / TestAdmin123!
--- Sales: marie@crm.local / TestSales123!
--- Sales: jean@crm.local / TestSales123!
--- Sales: sophie@crm.local / TestSales123!
+-- Login uses USERNAME only (not email), password: 123456
+-- Admin: admin / 123456
+-- Sales: marie / 123456
+-- Sales: jean / 123456
+-- Sales: sophie / 123456
 -- =============================================================================
