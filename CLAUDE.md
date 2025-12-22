@@ -445,26 +445,60 @@ mcp__supabase__get_advisors(
 
 ---
 
-## 11) Suggested Commands (adjust to actual package manager)
+## 11) Suggested Commands
 
-Common:
+### Local Development (Full Stack)
 
-- `pnpm dev` / `npm run dev`
-- `pnpm lint`
-- `pnpm typecheck`
+```bash
+# Start everything (Supabase + Next.js + ngrok for webhooks)
+npm run dev:local
 
-Supabase local (if used):
+# If Supabase already running, start Next.js + ngrok only
+npm run dev:all
 
-- `supabase start`
-- `supabase db reset`
-- `supabase migration new <name>`
-- `supabase functions serve <function-name>`
+# Individual commands
+npm run dev           # Next.js only
+npm run dev:webhook   # ngrok tunnel only
+```
 
-Vercel local (optional):
+### Local Dev Scripts Summary
 
-- `vercel dev`
+| Script | What it starts |
+|--------|----------------|
+| `npm run dev:local` | Supabase + Next.js + Edge Functions + ngrok |
+| `npm run dev:all` | Next.js + Edge Functions + ngrok (assumes Supabase running) |
+| `npm run dev` | Next.js only |
+| `npm run dev:functions` | Edge Functions only |
+| `npm run dev:webhook` | ngrok tunnel only |
 
-If commands differ, update this section.
+### Supabase Local Commands
+
+```bash
+npx supabase start              # Start local Supabase stack
+npx supabase stop               # Stop local stack
+npx supabase db reset           # Reset DB + apply migrations + seed
+npx supabase functions serve    # Start Edge Functions locally
+npx supabase migration new xxx  # Create new migration
+npx supabase status             # Show local service URLs
+```
+
+### Other Commands
+
+```bash
+npm run lint        # ESLint
+npm run typecheck   # TypeScript check
+npm run test        # Run tests
+npm run build       # Production build
+```
+
+### Test Credentials (Local/Preview)
+
+| Role | Email | Password |
+|------|-------|----------|
+| Admin | admin@crm.local | 123456 |
+| Sales | marie@crm.local | 123456 |
+| Sales | jean@crm.local | 123456 |
+| Sales | sophie@crm.local | 123456 |
 
 ---
 
