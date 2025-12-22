@@ -32,9 +32,11 @@ pool_mode = "transaction"
 default_pool_size = 20
 max_client_conn = 100
 
-# Seed configuration - runs on preview branch creation
+# Seed configuration
+# NOTE: Disabled for preview branches due to payload size limits
+# Our GitHub workflow (supabase-preview.yml) handles seeding via CLI instead
 [db.seed]
-enabled = true
+enabled = false
 sql_paths = ["seed.sql"]
 
 # =============================================================================
