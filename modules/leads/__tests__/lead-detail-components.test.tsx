@@ -16,15 +16,19 @@ describe('LeadActivityTabs', () => {
       <LeadActivityTabs
         commentsContent={<div>Comments Content</div>}
         historyContent={<div>History Content</div>}
+        meetingsContent={<div>Meetings Content</div>}
         commentCount={5}
         historyCount={10}
+        meetingsCount={3}
       />
     );
 
     expect(screen.getByText('Commentaires')).toBeInTheDocument();
     expect(screen.getByText('Historique')).toBeInTheDocument();
+    expect(screen.getByText('Réunions')).toBeInTheDocument();
     expect(screen.getByText('5')).toBeInTheDocument();
     expect(screen.getByText('10')).toBeInTheDocument();
+    expect(screen.getByText('3')).toBeInTheDocument();
     expect(screen.getByText('Comments Content')).toBeInTheDocument();
   });
 
@@ -33,8 +37,10 @@ describe('LeadActivityTabs', () => {
       <LeadActivityTabs
         commentsContent={<div>Comments Content</div>}
         historyContent={<div>History Content</div>}
+        meetingsContent={<div>Meetings Content</div>}
         commentCount={5}
         historyCount={10}
+        meetingsCount={3}
       />
     );
 
@@ -43,6 +49,25 @@ describe('LeadActivityTabs', () => {
     fireEvent.click(historyTab);
 
     expect(screen.getByText('History Content')).toBeInTheDocument();
+  });
+
+  it('switches to meetings tab when clicked', async () => {
+    render(
+      <LeadActivityTabs
+        commentsContent={<div>Comments Content</div>}
+        historyContent={<div>History Content</div>}
+        meetingsContent={<div>Meetings Content</div>}
+        commentCount={5}
+        historyCount={10}
+        meetingsCount={3}
+      />
+    );
+
+    // Click meetings tab
+    const meetingsTab = screen.getByText('Réunions').closest('button')!;
+    fireEvent.click(meetingsTab);
+
+    expect(screen.getByText('Meetings Content')).toBeInTheDocument();
   });
 });
 

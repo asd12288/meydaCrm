@@ -440,11 +440,29 @@ export async function getLeadById(
     console.error('Error fetching history:', historyError);
   }
 
+  // Fetch meetings with assignee
+  const { data: meetings, error: meetingsError } = await supabase
+    .from('meetings')
+    .select(
+      `
+      *,
+      lead:leads!meetings_lead_id_fkey(id, first_name, last_name),
+      assignee:profiles!meetings_assigned_to_fkey(id, display_name)
+    `
+    )
+    .eq('lead_id', leadId)
+    .order('scheduled_start', { ascending: false });
+
+  if (meetingsError) {
+    console.error('Error fetching meetings:', meetingsError);
+  }
+
   return {
     lead: {
       ...lead,
       comments: (comments as CommentWithAuthor[]) || [],
       history: (history as HistoryEventWithActor[]) || [],
+      meetings: meetings || [],
     },
   };
 }

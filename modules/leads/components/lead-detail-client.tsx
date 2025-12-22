@@ -7,6 +7,7 @@ import { LeadActivityTabs } from './lead-activity-tabs';
 import { LeadEditModal } from './lead-edit-modal';
 import { LeadComments } from './lead-comments';
 import { LeadHistory } from './lead-history';
+import { LeadMeetings } from './lead-meetings';
 import type { LeadWithFullDetails, SalesUser } from '../types';
 
 interface LeadDetailClientProps {
@@ -57,8 +58,14 @@ export function LeadDetailClient({
                     <LeadHistory history={lead.history} />
                   </div>
                 }
+                meetingsContent={
+                  <div className="p-4 overflow-y-auto h-full">
+                    <LeadMeetings leadId={lead.id} meetings={lead.meetings} />
+                  </div>
+                }
                 commentCount={lead.comments.length}
                 historyCount={lead.history.length}
+                meetingsCount={lead.meetings.length}
               />
             </ErrorBoundary>
           </div>

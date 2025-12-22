@@ -395,52 +395,84 @@ Never put service role key in client-side code.
 
 ---
 
-## 10.1) Supabase MCP Tools (Claude Integration)
+## 10.1) Database Migrations (Best Practice)
 
-Claude has access to Supabase via MCP (Model Context Protocol). Use these tools for database operations:
+### Preferred Approach: Local Migration Files
 
-### Available Tools
+**Always create migrations as local files** instead of using MCP `apply_migration` directly:
 
-| Tool | Description | Example Use |
+```bash
+# Create a new migration file
+npx supabase migration new add_new_column
+
+# Edit the generated file in supabase/migrations/YYYYMMDDHHMMSS_add_new_column.sql
+# Add your SQL (CREATE, ALTER, etc.)
+
+# Test locally
+npx supabase db reset   # Reapply all migrations + seed
+
+# Commit and push with your PR
+git add supabase/migrations/
+git commit -m "feat: add new column to leads"
+```
+
+**Why local files are better:**
+
+| Local Migration Files | MCP `apply_migration` |
+|-----------------------|----------------------|
+| ✅ Version controlled in git | ❌ Not tracked in git |
+| ✅ Reviewable in PRs | ❌ Applied directly, no review |
+| ✅ Testable locally with `db reset` | ❌ Applied to remote only |
+| ✅ Auto-applied to preview branches | ❌ Must manually re-apply |
+| ✅ Team can see schema changes | ❌ Only visible in DB |
+| ✅ Reproducible across environments | ❌ Environment-specific |
+
+### Supabase MCP Tools (Read-Only & Exploration)
+
+Claude has access to Supabase via MCP. Use these tools for **querying and exploration only**:
+
+| Tool | Description | When to Use |
 |------|-------------|-------------|
-| `mcp__supabase__list_tables` | List all tables in the database | Check schema |
-| `mcp__supabase__execute_sql` | Run SELECT queries (read-only) | Query data |
-| `mcp__supabase__apply_migration` | Apply DDL changes (CREATE, ALTER) | Schema changes |
-| `mcp__supabase__list_migrations` | List applied migrations | Check migration history |
-| `mcp__supabase__get_advisors` | Security/performance recommendations | Audit RLS policies |
-| `mcp__supabase__generate_typescript_types` | Generate TypeScript types | Update `db/types.ts` |
+| `mcp__supabase__list_tables` | List all tables | Check current schema |
+| `mcp__supabase__execute_sql` | Run SELECT queries | Query data, debug issues |
+| `mcp__supabase__list_migrations` | List applied migrations | Verify migration status |
+| `mcp__supabase__get_advisors` | Security/performance tips | Audit RLS policies |
+| `mcp__supabase__generate_typescript_types` | Generate TS types | Update `db/types.ts` |
 
-### Usage Examples
+### MCP Usage Examples
 
 ```
 # List all tables
 mcp__supabase__list_tables(project_id="owwyxrxojltmupqrvqcp")
 
-# Run a query
+# Run a query (read-only)
 mcp__supabase__execute_sql(
   project_id="owwyxrxojltmupqrvqcp",
-  query="SELECT * FROM subscriptions LIMIT 5"
+  query="SELECT * FROM leads LIMIT 5"
 )
 
-# Apply a migration
-mcp__supabase__apply_migration(
-  project_id="owwyxrxojltmupqrvqcp",
-  name="add_new_column",
-  query="ALTER TABLE leads ADD COLUMN notes TEXT"
-)
-
-# Check security advisors
+# Check security advisors after schema changes
 mcp__supabase__get_advisors(
   project_id="owwyxrxojltmupqrvqcp",
   type="security"
 )
 ```
 
+### When MCP `apply_migration` is Acceptable
+
+Only use `mcp__supabase__apply_migration` for:
+- **Quick prototyping** during early exploration (then recreate as local file)
+- **Emergency hotfixes** that need immediate production deployment (rare)
+- **One-time data fixes** that don't need to be reproducible
+
+**After using MCP apply_migration, always:**
+1. Create a matching local migration file for reproducibility
+2. Or document why it was a one-time operation
+
 ### Important Notes
 
-- Always use the project ID `owwyxrxojltmupqrvqcp` for this CRM
-- Use `apply_migration` for DDL (schema changes), `execute_sql` for DML (data queries)
-- Check security advisors after schema changes to verify RLS policies
+- Project ID: `owwyxrxojltmupqrvqcp`
+- Always check security advisors after schema changes
 - Generated TypeScript types should be reviewed before committing
 
 ---

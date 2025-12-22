@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { LeadStatus } from '@/db/types';
+import type { MeetingWithDetails } from '@/modules/meetings/types';
 
 // Special value for filtering unassigned leads
 export const UNASSIGNED_FILTER_VALUE = 'unassigned';
@@ -187,6 +188,7 @@ export interface LeadWithFullDetails extends SupabaseLead {
   assignee: LeadAssignee | null;
   comments: CommentWithAuthor[];
   history: HistoryEventWithActor[];
+  meetings: MeetingWithDetails[];
 }
 
 // Lead with last comment for kanban view
