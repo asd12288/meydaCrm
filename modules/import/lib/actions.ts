@@ -124,7 +124,7 @@ export async function getImportJob(
 
     const { data, error } = await supabase
       .from('import_jobs')
-      .select('*, creator:profiles!import_jobs_created_by_profiles_id_fk(id, display_name)')
+      .select('*, creator:profiles!import_jobs_created_by_fkey(id, display_name)')
       .eq('id', importJobId)
       .single();
 
@@ -151,7 +151,7 @@ export async function getImportJobs(): Promise<ImportActionResult<ImportJobWithS
 
     const { data, error } = await supabase
       .from('import_jobs')
-      .select('*, creator:profiles!import_jobs_created_by_profiles_id_fk(id, display_name)')
+      .select('*, creator:profiles!import_jobs_created_by_fkey(id, display_name)')
       .order('created_at', { ascending: false })
       .limit(50);
 
@@ -181,7 +181,7 @@ export async function getRecentImportJobs(
     // Get jobs with count
     const { data, error, count } = await supabase
       .from('import_jobs')
-      .select('*, creator:profiles!import_jobs_created_by_profiles_id_fk(id, display_name)', {
+      .select('*, creator:profiles!import_jobs_created_by_fkey(id, display_name)', {
         count: 'exact',
       })
       .order('created_at', { ascending: false })
@@ -196,6 +196,50 @@ export async function getRecentImportJobs(
       data: {
         jobs: data as ImportJobWithStats[],
         total: count || 0,
+      },
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Erreur inconnue',
+    };
+  }
+}
+
+/**
+ * Get paginated import jobs
+ */
+export async function getPaginatedImportJobs(
+  page: number = 1,
+  pageSize: number = 10
+): Promise<ImportActionResult<{ jobs: ImportJobWithStats[]; total: number; totalPages: number }>> {
+  try {
+    await requireAdmin();
+    const supabase = await createClient();
+
+    const offset = (page - 1) * pageSize;
+
+    const { data, error, count } = await supabase
+      .from('import_jobs')
+      .select('*, creator:profiles!import_jobs_created_by_fkey(id, display_name)', {
+        count: 'exact',
+      })
+      .order('created_at', { ascending: false })
+      .range(offset, offset + pageSize - 1);
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    const total = count || 0;
+    const totalPages = Math.ceil(total / pageSize);
+
+    return {
+      success: true,
+      data: {
+        jobs: data as ImportJobWithStats[],
+        total,
+        totalPages,
       },
     };
   } catch (error) {
@@ -835,6 +879,59 @@ export async function retryImportJob(
 
     revalidatePath('/import');
     return { success: true, data: { messageId } };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Erreur inconnue',
+    };
+  }
+}
+
+// =============================================================================
+// FILE DOWNLOAD
+// =============================================================================
+
+/**
+ * Get a signed URL to download the original import file
+ */
+export async function downloadImportFile(
+  importJobId: string
+): Promise<ImportActionResult<{ url: string; fileName: string }>> {
+  try {
+    await requireAdmin();
+    const supabase = await createClient();
+
+    // Get the job to find storage path and file name
+    const { data: job, error: jobError } = await supabase
+      .from('import_jobs')
+      .select('storage_path, file_name')
+      .eq('id', importJobId)
+      .single();
+
+    if (jobError || !job) {
+      return { success: false, error: 'Job non trouvé' };
+    }
+
+    if (!job.storage_path) {
+      return { success: false, error: 'Fichier non disponible' };
+    }
+
+    // Create a signed URL (valid for 1 hour)
+    const { data: signedUrl, error: signError } = await supabase.storage
+      .from('imports')
+      .createSignedUrl(job.storage_path, 3600);
+
+    if (signError || !signedUrl) {
+      return { success: false, error: 'Impossible de générer le lien de téléchargement' };
+    }
+
+    return {
+      success: true,
+      data: {
+        url: signedUrl.signedUrl,
+        fileName: job.file_name,
+      },
+    };
   } catch (error) {
     return {
       success: false,

@@ -39,7 +39,7 @@ export async function getLeads(
   // Build query with assignee join
   let query = supabase
     .from('leads')
-    .select('*, assignee:profiles!leads_assigned_to_profiles_id_fk(id, display_name)')
+    .select('*, assignee:profiles!leads_assigned_to_fkey(id, display_name)')
     .is('deleted_at', null);
 
   // Apply search filter only if minimum length is met
@@ -116,7 +116,7 @@ export async function getLeadsForKanban(
   // Build query - always filter by current user's assigned leads
   let query = supabase
     .from('leads')
-    .select('*, assignee:profiles!leads_assigned_to_profiles_id_fk(id, display_name)', {
+    .select('*, assignee:profiles!leads_assigned_to_fkey(id, display_name)', {
       count: 'exact',
     })
     .is('deleted_at', null)
@@ -150,7 +150,7 @@ export async function getLeadsForKanban(
   const leadIds = leads.map((l) => l.id);
   const { data: comments } = await supabase
     .from('lead_comments')
-    .select('id, lead_id, body, created_at, author:profiles!author_id(id, display_name, avatar)')
+    .select('id, lead_id, body, created_at, author:profiles!lead_comments_author_id_fkey(id, display_name, avatar)')
     .in('lead_id', leadIds)
     .order('created_at', { ascending: false });
 
@@ -408,7 +408,7 @@ export async function getLeadById(
   // Fetch lead with assignee
   const { data: lead, error: leadError } = await supabase
     .from('leads')
-    .select('*, assignee:profiles!leads_assigned_to_profiles_id_fk(id, display_name)')
+    .select('*, assignee:profiles!leads_assigned_to_fkey(id, display_name)')
     .eq('id', leadId)
     .is('deleted_at', null)
     .single();
@@ -421,7 +421,7 @@ export async function getLeadById(
   // Fetch comments with author (use author_id column for relation)
   const { data: comments, error: commentsError } = await supabase
     .from('lead_comments')
-    .select('*, author:profiles!author_id(id, display_name, avatar)')
+    .select('*, author:profiles!lead_comments_author_id_fkey(id, display_name, avatar)')
     .eq('lead_id', leadId)
     .order('created_at', { ascending: false });
 
@@ -429,10 +429,10 @@ export async function getLeadById(
     console.error('Error fetching comments:', commentsError);
   }
 
-  // Fetch history with actor (use actor_id column for relation)
+  // Fetch history with actor (use explicit FK constraint name)
   const { data: history, error: historyError } = await supabase
     .from('lead_history')
-    .select('*, actor:profiles!actor_id(id, display_name, avatar)')
+    .select('*, actor:profiles!lead_history_actor_id_fkey(id, display_name, avatar)')
     .eq('lead_id', leadId)
     .order('created_at', { ascending: false });
 
@@ -644,7 +644,7 @@ export async function addComment(
       author_id: user.id,
       body: body.trim(),
     })
-    .select('*, author:profiles!author_id(id, display_name, avatar)')
+    .select('*, author:profiles!lead_comments_author_id_fkey(id, display_name, avatar)')
     .single();
 
   if (insertError) {

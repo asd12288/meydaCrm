@@ -207,7 +207,7 @@ describe('Lead Actions - Get Leads', () => {
     // Use one of our test leads that we know exists
     const { data, error } = await client
       .from('leads')
-      .select('*, assignee:profiles!leads_assigned_to_profiles_id_fk(id, display_name)')
+      .select('*, assignee:profiles!leads_assigned_to_fkey(id, display_name)')
       .is('deleted_at', null)
       .in('id', testLeadIds)
       .eq('assigned_to', sales1.id)
@@ -1030,7 +1030,7 @@ describe('Lead Actions - Add Comment', () => {
         author_id: admin.id,
         body: commentBody,
       })
-      .select('*, author:profiles!author_id(id, display_name, avatar)')
+      .select('*, author:profiles!lead_comments_author_id_fkey(id, display_name, avatar)')
       .single()
 
     expect(error).toBeNull()
@@ -1113,7 +1113,7 @@ describe('Lead Actions - Add Comment', () => {
         author_id: admin.id,
         body: `Author test ${testPrefix}`,
       })
-      .select('*, author:profiles!author_id(id, display_name, avatar)')
+      .select('*, author:profiles!lead_comments_author_id_fkey(id, display_name, avatar)')
       .single()
 
     expect(error).toBeNull()
@@ -1318,7 +1318,7 @@ describe('Lead Actions - Get Lead By ID', () => {
 
     const { data: lead, error: leadError } = await client
       .from('leads')
-      .select('*, assignee:profiles!leads_assigned_to_profiles_id_fk(id, display_name)')
+      .select('*, assignee:profiles!leads_assigned_to_fkey(id, display_name)')
       .eq('id', testLeadId)
       .is('deleted_at', null)
       .single()
@@ -1330,7 +1330,7 @@ describe('Lead Actions - Get Lead By ID', () => {
     // Fetch comments
     const { data: comments } = await client
       .from('lead_comments')
-      .select('*, author:profiles!author_id(id, display_name, avatar)')
+      .select('*, author:profiles!lead_comments_author_id_fkey(id, display_name, avatar)')
       .eq('lead_id', testLeadId)
       .order('created_at', { ascending: false })
 
@@ -1340,7 +1340,7 @@ describe('Lead Actions - Get Lead By ID', () => {
     // Fetch history
     const { data: history } = await client
       .from('lead_history')
-      .select('*, actor:profiles!actor_id(id, display_name, avatar)')
+      .select('*, actor:profiles!lead_history_actor_id_fkey(id, display_name, avatar)')
       .eq('lead_id', testLeadId)
       .order('created_at', { ascending: false })
 
@@ -1353,7 +1353,7 @@ describe('Lead Actions - Get Lead By ID', () => {
 
     const { data: lead, error } = await client
       .from('leads')
-      .select('*, assignee:profiles!leads_assigned_to_profiles_id_fk(id, display_name)')
+      .select('*, assignee:profiles!leads_assigned_to_fkey(id, display_name)')
       .eq('id', testLeadId)
       .is('deleted_at', null)
       .single()
@@ -1388,7 +1388,7 @@ describe('Lead Actions - Get Lead By ID', () => {
 
     const { data: comments } = await client
       .from('lead_comments')
-      .select('*, author:profiles!author_id(id, display_name, avatar)')
+      .select('*, author:profiles!lead_comments_author_id_fkey(id, display_name, avatar)')
       .eq('lead_id', testLeadId)
       .order('created_at', { ascending: false })
 
@@ -1408,7 +1408,7 @@ describe('Lead Actions - Get Lead By ID', () => {
 
     const { data: history } = await client
       .from('lead_history')
-      .select('*, actor:profiles!actor_id(id, display_name, avatar)')
+      .select('*, actor:profiles!lead_history_actor_id_fkey(id, display_name, avatar)')
       .eq('lead_id', testLeadId)
       .order('created_at', { ascending: false })
 
