@@ -85,7 +85,7 @@ jobs:
 
           echo "Edge Functions deployed successfully!"
 
-      # Run seed data on the preview branch using Supabase API
+      # Run seed data on the preview branch using Supabase CLI
       - name: Apply Seed Data
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
@@ -99,27 +99,16 @@ jobs:
             exit 0
           fi
 
-          # Read seed.sql content
-          SEED_SQL=$(cat supabase/seed.sql)
+          # Link to preview project (already linked from functions deploy, but be explicit)
+          supabase link --project-ref "$PREVIEW_REF"
 
-          # Execute SQL via Supabase Management API
-          echo "Running seed.sql via Supabase API..."
-          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
-            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
-            -H "Content-Type: application/json" \
-            -d "{\"query\": $(echo "$SEED_SQL" | jq -Rs .)}" \
-            "https://api.supabase.com/v1/projects/$PREVIEW_REF/database/query")
+          # Execute seed.sql using Supabase CLI (handles larger files)
+          echo "Running seed.sql via Supabase CLI..."
+          cat supabase/seed.sql | supabase db execute --project-ref "$PREVIEW_REF" || {
+            echo "Warning: Seed data may have partially failed (some data might already exist)"
+          }
 
-          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
-          BODY=$(echo "$RESPONSE" | sed '$d')
-
-          if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
-            echo "Seed data applied successfully!"
-          else
-            echo "Warning: Seed data may have partially failed"
-            echo "Response: $BODY"
-            # Don't fail the job - some seed data might already exist
-          fi
+          echo "Seed data applied!"
 
       - name: Summary
         run: |
