@@ -27,12 +27,17 @@ jobs:
           timeoutSeconds: 600
           intervalSeconds: 15
 
-      - name: Check if Supabase Preview succeeded
-        if: steps.wait-for-supabase.outputs.conclusion != 'success'
+      - name: Check Supabase Preview Status
         run: |
-          echo "Supabase Preview branch creation failed or timed out"
-          echo "Status: ${{ steps.wait-for-supabase.outputs.conclusion }}"
-          exit 1
+          echo "Supabase Preview status: ${{ steps.wait-for-supabase.outputs.conclusion }}"
+          # We continue even if Supabase Preview failed because:
+          # - The branch might exist but functions failed to deploy
+          # - Our job is to fix that by deploying functions ourselves
+          if [ "${{ steps.wait-for-supabase.outputs.conclusion }}" == "" ]; then
+            echo "Supabase Preview check timed out or not found"
+            exit 1
+          fi
+          echo "Proceeding to deploy Edge Functions and seed data..."
 
       # Get the preview branch project ref from Supabase API
       - name: Get Preview Branch Info
