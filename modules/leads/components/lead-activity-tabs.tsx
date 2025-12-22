@@ -1,23 +1,27 @@
 'use client';
 
 import { useState } from 'react';
-import { IconMessage, IconHistory } from '@tabler/icons-react';
+import { IconMessage, IconHistory, IconCalendar } from '@tabler/icons-react';
 import { CardBox } from '@/modules/shared';
 
 interface LeadActivityTabsProps {
   commentsContent: React.ReactNode;
   historyContent: React.ReactNode;
+  meetingsContent: React.ReactNode;
   commentCount: number;
   historyCount: number;
+  meetingsCount: number;
 }
 
 export function LeadActivityTabs({
   commentsContent,
   historyContent,
+  meetingsContent,
   commentCount,
   historyCount,
+  meetingsCount,
 }: LeadActivityTabsProps) {
-  const [activeTab, setActiveTab] = useState<'comments' | 'history'>('comments');
+  const [activeTab, setActiveTab] = useState<'comments' | 'history' | 'meetings'>('comments');
 
   return (
     <CardBox className="h-full flex flex-col overflow-hidden p-0">
@@ -45,11 +49,24 @@ export function LeadActivityTabs({
             {historyCount}
           </span>
         </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('meetings')}
+          className={`tab-button ${activeTab === 'meetings' ? 'tab-button-active' : ''}`}
+        >
+          <IconCalendar size={18} />
+          <span>Réunions</span>
+          <span className="inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full text-xs font-medium bg-lightsuccess text-success">
+            {meetingsCount}
+          </span>
+        </button>
       </div>
 
       {/* Tab Content */}
       <div className="flex-1 overflow-hidden">
-        {activeTab === 'comments' ? commentsContent : historyContent}
+        {activeTab === 'comments' && commentsContent}
+        {activeTab === 'history' && historyContent}
+        {activeTab === 'meetings' && meetingsContent}
       </div>
     </CardBox>
   );

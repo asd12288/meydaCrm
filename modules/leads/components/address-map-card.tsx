@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { useGeocoding } from '../hooks/use-geocoding';
 
@@ -30,6 +31,9 @@ export function AddressMapCard({
   postalCode,
   country,
 }: AddressMapCardProps) {
+  // Track if we're mounted to avoid hydration mismatch
+  const [isMounted, setIsMounted] = useState(false);
+
   const { lat, lng, isLoading, error } = useGeocoding(
     address,
     city,
@@ -37,13 +41,19 @@ export function AddressMapCard({
     country
   );
 
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional: triggers re-render after hydration to prevent mismatch
+    setIsMounted(true);
+  }, []);
+
   // Don't render if no address data
   if (!address && !city && !postalCode) {
     return null;
   }
 
-  // Loading state
-  if (isLoading) {
+  // Always show skeleton on server and during initial client render
+  // This ensures consistent HTML between server and client
+  if (!isMounted || isLoading) {
     return <div className="address-map-skeleton" />;
   }
 

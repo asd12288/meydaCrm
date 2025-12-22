@@ -411,6 +411,31 @@ export function SalesDashboardSkeleton() {
 }
 
 /**
+ * Skeleton for meetings widget
+ */
+export function MeetingsSkeleton() {
+  return (
+    <CardBox>
+      <div className="flex items-center justify-between mb-4">
+        <div className="skeleton skeleton-text w-40 h-5" />
+        <div className="skeleton w-6 h-6 rounded-full" />
+      </div>
+      <div className="space-y-3">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="flex items-start gap-3 animate-pulse">
+            <div className="w-14 h-14 rounded-lg bg-lightgray shrink-0" />
+            <div className="flex-1 space-y-2 py-1">
+              <div className="skeleton skeleton-text w-32 h-4" />
+              <div className="skeleton skeleton-text w-24 h-3" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </CardBox>
+  );
+}
+
+/**
  * Generic dashboard page skeleton
  * Detects role and shows appropriate skeleton
  */
