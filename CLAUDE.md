@@ -1127,25 +1127,42 @@ import { FormSelectDropdown } from '@/modules/shared';
 
 ---
 
-## 17) Development Workflow (Supabase Branching)
+## 17) Development Workflow (Two-Tier: Local + Preview)
 
-### How Branching Works
+### Overview
 
-Supabase Branching creates **ephemeral preview branches** automatically when you open a PR:
+Development uses a **two-tier workflow**:
 
-| Environment | Supabase | Git Branch | Vercel |
-|-------------|----------|------------|--------|
-| **Production** | `owwyxrxojltmupqrvqcp` (main) | `main` | Production |
-| **Preview** | Auto-created branch | feature branches | Preview (auto-synced) |
+| Tier | Environment | Use For |
+|------|-------------|---------|
+| **Local** | `supabase start` (Docker) | Day-to-day development, instant feedback |
+| **Preview** | Supabase Branch (auto on PR) | Integration testing, team review |
 
-**The flow:**
-1. **Create PR** → Supabase creates a preview branch with your migrations
-2. **Seeded Data** → Preview branch runs `supabase/seed.sql` (sample users + leads)
-3. **Vercel Sync** → Vercel preview deployment automatically uses preview branch credentials
-4. **Merge PR** → Migrations are applied to production
-5. **Cleanup** → Preview branch is automatically deleted
+### Tier 1: Local Development (Recommended for daily work)
 
-### Test Credentials (Preview Branches Only)
+Run a complete Supabase stack locally in Docker:
+
+```bash
+# Start local Supabase (PostgreSQL + Auth + Storage + Edge Functions)
+npx supabase start
+
+# Local dashboard: http://localhost:54323
+# Local API:       http://localhost:54321
+# Local DB:        postgresql://postgres:postgres@localhost:54322/postgres
+
+# Start app against local Supabase
+npm run dev
+```
+
+**Benefits:**
+- ✅ Instant feedback (no network latency)
+- ✅ Works offline
+- ✅ Free (no quota usage)
+- ✅ Completely isolated - break things without fear
+- ✅ Migrations applied automatically from `supabase/migrations/`
+- ✅ Seed data applied from `supabase/seed.sql`
+
+**Local Test Credentials:**
 
 | Role | Email | Password |
 |------|-------|----------|
@@ -1153,6 +1170,73 @@ Supabase Branching creates **ephemeral preview branches** automatically when you
 | Sales | marie@crm.local | TestSales123! |
 | Sales | jean@crm.local | TestSales123! |
 | Sales | sophie@crm.local | TestSales123! |
+
+**Local Commands:**
+```bash
+npx supabase start     # Start local stack
+npx supabase stop      # Stop local stack
+npx supabase db reset  # Reset DB + reapply migrations + seed
+npx supabase status    # Show local service URLs
+```
+
+### Tier 2: Preview Branches (Auto on PR)
+
+When you open a PR, everything happens automatically:
+
+1. **Supabase** creates a preview branch (forks from production)
+2. **Migrations** in your PR are applied to the preview branch
+3. **Seed data** runs on preview branch
+4. **Vercel** deploys preview with auto-synced credentials
+5. **Merge** → migrations apply to production, preview branch deleted
+
+| Environment | Supabase | Git Branch | Vercel |
+|-------------|----------|------------|--------|
+| **Production** | `owwyxrxojltmupqrvqcp` | `main` | Production |
+| **Preview** | Auto-created | feature branches | Preview (auto-synced) |
+
+### Daily Workflow
+
+```bash
+# Morning setup
+git pull origin main
+npx supabase start      # Local DB running
+npm run dev             # App at http://localhost:3000
+
+# Develop your feature
+# - Edit code
+# - Create migrations with: npx supabase migration new my_migration
+# - Test locally (full isolation)
+
+# Ready for review
+git push -u origin feature/my-feature
+gh pr create
+
+# Automatic:
+# → Supabase creates preview branch
+# → Vercel deploys with correct credentials
+# → Test on Vercel preview URL
+
+# Merge PR
+# → Migrations apply to production
+# → Preview branch auto-deleted
+```
+
+### Creating Migrations
+
+```bash
+# Create new migration file
+npx supabase migration new add_new_column
+
+# Edit the file in supabase/migrations/XXXX_add_new_column.sql
+
+# Test locally
+npx supabase db reset   # Reapply all migrations
+
+# Push with PR
+git add supabase/migrations/
+git commit -m "feat: add new column"
+git push
+```
 
 ### Safety Rules (MUST follow)
 
@@ -1170,46 +1254,24 @@ The `main` branch has protection rules enabled:
 - Requires status checks to pass (build + Supabase Preview)
 - No direct pushes allowed
 
-### Workflow for New Features
-
-```bash
-# 1. Create feature branch
-git checkout -b feature/my-feature
-
-# 2. Make changes (code + migrations if needed)
-# Add new migration: supabase/migrations/XXXX_description.sql
-
-# 3. Push and create PR
-git push -u origin feature/my-feature
-gh pr create --title "Feature: My feature" --body "Description"
-
-# 4. Wait for status checks:
-#    - CI (build, lint, typecheck)
-#    - Supabase Preview (migrations applied successfully)
-
-# 5. Test on Vercel preview URL with seeded data
-
-# 6. Get approval and merge
-# Migrations auto-apply to production on merge
-```
-
 ### Configuration Files
 
 | File | Purpose |
 |------|---------|
-| `supabase/config.toml` | Branching, auth, storage, Edge Functions config |
-| `supabase/seed.sql` | Sample data for preview branches |
+| `supabase/config.toml` | Project config (auth, storage, Edge Functions) |
+| `supabase/seed.sql` | Sample data for local + preview branches |
 | `supabase/migrations/*.sql` | Database migrations |
-| `supabase/functions/` | Edge Functions (deployed per branch) |
+| `supabase/functions/` | Edge Functions |
 
 ### Troubleshooting
 
 | Issue | Solution |
 |-------|----------|
+| Local won't start | `docker ps` to check Docker, `npx supabase stop --no-backup` to reset |
 | Migration failed | Check Supabase dashboard → Branches → View logs |
-| Seed data missing | Delete branch in dashboard, reopen PR |
-| Wrong credentials | Supabase integration auto-syncs, wait 1-2 min |
+| Seed data missing | `npx supabase db reset` locally, or delete/recreate PR branch |
 | Schema drift | Rebase your feature branch from main |
+| Wrong credentials | Vercel auto-syncs on PR open, wait 1-2 min |
 
 ### Scripts for Data Management
 
