@@ -1,0 +1,3 @@
+-- Migration: add_monthly_leads_trend_function
+-- Applied directly to production via Supabase MCP
+-- Placeholder for branching compatibility

@@ -1,0 +1,3 @@
+-- Migration: allow_all_users_read_profiles
+-- Applied directly to production via Supabase MCP
+-- Placeholder for branching compatibility

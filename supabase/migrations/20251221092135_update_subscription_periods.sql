@@ -1,0 +1,3 @@
+-- Migration: update_subscription_periods
+-- Applied directly to production via Supabase MCP
+-- Placeholder for branching compatibility

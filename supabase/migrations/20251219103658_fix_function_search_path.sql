@@ -1,0 +1,3 @@
+-- Migration: fix_function_search_path
+-- Applied directly to production via Supabase MCP
+-- Placeholder for branching compatibility

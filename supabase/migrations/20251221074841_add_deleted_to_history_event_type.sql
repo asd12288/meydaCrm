@@ -1,0 +1,3 @@
+-- Migration: add_deleted_to_history_event_type
+-- Applied directly to production via Supabase MCP
+-- Placeholder for branching compatibility

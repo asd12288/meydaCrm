@@ -1,0 +1,3 @@
+-- Migration: simplify_import_system
+-- Applied directly to production via Supabase MCP
+-- Placeholder for branching compatibility

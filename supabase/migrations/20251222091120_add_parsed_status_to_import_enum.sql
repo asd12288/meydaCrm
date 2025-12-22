@@ -1,0 +1,3 @@
+-- Migration: add_parsed_status_to_import_enum
+-- Applied directly to production via Supabase MCP
+-- Placeholder for branching compatibility

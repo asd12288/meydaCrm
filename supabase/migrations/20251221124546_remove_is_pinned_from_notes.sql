@@ -1,0 +1,3 @@
+-- Migration: remove_is_pinned_from_notes
+-- Applied directly to production via Supabase MCP
+-- Placeholder for branching compatibility

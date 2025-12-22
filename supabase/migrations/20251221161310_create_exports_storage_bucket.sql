@@ -1,0 +1,3 @@
+-- Migration: create_exports_storage_bucket
+-- Applied directly to production via Supabase MCP
+-- Placeholder for branching compatibility

@@ -1,4 +1,14 @@
 /**
+ * @deprecated This script is DEPRECATED as of the Supabase Branching migration.
+ *
+ * We now use ephemeral preview branches instead of a permanent dev branch.
+ * Test data is automatically seeded via supabase/seed.sql when a preview branch is created.
+ *
+ * See CLAUDE.md Section 17 for the new branching workflow.
+ *
+ * ============================================================================
+ * ORIGINAL DESCRIPTION (for reference):
+ * ============================================================================
  * Seed the development branch with users and data
  *
  * This script:
@@ -9,6 +19,14 @@
  *   Set SUPABASE_DEV_URL and SUPABASE_DEV_SERVICE_KEY env vars, then run:
  *   npx tsx scripts/seed-develop-branch.ts
  */
+
+console.warn('');
+console.warn('='.repeat(70));
+console.warn('WARNING: This script is DEPRECATED.');
+console.warn('We now use Supabase Branching with supabase/seed.sql.');
+console.warn('See CLAUDE.md Section 17 for the new workflow.');
+console.warn('='.repeat(70));
+console.warn('');
 
 import { createClient } from '@supabase/supabase-js';
 import * as XLSX from 'xlsx';

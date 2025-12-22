@@ -1,0 +1,3 @@
+-- Migration: support_tickets
+-- Applied directly to production via Supabase MCP
+-- Placeholder for branching compatibility
