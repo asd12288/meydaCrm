@@ -115,21 +115,22 @@ INSERT INTO auth.users (
 ) ON CONFLICT (id) DO NOTHING;
 
 -- =============================================================================
--- SECTION 2: Update Profiles with Correct Roles
+-- SECTION 2: Create/Update Profiles
 -- =============================================================================
--- The trigger creates profiles, but we need to ensure correct roles
+-- Create profiles explicitly (fallback if trigger doesn't fire in preview branches)
+-- Then update with correct roles
 
-UPDATE public.profiles SET role = 'admin', display_name = 'Admin Test', avatar = 'avatar-01'
-WHERE id = '00000000-0000-0000-0000-000000000001';
-
-UPDATE public.profiles SET role = 'sales', display_name = 'Marie Dupont', avatar = 'avatar-02'
-WHERE id = '00000000-0000-0000-0000-000000000002';
-
-UPDATE public.profiles SET role = 'sales', display_name = 'Jean Martin', avatar = 'avatar-03'
-WHERE id = '00000000-0000-0000-0000-000000000003';
-
-UPDATE public.profiles SET role = 'sales', display_name = 'Sophie Bernard', avatar = 'avatar-04'
-WHERE id = '00000000-0000-0000-0000-000000000004';
+INSERT INTO public.profiles (id, username, display_name, role, avatar, created_at, updated_at)
+VALUES
+  ('00000000-0000-0000-0000-000000000001', 'admin', 'Admin Test', 'admin', 'avatar-01', now(), now()),
+  ('00000000-0000-0000-0000-000000000002', 'marie', 'Marie Dupont', 'sales', 'avatar-02', now(), now()),
+  ('00000000-0000-0000-0000-000000000003', 'jean', 'Jean Martin', 'sales', 'avatar-03', now(), now()),
+  ('00000000-0000-0000-0000-000000000004', 'sophie', 'Sophie Bernard', 'sales', 'avatar-04', now(), now())
+ON CONFLICT (id) DO UPDATE SET
+  role = EXCLUDED.role,
+  display_name = EXCLUDED.display_name,
+  avatar = EXCLUDED.avatar,
+  updated_at = now();
 
 -- =============================================================================
 -- SECTION 3: Sample Leads (50 leads with various statuses)
