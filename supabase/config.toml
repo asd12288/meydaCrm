@@ -93,7 +93,6 @@ enable_anonymous_sign_ins = false
 minimum_password_length = 6
 
 [auth.email]
-enabled = true
 enable_confirmations = false
 double_confirm_changes = false
 enable_signup = false

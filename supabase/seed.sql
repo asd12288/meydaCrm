@@ -41,7 +41,12 @@ INSERT INTO auth.users (
   now(),
   'authenticated',
   'authenticated'
-) ON CONFLICT (id) DO NOTHING;
+) ON CONFLICT (id) DO UPDATE SET
+  encrypted_password = EXCLUDED.encrypted_password,
+  raw_app_meta_data = EXCLUDED.raw_app_meta_data,
+  raw_user_meta_data = EXCLUDED.raw_user_meta_data,
+  email_confirmed_at = EXCLUDED.email_confirmed_at,
+  updated_at = now();
 
 -- Sales user 1: Marie (password: TestSales123!)
 INSERT INTO auth.users (
@@ -70,7 +75,12 @@ INSERT INTO auth.users (
   now(),
   'authenticated',
   'authenticated'
-) ON CONFLICT (id) DO NOTHING;
+) ON CONFLICT (id) DO UPDATE SET
+  encrypted_password = EXCLUDED.encrypted_password,
+  raw_app_meta_data = EXCLUDED.raw_app_meta_data,
+  raw_user_meta_data = EXCLUDED.raw_user_meta_data,
+  email_confirmed_at = EXCLUDED.email_confirmed_at,
+  updated_at = now();
 
 -- Sales user 2: Jean (password: TestSales123!)
 INSERT INTO auth.users (
@@ -99,7 +109,12 @@ INSERT INTO auth.users (
   now(),
   'authenticated',
   'authenticated'
-) ON CONFLICT (id) DO NOTHING;
+) ON CONFLICT (id) DO UPDATE SET
+  encrypted_password = EXCLUDED.encrypted_password,
+  raw_app_meta_data = EXCLUDED.raw_app_meta_data,
+  raw_user_meta_data = EXCLUDED.raw_user_meta_data,
+  email_confirmed_at = EXCLUDED.email_confirmed_at,
+  updated_at = now();
 
 -- Sales user 3: Sophie (password: TestSales123!)
 INSERT INTO auth.users (
@@ -128,7 +143,12 @@ INSERT INTO auth.users (
   now(),
   'authenticated',
   'authenticated'
-) ON CONFLICT (id) DO NOTHING;
+) ON CONFLICT (id) DO UPDATE SET
+  encrypted_password = EXCLUDED.encrypted_password,
+  raw_app_meta_data = EXCLUDED.raw_app_meta_data,
+  raw_user_meta_data = EXCLUDED.raw_user_meta_data,
+  email_confirmed_at = EXCLUDED.email_confirmed_at,
+  updated_at = now();
 
 -- =============================================================================
 -- SECTION 2: Create/Update Profiles
