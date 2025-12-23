@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import { ThemeProvider, ThemeScript } from '@/lib/theme';
 import { ToastProvider } from '@/modules/shared';
+import { AnalyticsProvider } from '@/lib/analytics';
 import 'simplebar-react/dist/simplebar.min.css';
 import './globals.css';
 
@@ -27,7 +28,9 @@ export default function RootLayout({
       </head>
       <body className={`${inter.variable} font-sans antialiased bg-white dark:bg-dark text-link dark:text-darklink`}>
         <ThemeProvider>
-          <ToastProvider>{children}</ToastProvider>
+          <ToastProvider>
+            <AnalyticsProvider>{children}</AnalyticsProvider>
+          </ToastProvider>
         </ThemeProvider>
       </body>
     </html>
