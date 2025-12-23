@@ -157,3 +157,13 @@ max_rows = 1000
 # Production does NOT run seed.sql
 [remotes.production.db.seed]
 enabled = false
+
+# Production Auth Settings (prevents Dashboard settings from being reset on merge)
+[remotes.production.auth]
+enabled = true
+site_url = "https://meyda-crm.vercel.app"
+
+[remotes.production.auth.email]
+enable_confirmations = false
+double_confirm_changes = false
+enable_signup = false

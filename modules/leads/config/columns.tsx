@@ -2,7 +2,7 @@
 
 import { createColumnHelper } from '@tanstack/react-table';
 import Link from 'next/link';
-import { IconDots, IconEye, IconEdit, IconTrash } from '@tabler/icons-react';
+import { IconDots, IconEye, IconEdit, IconTrash, IconCalendar } from '@tabler/icons-react';
 import { Button } from '@/components/ui/button';
 import {
   CopyableText,
@@ -22,6 +22,7 @@ interface ColumnOptions {
   isAdmin: boolean;
   includeSelection: boolean;
   onDelete?: (leadId: string) => void;
+  onCreateMeeting?: (leadId: string) => void;
 }
 
 // Row actions dropdown component
@@ -29,10 +30,12 @@ function RowActionsDropdown({
   leadId,
   isAdmin,
   onDelete,
+  onCreateMeeting,
 }: {
   leadId: string;
   isAdmin: boolean;
   onDelete?: (leadId: string) => void;
+  onCreateMeeting?: (leadId: string) => void;
 }) {
   return (
     <DropdownMenu
@@ -57,6 +60,14 @@ function RowActionsDropdown({
         >
           Modifier
         </DropdownMenuItem>
+        {onCreateMeeting && (
+          <DropdownMenuItem
+            onClick={() => onCreateMeeting(leadId)}
+            icon={<IconCalendar size={16} />}
+          >
+            Planifier un rendez-vous
+          </DropdownMenuItem>
+        )}
         {isAdmin && onDelete && (
           <>
             <DropdownMenuDivider />
@@ -74,7 +85,7 @@ function RowActionsDropdown({
   );
 }
 
-export function getLeadColumns({ isAdmin, includeSelection, onDelete }: ColumnOptions) {
+export function getLeadColumns({ isAdmin, includeSelection, onDelete, onCreateMeeting }: ColumnOptions) {
   const columns = [];
 
   // Selection column (admin only)
@@ -241,6 +252,7 @@ export function getLeadColumns({ isAdmin, includeSelection, onDelete }: ColumnOp
           leadId={info.row.original.id}
           isAdmin={isAdmin}
           onDelete={onDelete}
+          onCreateMeeting={onCreateMeeting}
         />
       ),
       size: 50,
