@@ -1324,25 +1324,21 @@ button.bg-info:hover,
   background: linear-gradient(135deg, #9333ea 0%, #6b21a8 100%);
 }
 
-/* HAPPY GREEN - Deposit status (money/celebration!) */
+/* Deposit status - Solid success green with good contrast */
 .badge-deposit {
-  background: linear-gradient(135deg, #86efac 0%, #4ade80 50%, #22c55e 100%);
-  color: #166534;
+  background-color: #16a34a;
+  color: white;
   transition: all 0.2s ease;
-  box-shadow: 0 0 6px rgba(74, 222, 128, 0.4);
 }
 .badge-deposit:hover {
-  background: linear-gradient(135deg, #bbf7d0 0%, #86efac 50%, #4ade80 100%);
-  box-shadow: 0 0 10px rgba(74, 222, 128, 0.6);
+  background-color: #15803d;
 }
 .dark .badge-deposit {
-  background: linear-gradient(135deg, #4ade80 0%, #22c55e 50%, #16a34a 100%);
+  background-color: #16a34a;
   color: white;
-  box-shadow: 0 0 5px rgba(74, 222, 128, 0.3);
 }
 .dark .badge-deposit:hover {
-  background: linear-gradient(135deg, #86efac 0%, #4ade80 50%, #22c55e 100%);
-  box-shadow: 0 0 8px rgba(74, 222, 128, 0.5);
+  background-color: #22c55e;
 }
 
 /* SKY - Light calm blue (no_answer_1) */
@@ -1409,6 +1405,21 @@ button.bg-info:hover,
   background: linear-gradient(135deg, #d946ef 0%, #a21caf 100%);
 }
 
+.badge-darkblue {
+  background: linear-gradient(135deg, #3b82f6 0%, #1e40af 50%, #1e3a8a 100%);
+  color: white;
+  transition: all 0.2s ease;
+}
+.badge-darkblue:hover {
+  background: linear-gradient(135deg, #60a5fa 0%, #2563eb 50%, #1e40af 100%);
+}
+.dark .badge-darkblue {
+  background: linear-gradient(135deg, #2563eb 0%, #1e40af 50%, #172554 100%);
+}
+.dark .badge-darkblue:hover {
+  background: linear-gradient(135deg, #3b82f6 0%, #1e40af 50%, #1e3a8a 100%);
+}
+
 /* Solid badges */
 .badge-solid-primary {
   background-color: var(--color-primary);
@@ -1473,7 +1484,10 @@ button.bg-info:hover,
   color: #14b8a6 !important;
 }
 .text-deposit {
-  color: #4ade80 !important;
+  color: #16a34a !important;
+}
+.text-darkblue {
+  color: #1e40af !important;
 }
 
 /* Hover text colors for filter dropdown options */
