@@ -25,7 +25,7 @@ describe('LeadActivityTabs', () => {
 
     expect(screen.getByText('Commentaires')).toBeInTheDocument();
     expect(screen.getByText('Historique')).toBeInTheDocument();
-    expect(screen.getByText('Réunions')).toBeInTheDocument();
+    expect(screen.getByText('Rendez-vous')).toBeInTheDocument();
     expect(screen.getByText('5')).toBeInTheDocument();
     expect(screen.getByText('10')).toBeInTheDocument();
     expect(screen.getByText('3')).toBeInTheDocument();
@@ -64,7 +64,7 @@ describe('LeadActivityTabs', () => {
     );
 
     // Click meetings tab
-    const meetingsTab = screen.getByText('Réunions').closest('button')!;
+    const meetingsTab = screen.getByText('Rendez-vous').closest('button')!;
     fireEvent.click(meetingsTab);
 
     expect(screen.getByText('Meetings Content')).toBeInTheDocument();

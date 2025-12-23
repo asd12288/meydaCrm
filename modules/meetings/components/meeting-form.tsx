@@ -205,7 +205,7 @@ export function MeetingForm({
 
       <FormTextarea
         label={MEETING_FIELD_LABELS.description}
-        placeholder="Notes sur la réunion..."
+        placeholder="Notes sur le rendez-vous..."
         rows={3}
         error={errors.description?.message}
         {...register('description')}
@@ -217,7 +217,7 @@ export function MeetingForm({
       <FormErrorAlert error={error} />
       <FormSuccessAlert
         show={success}
-        message={isEditing ? 'Réunion modifiée' : 'Réunion créée'}
+        message={isEditing ? 'Rendez-vous modifié' : 'Rendez-vous créé'}
       />
 
       <FormActions

@@ -152,7 +152,7 @@ export async function createMeeting(
 
   if (error) {
     console.error('Error creating meeting:', error);
-    return { error: 'Erreur lors de la création de la réunion' };
+    return { error: 'Erreur lors de la création du rendez-vous' };
   }
 
   revalidatePath('/dashboard');

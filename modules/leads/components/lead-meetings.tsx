@@ -44,7 +44,7 @@ export function LeadMeetings({ leadId, meetings }: LeadMeetingsProps) {
     <div className="space-y-4">
       {/* Header with Add button */}
       <div className="flex items-center justify-between">
-        <h6 className="font-medium text-ld">Réunions</h6>
+        <h6 className="font-medium text-ld">Rendez-vous</h6>
         <Button size="sm" onClick={() => setShowForm(true)}>
           <IconPlus size={16} />
           Planifier
@@ -54,8 +54,8 @@ export function LeadMeetings({ leadId, meetings }: LeadMeetingsProps) {
       {meetings.length === 0 ? (
         <EmptyState
           icon={<IconCalendar size={48} />}
-          title="Aucune réunion"
-          description="Planifiez une réunion avec ce lead"
+          title="Aucun rendez-vous"
+          description="Planifiez un rendez-vous avec ce lead"
         />
       ) : (
         <>
@@ -93,7 +93,7 @@ export function LeadMeetings({ leadId, meetings }: LeadMeetingsProps) {
       <Modal
         isOpen={showForm}
         onClose={() => setShowForm(false)}
-        title="Planifier une réunion"
+        title="Planifier un rendez-vous"
       >
         <MeetingForm
           leadId={leadId}
@@ -107,7 +107,7 @@ export function LeadMeetings({ leadId, meetings }: LeadMeetingsProps) {
         <Modal
           isOpen={!!editingMeeting}
           onClose={() => setEditingMeeting(null)}
-          title="Modifier la réunion"
+          title="Modifier le rendez-vous"
         >
           <MeetingForm
             leadId={leadId}
