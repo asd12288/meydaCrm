@@ -4,14 +4,19 @@ import posthog from 'posthog-js';
 import { PostHogProvider } from 'posthog-js/react';
 import { useEffect } from 'react';
 
+// Set to true to test locally, false for production
+const ENABLE_DEV_TRACKING = false;
+
 export function PHProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_POSTHOG_KEY) {
       posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
         api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://eu.i.posthog.com',
-        // Only capture in production
+        // Debug mode shows events in console
+        debug: process.env.NODE_ENV === 'development',
         loaded: (ph) => {
-          if (process.env.NODE_ENV === 'development') {
+          // Disable in dev unless explicitly enabled for testing
+          if (process.env.NODE_ENV === 'development' && !ENABLE_DEV_TRACKING) {
             ph.opt_out_capturing();
           }
         },
