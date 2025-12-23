@@ -1003,7 +1003,7 @@ export async function bulkTransferLeads(
 
   // Perform the bulk transfer using service role client to bypass RLS
   const adminClient = createServiceRoleClient();
-  const { error: updateError, count } = await adminClient
+  const { error: updateError } = await adminClient
     .from('leads')
     .update({
       assigned_to: newAssigneeId,
