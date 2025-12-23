@@ -19,7 +19,7 @@ export const STATUS_BADGE_CLASSES: Record<LeadStatus, string> = {
   no_answer_2: 'badge-slate', // Slate gray - Patient, neutral second attempt
   wrong_number: 'badge-gray', // Dark gray - Closed, move on
   not_interested: 'badge-rose', // Rose pink - Rejection (softer than red)
-  deposit: 'badge-deposit', // Vibrant lime-green - Money/celebration!
+  deposit: 'badge-deposit', // Solid success green - Money/celebration!
   callback: 'badge-orange', // Orange - Scheduled callback
   relance: 'badge-primary', // Blue - Professional follow-up
   mail: 'badge-fuchsia', // Fuchsia pink - Communication (distinct from purple)
@@ -34,34 +34,31 @@ export const STATUS_BADGE_CLASSES: Record<LeadStatus, string> = {
 };
 
 /**
- * Badge class to hex color mapping
- * Used for inline styles (filters, charts, icons)
- * ALL VALUES ARE HEX for consistency across the app
+ * Badge class to CSS variable mapping
+ * Used for inline styles when CSS classes can't be applied
  */
 export const BADGE_TO_CSS_VAR: Record<string, string> = {
-  // Core theme colors
-  'badge-success': '#22c55e',
-  'badge-warning': '#eab308',
-  'badge-error': '#ef4444',
-  'badge-info': '#06b6d4',
-  'badge-primary': '#3b82f6',
-  'badge-secondary': '#8b5cf6',
-  // Status-specific colors (matching chart colors exactly)
-  'badge-indigo': '#6366f1',
+  'badge-success': 'var(--color-success)',
+  'badge-warning': 'var(--color-warning)',
+  'badge-error': 'var(--color-error)',
+  'badge-info': 'var(--color-info)',
+  'badge-primary': 'var(--color-primary)',
+  'badge-secondary': 'var(--color-secondary)',
+  // Extended colors for unique status differentiation
+  'badge-indigo': 'var(--color-indigo)',
+  'badge-orange': 'var(--color-orange)',
+  'badge-gray': 'var(--color-gray)',
+  'badge-emerald': 'var(--color-emerald)',
+  'badge-cyan': 'var(--color-cyan)',
+  'badge-purple': 'var(--color-purple)',
+  // NEW distinct colors
   'badge-teal': '#14b8a6',
+  'badge-deposit': '#16a34a',
   'badge-sky': '#0ea5e9',
   'badge-slate': '#64748b',
-  'badge-gray': '#52525b',
   'badge-rose': '#f43f5e',
-  'badge-deposit': '#16a34a',
-  'badge-orange': '#f97316',
   'badge-fuchsia': '#d946ef',
   'badge-darkblue': '#1e40af',
-  // Legacy
-  'badge-emerald': '#10b981',
-  'badge-cyan': '#06b6d4',
-  'badge-purple': '#a855f7',
-  'badge-gold': '#f59e0b',
 };
 
 /**
@@ -93,34 +90,31 @@ export const BADGE_TO_TEXT_CLASS: Record<string, string> = {
 };
 
 /**
- * Text color class to hex color mapping
+ * Text color class to CSS variable mapping
  * Used for inline icon styles in dropdowns
- * ALL VALUES ARE HEX for consistency across the app
  */
 export const TEXT_CLASS_TO_CSS_VAR: Record<string, string> = {
-  // Core theme colors
-  'text-success': '#22c55e',
-  'text-warning': '#eab308',
-  'text-error': '#ef4444',
-  'text-info': '#06b6d4',
-  'text-primary': '#3b82f6',
-  'text-secondary': '#8b5cf6',
-  // Status-specific colors (matching chart colors exactly)
-  'text-indigo': '#6366f1',
+  'text-success': 'var(--color-success)',
+  'text-warning': 'var(--color-warning)',
+  'text-error': 'var(--color-error)',
+  'text-info': 'var(--color-info)',
+  'text-primary': 'var(--color-primary)',
+  'text-secondary': 'var(--color-secondary)',
+  // Extended colors
+  'text-indigo': 'var(--color-indigo)',
+  'text-orange': 'var(--color-orange)',
+  'text-gray-status': 'var(--color-gray)',
+  'text-emerald': 'var(--color-emerald)',
+  'text-cyan': 'var(--color-cyan)',
+  'text-purple': 'var(--color-purple)',
+  // NEW distinct colors
   'text-teal': '#14b8a6',
+  'text-deposit': '#16a34a',
   'text-sky': '#0ea5e9',
   'text-slate': '#64748b',
-  'text-gray-status': '#52525b',
   'text-rose': '#f43f5e',
-  'text-deposit': '#16a34a',
-  'text-orange': '#f97316',
   'text-fuchsia': '#d946ef',
   'text-darkblue': '#1e40af',
-  // Legacy
-  'text-emerald': '#10b981',
-  'text-cyan': '#06b6d4',
-  'text-purple': '#a855f7',
-  'text-gold': '#f59e0b',
 };
 
 /**

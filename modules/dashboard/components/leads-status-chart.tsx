@@ -96,7 +96,7 @@ export function LeadsStatusChart({ leadsByStatus, totalLeads }: LeadsStatusChart
   return (
     <CardBox className="h-full">
       <h5 className="card-title mb-6">Répartition par statut</h5>
-      
+
       <div className="grid grid-cols-12 gap-6 items-center">
         <div className="lg:col-span-6 col-span-12">
           <Chart
@@ -107,7 +107,7 @@ export function LeadsStatusChart({ leadsByStatus, totalLeads }: LeadsStatusChart
             width="100%"
           />
         </div>
-        
+
         <div className="lg:col-span-6 col-span-12">
           <div className="space-y-3">
             {sortedStatuses.map(([status, count]) => {
