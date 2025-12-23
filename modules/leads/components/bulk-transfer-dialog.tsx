@@ -61,7 +61,7 @@ export function BulkTransferDialog({
       onClose={handleClose}
       title="Transférer les leads"
       icon={<IconTransfer size={20} className="text-primary" />}
-      size="sm"
+      size="md"
     >
       <form onSubmit={(e) => { e.preventDefault(); handleTransfer(); }} className="space-y-4">
         {/* User selection */}
@@ -70,7 +70,7 @@ export function BulkTransferDialog({
           {transferableUsers.length === 0 ? (
             <p className="text-sm text-darklink italic">Aucun commercial disponible</p>
           ) : (
-            <div className="space-y-2 max-h-48 overflow-y-auto">
+            <div className="space-y-2 max-h-64 overflow-y-auto">
               {transferableUsers.map((user) => (
                 <button
                   key={user.id}
