@@ -48,7 +48,7 @@ export function MeetingsWidget({
       <div className="flex items-center justify-between mb-4">
         <h5 className="card-title flex items-center gap-2">
           <IconCalendar size={20} className="text-primary" />
-          Réunions du jour
+          Rendez-vous du jour
         </h5>
         <span className="inline-flex items-center justify-center min-w-6 h-6 px-2 rounded-full text-xs font-semibold bg-lightprimary text-primary">
           {todayMeetings.length}
@@ -57,7 +57,7 @@ export function MeetingsWidget({
 
       {todayMeetings.length === 0 ? (
         <p className="text-darklink text-sm py-4 text-center">
-          Aucune réunion aujourd&apos;hui
+          Aucun rendez-vous aujourd&apos;hui
         </p>
       ) : (
         <div className="space-y-3 mb-4">
@@ -91,7 +91,7 @@ export function MeetingsWidget({
       {futureUpcoming.length > 0 && (
         <div className="border-t border-ld pt-3 mt-3">
           <p className="text-xs text-darklink uppercase font-medium mb-2">
-            Prochaines réunions
+            Prochains rendez-vous
           </p>
           <div className="space-y-2">
             {futureUpcoming.slice(0, 3).map((meeting) => (

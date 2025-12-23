@@ -55,7 +55,7 @@ export function LeadActivityTabs({
           className={`tab-button ${activeTab === 'meetings' ? 'tab-button-active' : ''}`}
         >
           <IconCalendar size={18} />
-          <span>Réunions</span>
+          <span>Rendez-vous</span>
           <span className="inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full text-xs font-medium bg-lightsuccess text-success">
             {meetingsCount}
           </span>
