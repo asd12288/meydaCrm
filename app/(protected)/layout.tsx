@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { DashboardLayout } from '@/modules/layout';
 import { getProfile, createDefaultProfile } from '@/lib/auth';
 import { checkSubscriptionStatus } from '@/lib/subscription';
+import { PostHogIdentify } from '@/lib/analytics';
 
 export default async function ProtectedLayout({
   children,
@@ -53,6 +54,11 @@ export default async function ProtectedLayout({
     );
     return (
       <DashboardLayout profile={defaultProfile} subscription={subscriptionInfo}>
+        <PostHogIdentify
+          userId={defaultProfile.id}
+          displayName={defaultProfile.displayName}
+          role={defaultProfile.role}
+        />
         {children}
       </DashboardLayout>
     );
@@ -60,6 +66,11 @@ export default async function ProtectedLayout({
 
   return (
     <DashboardLayout profile={profile} subscription={subscriptionInfo}>
+      <PostHogIdentify
+        userId={profile.id}
+        displayName={profile.displayName}
+        role={profile.role}
+      />
       {children}
     </DashboardLayout>
   );
