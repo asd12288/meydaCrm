@@ -24,11 +24,24 @@ export {
 export {
   LEAD_STATUSES,
   LEAD_STATUS_LABELS,
-  LEAD_STATUS_COLORS,
   LEAD_STATUS_OPTIONS,
-  getStatusColor,
-  type LeadStatus,
+  type LeadStatusKey,
+  type LeadStatusLabel,
 } from './lead-statuses';
+
+// Status colors (centralized)
+export {
+  STATUS_BADGE_CLASSES,
+  BADGE_TO_CSS_VAR,
+  BADGE_TO_TEXT_CLASS,
+  TEXT_CLASS_TO_CSS_VAR,
+  STATUS_CHART_COLORS,
+  getStatusBadgeClass,
+  getStatusCssVar,
+  getStatusTextClass,
+  getStatusChartColor,
+  getTextClassCssVar,
+} from './status-colors';
 
 // History events
 export {

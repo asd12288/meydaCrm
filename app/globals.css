@@ -132,17 +132,39 @@
   --color-warning: #FFB900;
   --color-error: #FF6692;
 
+  /* Extended Status Colors (for unique lead statuses) */
+  --color-indigo: #6366f1;
+  --color-orange: #f97316;
+  --color-gray: #71717a;
+  --color-emerald: #10b981;
+  --color-cyan: #06b6d4;
+  --color-purple: #a855f7;
+
   /* Light Status Variants */
   --color-lightsuccess: #00ceb625;
   --color-lighterror: #FF669230;
   --color-lightinfo: #46caeb25;
   --color-lightwarning: #FFB90025;
 
+  /* Light Extended Status Variants */
+  --color-lightindigo: #6366f125;
+  --color-lightorange: #f9731625;
+  --color-lightgray-status: #71717a20;
+  --color-lightemerald: #10b98125;
+  --color-lightcyan: #06b6d425;
+  --color-lightpurple: #a855f725;
+
   /* Emphasis (hover) variants */
   --color-error-emphasis: #d9577c;
   --color-warning-emphasis: #d9941a;
   --color-success-emphasis: #10bd9d;
   --color-info-emphasis: #3cacc8;
+  --color-indigo-emphasis: #4f46e5;
+  --color-orange-emphasis: #ea580c;
+  --color-gray-emphasis: #52525b;
+  --color-emerald-emphasis: #059669;
+  --color-cyan-emphasis: #0891b2;
+  --color-purple-emphasis: #9333ea;
 
   /* Neutral Colors */
   --color-white: #fff;
@@ -204,6 +226,9 @@
   --kanban-board-circle-red: oklch(0.6368 0.2078 25.33);
   --kanban-board-circle-violet: oklch(0.6059 0.2187 292.72);
   --kanban-board-circle-yellow: oklch(0.7959 0.1618 86.05);
+  /* Extended kanban colors for unique status differentiation */
+  --kanban-board-circle-orange: oklch(0.7020 0.1910 41.29);
+  --kanban-board-circle-emerald: oklch(0.6964 0.1740 163.22);
 }
 
 /* Dark Mode Variables */
@@ -259,6 +284,9 @@
   --kanban-board-circle-red: oklch(0.7108 0.1660 22.21);
   --kanban-board-circle-violet: oklch(0.7093 0.1589 293.52);
   --kanban-board-circle-yellow: oklch(0.8601 0.1730 91.84);
+  /* Extended kanban colors for dark mode */
+  --kanban-board-circle-orange: oklch(0.7520 0.1810 45.29);
+  --kanban-board-circle-emerald: oklch(0.7564 0.1640 165.22);
 }
 
 /* Theme Transition */
@@ -388,6 +416,9 @@ html.dark {
   --color-kanban-board-circle-gray: var(--kanban-board-circle-gray);
   --color-kanban-board-circle-cyan: var(--kanban-board-circle-cyan);
   --color-kanban-board-circle-blue: var(--kanban-board-circle-blue);
+  /* Extended kanban colors */
+  --color-kanban-board-circle-orange: var(--kanban-board-circle-orange);
+  --color-kanban-board-circle-emerald: var(--kanban-board-circle-emerald);
 }
 
 /* ============================================
@@ -1092,37 +1123,290 @@ button.bg-info:hover,
 }
 
 /* ============================================
-   Status Badge Classes
+   Status Badge Classes (Vibrant Gradients)
    ============================================ */
 
 .badge-primary {
-  background-color: var(--color-lightprimary);
-  color: var(--color-primary);
+  background: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%);
+  color: white;
+  transition: all 0.2s ease;
+}
+.badge-primary:hover {
+  background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%);
+}
+.dark .badge-primary {
+  background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%);
+}
+.dark .badge-primary:hover {
+  background: linear-gradient(135deg, #0284c7 0%, #075985 100%);
 }
 
 .badge-secondary {
-  background-color: var(--color-lightsecondary);
-  color: var(--color-secondary);
+  background: linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%);
+  color: white;
+  transition: all 0.2s ease;
+}
+.badge-secondary:hover {
+  background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+}
+.dark .badge-secondary {
+  background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+}
+.dark .badge-secondary:hover {
+  background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);
 }
 
 .badge-success {
-  background-color: var(--color-lightsuccess);
-  color: var(--color-success);
+  background: linear-gradient(135deg, #4ade80 0%, #16a34a 100%);
+  color: white;
+  transition: all 0.2s ease;
+}
+.badge-success:hover {
+  background: linear-gradient(135deg, #22c55e 0%, #15803d 100%);
+}
+.dark .badge-success {
+  background: linear-gradient(135deg, #22c55e 0%, #15803d 100%);
+}
+.dark .badge-success:hover {
+  background: linear-gradient(135deg, #16a34a 0%, #166534 100%);
+}
+
+/* TEAL - RDV status (meeting scheduled) */
+.badge-teal {
+  background: linear-gradient(135deg, #5eead4 0%, #14b8a6 50%, #0d9488 100%);
+  color: white;
+  transition: all 0.2s ease;
+}
+.badge-teal:hover {
+  background: linear-gradient(135deg, #99f6e4 0%, #2dd4bf 50%, #14b8a6 100%);
+}
+.dark .badge-teal {
+  background: linear-gradient(135deg, #2dd4bf 0%, #14b8a6 50%, #0f766e 100%);
+}
+.dark .badge-teal:hover {
+  background: linear-gradient(135deg, #5eead4 0%, #2dd4bf 50%, #14b8a6 100%);
 }
 
 .badge-warning {
-  background-color: var(--color-lightwarning);
-  color: var(--color-warning);
+  background: linear-gradient(135deg, #fde047 0%, #eab308 100%);
+  color: #1a1a1a;
+  transition: all 0.2s ease;
+}
+.badge-warning:hover {
+  background: linear-gradient(135deg, #facc15 0%, #ca8a04 100%);
+}
+.dark .badge-warning {
+  background: linear-gradient(135deg, #facc15 0%, #ca8a04 100%);
+}
+.dark .badge-warning:hover {
+  background: linear-gradient(135deg, #eab308 0%, #a16207 100%);
 }
 
 .badge-error {
-  background-color: var(--color-lighterror);
-  color: var(--color-error);
+  background: linear-gradient(135deg, #f87171 0%, #dc2626 100%);
+  color: white;
+  transition: all 0.2s ease;
+}
+.badge-error:hover {
+  background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+}
+.dark .badge-error {
+  background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+}
+.dark .badge-error:hover {
+  background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
 }
 
 .badge-info {
-  background-color: var(--color-lightinfo);
-  color: var(--color-info);
+  background: linear-gradient(135deg, #2dd4bf 0%, #0d9488 100%);
+  color: white;
+  transition: all 0.2s ease;
+}
+.badge-info:hover {
+  background: linear-gradient(135deg, #14b8a6 0%, #0f766e 100%);
+}
+.dark .badge-info {
+  background: linear-gradient(135deg, #14b8a6 0%, #0f766e 100%);
+}
+.dark .badge-info:hover {
+  background: linear-gradient(135deg, #0d9488 0%, #115e59 100%);
+}
+
+/* Extended status badges (unique colors for each lead status) */
+.badge-indigo {
+  background: linear-gradient(135deg, #818cf8 0%, #4f46e5 100%);
+  color: white;
+  transition: all 0.2s ease;
+}
+.badge-indigo:hover {
+  background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);
+}
+.dark .badge-indigo {
+  background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);
+}
+.dark .badge-indigo:hover {
+  background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%);
+}
+
+.badge-orange {
+  background: linear-gradient(135deg, #fdba74 0%, #fb923c 50%, #f97316 100%);
+  color: #1a1a1a;
+  transition: all 0.2s ease;
+}
+.badge-orange:hover {
+  background: linear-gradient(135deg, #fed7aa 0%, #fdba74 50%, #fb923c 100%);
+}
+.dark .badge-orange {
+  background: linear-gradient(135deg, #fb923c 0%, #f97316 50%, #ea580c 100%);
+  color: white;
+}
+.dark .badge-orange:hover {
+  background: linear-gradient(135deg, #fdba74 0%, #fb923c 50%, #f97316 100%);
+}
+
+.badge-gray {
+  background: linear-gradient(135deg, #a1a1aa 0%, #52525b 100%);
+  color: white;
+  transition: all 0.2s ease;
+}
+.badge-gray:hover {
+  background: linear-gradient(135deg, #71717a 0%, #3f3f46 100%);
+}
+.dark .badge-gray {
+  background: linear-gradient(135deg, #71717a 0%, #3f3f46 100%);
+}
+.dark .badge-gray:hover {
+  background: linear-gradient(135deg, #52525b 0%, #27272a 100%);
+}
+
+.badge-emerald {
+  background: linear-gradient(135deg, #34d399 0%, #059669 100%);
+  color: white;
+  transition: all 0.2s ease;
+}
+.badge-emerald:hover {
+  background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+}
+.dark .badge-emerald {
+  background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+}
+.dark .badge-emerald:hover {
+  background: linear-gradient(135deg, #059669 0%, #065f46 100%);
+}
+
+.badge-cyan {
+  background: linear-gradient(135deg, #22d3ee 0%, #0891b2 100%);
+  color: white;
+  transition: all 0.2s ease;
+}
+.badge-cyan:hover {
+  background: linear-gradient(135deg, #06b6d4 0%, #0e7490 100%);
+}
+.dark .badge-cyan {
+  background: linear-gradient(135deg, #06b6d4 0%, #0e7490 100%);
+}
+.dark .badge-cyan:hover {
+  background: linear-gradient(135deg, #0891b2 0%, #155e75 100%);
+}
+
+.badge-purple {
+  background: linear-gradient(135deg, #c084fc 0%, #9333ea 100%);
+  color: white;
+  transition: all 0.2s ease;
+}
+.badge-purple:hover {
+  background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%);
+}
+.dark .badge-purple {
+  background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%);
+}
+.dark .badge-purple:hover {
+  background: linear-gradient(135deg, #9333ea 0%, #6b21a8 100%);
+}
+
+/* HAPPY GREEN - Deposit status (money/celebration!) */
+.badge-deposit {
+  background: linear-gradient(135deg, #86efac 0%, #4ade80 50%, #22c55e 100%);
+  color: #166534;
+  transition: all 0.2s ease;
+  box-shadow: 0 0 6px rgba(74, 222, 128, 0.4);
+}
+.badge-deposit:hover {
+  background: linear-gradient(135deg, #bbf7d0 0%, #86efac 50%, #4ade80 100%);
+  box-shadow: 0 0 10px rgba(74, 222, 128, 0.6);
+}
+.dark .badge-deposit {
+  background: linear-gradient(135deg, #4ade80 0%, #22c55e 50%, #16a34a 100%);
+  color: white;
+  box-shadow: 0 0 5px rgba(74, 222, 128, 0.3);
+}
+.dark .badge-deposit:hover {
+  background: linear-gradient(135deg, #86efac 0%, #4ade80 50%, #22c55e 100%);
+  box-shadow: 0 0 8px rgba(74, 222, 128, 0.5);
+}
+
+/* SKY - Light calm blue (no_answer_1) */
+.badge-sky {
+  background: linear-gradient(135deg, #7dd3fc 0%, #0ea5e9 100%);
+  color: white;
+  transition: all 0.2s ease;
+}
+.badge-sky:hover {
+  background: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%);
+}
+.dark .badge-sky {
+  background: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%);
+}
+.dark .badge-sky:hover {
+  background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%);
+}
+
+/* SLATE - Neutral gray-blue (no_answer_2) */
+.badge-slate {
+  background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
+  color: white;
+  transition: all 0.2s ease;
+}
+.badge-slate:hover {
+  background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+}
+.dark .badge-slate {
+  background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+}
+.dark .badge-slate:hover {
+  background: linear-gradient(135deg, #475569 0%, #334155 100%);
+}
+
+/* ROSE - Softer red-pink (not_interested) */
+.badge-rose {
+  background: linear-gradient(135deg, #fb7185 0%, #e11d48 100%);
+  color: white;
+  transition: all 0.2s ease;
+}
+.badge-rose:hover {
+  background: linear-gradient(135deg, #f43f5e 0%, #be123c 100%);
+}
+.dark .badge-rose {
+  background: linear-gradient(135deg, #f43f5e 0%, #be123c 100%);
+}
+.dark .badge-rose:hover {
+  background: linear-gradient(135deg, #e11d48 0%, #9f1239 100%);
+}
+
+/* FUCHSIA - Bright pink (mail - distinct from purple) */
+.badge-fuchsia {
+  background: linear-gradient(135deg, #f0abfc 0%, #d946ef 100%);
+  color: white;
+  transition: all 0.2s ease;
+}
+.badge-fuchsia:hover {
+  background: linear-gradient(135deg, #e879f9 0%, #c026d3 100%);
+}
+.dark .badge-fuchsia {
+  background: linear-gradient(135deg, #e879f9 0%, #c026d3 100%);
+}
+.dark .badge-fuchsia:hover {
+  background: linear-gradient(135deg, #d946ef 0%, #a21caf 100%);
 }
 
 /* Solid badges */
@@ -1166,6 +1450,30 @@ button.bg-info:hover,
 }
 .text-secondary {
   color: var(--color-secondary) !important;
+}
+.text-indigo {
+  color: var(--color-indigo) !important;
+}
+.text-orange {
+  color: var(--color-orange) !important;
+}
+.text-gray-status {
+  color: var(--color-gray) !important;
+}
+.text-emerald {
+  color: var(--color-emerald) !important;
+}
+.text-cyan {
+  color: var(--color-cyan) !important;
+}
+.text-purple {
+  color: var(--color-purple) !important;
+}
+.text-teal {
+  color: #14b8a6 !important;
+}
+.text-deposit {
+  color: #4ade80 !important;
 }
 
 /* Hover text colors for filter dropdown options */
@@ -2206,6 +2514,9 @@ button.bg-info:hover,
     --color-kanban-board-circle-red: var(--kanban-board-circle-red);
     --color-kanban-board-circle-violet: var(--kanban-board-circle-violet);
     --color-kanban-board-circle-yellow: var(--kanban-board-circle-yellow);
+    /* Extended kanban colors */
+    --color-kanban-board-circle-orange: var(--kanban-board-circle-orange);
+    --color-kanban-board-circle-emerald: var(--kanban-board-circle-emerald);
   }
 }
 

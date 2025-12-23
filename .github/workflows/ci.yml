@@ -7,6 +7,25 @@ on:
     branches: [main]
 
 jobs:
+  # Ensure production email provider stays enabled after merges
+  enable-production-email:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Enable Email Provider on Production
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+        run: |
+          echo "Ensuring email provider is enabled on production..."
+          curl -s -X PATCH \
+            "https://api.supabase.com/v1/projects/$SUPABASE_PROJECT_ID/config/auth" \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"external_email_enabled": true}' \
+            && echo "Production email provider verified/enabled" \
+            || echo "::error::Failed to enable production email provider"
+
   build:
     runs-on: ubuntu-latest
 
@@ -34,7 +53,7 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
 
-  # Monitor Supabase Preview branch status on PRs
+  # Monitor Supabase Preview branch status and enable email provider
   supabase-preview:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
@@ -55,3 +74,35 @@ jobs:
         run: |
           echo "::warning::Supabase Preview branch failed. Check migration files in Supabase dashboard."
           exit 1
+
+      # Enable Email Provider on preview branch (it's disabled by default)
+      - name: Setup Supabase CLI
+        if: steps.wait-for-supabase.outputs.conclusion == 'success'
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Enable Email Provider on Preview Branch
+        if: steps.wait-for-supabase.outputs.conclusion == 'success'
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+        run: |
+          # Get preview branch info
+          BRANCH_INFO=$(supabase branches get "${{ github.head_ref }}" --project-ref "$SUPABASE_PROJECT_ID" --output json 2>/dev/null || echo "{}")
+          PREVIEW_REF=$(echo "$BRANCH_INFO" | jq -r '.project_ref // empty')
+
+          if [ -n "$PREVIEW_REF" ]; then
+            echo "Enabling email provider for preview branch: $PREVIEW_REF"
+
+            # Enable email provider via Management API
+            curl -s -X PATCH \
+              "https://api.supabase.com/v1/projects/$PREVIEW_REF/config/auth" \
+              -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+              -H "Content-Type: application/json" \
+              -d '{"external_email_enabled": true}' \
+              && echo "Email provider enabled successfully" \
+              || echo "::warning::Failed to enable email provider"
+          else
+            echo "::warning::Could not get preview branch project ref"
+          fi

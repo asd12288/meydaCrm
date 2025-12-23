@@ -8,50 +8,17 @@ import {
   IconFilter,
   IconUser,
   IconUserOff,
-  IconCalendarEvent,
-  IconPhoneOff,
-  IconPhoneX,
-  IconBan,
-  IconThumbDown,
-  IconCash,
-  IconPhoneCall,
-  IconRefresh,
-  IconMail,
   IconDownload,
-  IconSparkles,
 } from '@tabler/icons-react';
 import { FilterDropdown, type FilterOption, UserAvatar, useModal } from '@/modules/shared';
 import { Button } from '@/components/ui/button';
 import { useFilterNavigation } from '../hooks/use-filter-navigation';
 import { ExportModal } from '@/modules/export/components/export-modal';
 import type { ExportFilters } from '@/modules/export/types';
-import { LEAD_STATUS_OPTIONS, STATUS_COLORS, SEARCH_DEBOUNCE_MS, MIN_SEARCH_LENGTH } from '../config/constants';
+import { LEAD_STATUS_OPTIONS, STATUS_ICON_MAP, SEARCH_DEBOUNCE_MS, MIN_SEARCH_LENGTH } from '../config/constants';
+import { STATUS_BADGE_CLASSES, BADGE_TO_TEXT_CLASS } from '@/lib/constants';
 import { UNASSIGNED_FILTER_VALUE } from '../types';
 import type { SalesUser } from '../types';
-
-// Map status to icon component
-const STATUS_ICON_MAP: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
-  new: IconSparkles,
-  rdv: IconCalendarEvent,
-  no_answer_1: IconPhoneOff,
-  no_answer_2: IconPhoneX,
-  wrong_number: IconBan,
-  not_interested: IconThumbDown,
-  deposit: IconCash,
-  callback: IconPhoneCall,
-  relance: IconRefresh,
-  mail: IconMail,
-};
-
-// Map badge classes to text color classes
-const BADGE_TO_TEXT_COLOR: Record<string, string> = {
-  'badge-success': 'text-success',
-  'badge-warning': 'text-warning',
-  'badge-error': 'text-error',
-  'badge-info': 'text-info',
-  'badge-primary': 'text-primary',
-  'badge-secondary': 'text-secondary',
-};
 
 interface LeadFiltersProps {
   salesUsers: SalesUser[];
@@ -98,11 +65,12 @@ export function LeadFilters({ salesUsers, isAdmin, hideStatusFilter = false }: L
   const statusOptions: FilterOption[] = useMemo(
     () =>
       LEAD_STATUS_OPTIONS.map((opt) => {
-        const badgeClass = STATUS_COLORS[opt.value] || 'badge-primary';
-        const textColorClass = BADGE_TO_TEXT_COLOR[badgeClass] || 'text-primary';
+        // opt.value is the English key (LeadStatus like 'new'), opt.label is French
+        const badgeClass = STATUS_BADGE_CLASSES[opt.value] || 'badge-primary';
+        const textColorClass = BADGE_TO_TEXT_CLASS[badgeClass] || 'text-primary';
         return {
-          value: opt.value,
-          label: opt.label,
+          value: opt.value, // English key for filter (matches DB enum)
+          label: opt.label, // French label for display
           icon: STATUS_ICON_MAP[opt.value],
           iconColorClass: textColorClass,
         };

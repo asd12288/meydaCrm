@@ -22,9 +22,9 @@ interface LeadStatusBadgeProps {
 
 // Size configuration for badges
 const SIZE_CONFIG = {
-  sm: { badge: 'px-2 py-0.5 text-xs', icon: 12, chevron: 10 },
-  md: { badge: 'px-2.5 py-0.5 text-xs', icon: 12, chevron: 12 },
-  lg: { badge: 'px-4 py-1.5 text-sm', icon: 16, chevron: 14 },
+  sm: { badge: 'px-2 py-0.5 text-xs', icon: 14, chevron: 10 },
+  md: { badge: 'px-2.5 py-0.5 text-xs', icon: 14, chevron: 12 },
+  lg: { badge: 'px-4 py-1.5 text-sm', icon: 18, chevron: 14 },
 };
 
 export function LeadStatusBadge({
@@ -67,6 +67,7 @@ export function LeadStatusBadge({
     <DropdownMenu
       position="bottom-left"
       widthClass="w-48"
+      portal
       trigger={
         <button
           type="button"

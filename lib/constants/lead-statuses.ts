@@ -1,54 +1,56 @@
 /**
  * Centralized lead status constants (DRY)
  * Used across: leads, import, db modules
+ *
+ * Database enum values: new, contacted, qualified, proposal, negotiation,
+ * won, lost, no_answer, rdv, no_answer_1, no_answer_2, wrong_number,
+ * not_interested, deposit, callback, relance, mail
+ *
+ * NOTE: Color mappings are now in status-colors.ts
  */
 
 /**
- * All possible lead statuses
+ * All possible lead statuses (matches database enum)
+ * Key = database enum value, Value = French display label
  */
 export const LEAD_STATUSES = {
-  NEW: 'Nouveau',
-  TO_CONTACT: 'A contacter',
-  CONTACTED: 'Contacte',
-  MEETING_SCHEDULED: 'RDV planifie',
-  MEETING_DONE: 'RDV effectue',
-  PROPOSAL_SENT: 'Devis envoye',
-  NEGOTIATION: 'En negociation',
-  WON: 'Gagne',
-  LOST: 'Perdu',
-  NO_ANSWER: 'Pas de reponse',
-  INVALID_NUMBER: 'Numero invalide',
-  NOT_INTERESTED: 'Pas interesse',
-  CALLBACK: 'A rappeler',
-  DUPLICATE: 'Doublon',
+  new: 'Nouveau',
+  rdv: 'RDV',
+  no_answer_1: 'Pas de réponse 1',
+  no_answer_2: 'Pas de réponse 2',
+  wrong_number: 'Faux numéro',
+  not_interested: 'Pas intéressé',
+  deposit: 'Dépôt',
+  callback: 'Rappeler',
+  relance: 'Relance',
+  mail: 'Mail',
 } as const;
 
-export type LeadStatus = (typeof LEAD_STATUSES)[keyof typeof LEAD_STATUSES];
+/**
+ * Legacy statuses (in DB but not shown in UI)
+ */
+export const LEGACY_STATUSES = {
+  contacted: 'Contacté',
+  qualified: 'Qualifié',
+  proposal: 'Proposition',
+  negotiation: 'En négociation',
+  won: 'Gagné',
+  lost: 'Perdu',
+  no_answer: 'Pas de réponse',
+} as const;
 
 /**
- * Lead status display labels (same as values since we use French labels)
+ * All statuses (for display of existing data)
+ */
+export const ALL_STATUSES = { ...LEAD_STATUSES, ...LEGACY_STATUSES } as const;
+
+export type LeadStatusKey = keyof typeof LEAD_STATUSES;
+export type LeadStatusLabel = (typeof LEAD_STATUSES)[LeadStatusKey];
+
+/**
+ * Lead status display labels (French)
  */
 export const LEAD_STATUS_LABELS = LEAD_STATUSES;
-
-/**
- * Status color mappings for badges
- */
-export const LEAD_STATUS_COLORS: Record<string, string> = {
-  Nouveau: 'badge-info',
-  'A contacter': 'badge-primary',
-  Contacte: 'badge-secondary',
-  'RDV planifie': 'badge-warning',
-  'RDV effectue': 'badge-warning',
-  'Devis envoye': 'badge-primary',
-  'En negociation': 'badge-warning',
-  Gagne: 'badge-success',
-  Perdu: 'badge-error',
-  'Pas de reponse': 'badge-secondary',
-  'Numero invalide': 'badge-error',
-  'Pas interesse': 'badge-error',
-  'A rappeler': 'badge-warning',
-  Doublon: 'badge-secondary',
-};
 
 /**
  * Status options for dropdowns
@@ -60,10 +62,3 @@ export const LEAD_STATUS_OPTIONS = Object.entries(LEAD_STATUSES).map(
     key,
   })
 );
-
-/**
- * Get color class for a status
- */
-export function getStatusColor(status: string): string {
-  return LEAD_STATUS_COLORS[status] || 'badge-secondary';
-}
