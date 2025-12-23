@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, type ReactNode } from 'react';
+import { useState, useRef, useLayoutEffect, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { useClickOutside } from '../hooks/use-click-outside';
@@ -24,6 +24,8 @@ export interface DropdownMenuProps {
   tight?: boolean;
   /** Use portal to render outside parent (for modals) */
   portal?: boolean;
+  /** Enable automatic collision detection (flips direction if not enough space) */
+  autoFlip?: boolean;
 }
 
 /**
@@ -40,9 +42,10 @@ export function DropdownMenu({
   zIndexClass = 'z-50',
   tight = false,
   portal = false,
+  autoFlip = false,
 }: DropdownMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [menuPosition, setMenuPosition] = useState<{ top: number; left: number; width: number } | null>(null);
+  const [menuPosition, setMenuPosition] = useState<{ top: number; left?: number; right?: number; width: number; flipped?: boolean } | null>(null);
   const triggerRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -57,20 +60,43 @@ export function DropdownMenu({
       // Calculate position synchronously before opening
       const rect = triggerRef.current.getBoundingClientRect();
       const gap = tight ? 4 : 8;
+      const estimatedMenuHeight = 300; // Estimated max menu height for collision detection
 
-      let top = rect.bottom + gap;
-      let left = rect.left;
-
-      if (position === 'bottom-right') {
-        left = rect.right - rect.width; // Use trigger width initially
-      } else if (position === 'top-left' || position === 'top-right') {
-        top = rect.top - gap - 200; // Estimate height
-        if (position === 'top-right') {
-          left = rect.right - rect.width;
-        }
+      // Determine if we should flip (open upward instead of downward)
+      let shouldFlip = false;
+      if (autoFlip && (position === 'bottom-left' || position === 'bottom-right')) {
+        const spaceBelow = window.innerHeight - rect.bottom;
+        const spaceAbove = rect.top;
+        // Flip if not enough space below but enough above
+        shouldFlip = spaceBelow < estimatedMenuHeight && spaceAbove > spaceBelow;
+      } else if (autoFlip && (position === 'top-left' || position === 'top-right')) {
+        const spaceAbove = rect.top;
+        const spaceBelow = window.innerHeight - rect.bottom;
+        // Flip if not enough space above but enough below
+        shouldFlip = spaceAbove < estimatedMenuHeight && spaceBelow > spaceAbove;
       }
 
-      setMenuPosition({ top, left, width: rect.width });
+      let top: number;
+
+      // Calculate vertical position based on flip state
+      const effectivePosition = shouldFlip
+        ? (position.startsWith('bottom') ? position.replace('bottom', 'top') : position.replace('top', 'bottom'))
+        : position;
+
+      if (effectivePosition.startsWith('bottom')) {
+        top = rect.bottom + gap;
+      } else {
+        // For top positioning, we'll set it initially and adjust after render
+        top = rect.top - gap - estimatedMenuHeight;
+      }
+
+      // Calculate horizontal position - use 'right' for right-aligned menus
+      const isRightAligned = position.endsWith('right');
+      const horizontalPos = isRightAligned
+        ? { right: window.innerWidth - rect.right }
+        : { left: rect.left };
+
+      setMenuPosition({ top, ...horizontalPos, width: rect.width, flipped: shouldFlip });
     } else {
       // Reset position when closing
       setMenuPosition(null);
@@ -78,8 +104,20 @@ export function DropdownMenu({
     setIsOpen(!isOpen);
   };
 
-  // Reset position when closing - handled in handleToggle instead of effect
-  // to avoid ESLint warning about setState in effect
+  // Adjust position after menu renders (for accurate height when flipped)
+  useLayoutEffect(() => {
+    if (isOpen && portal && menuPosition?.flipped && menuRef.current && triggerRef.current) {
+      const menuHeight = menuRef.current.getBoundingClientRect().height;
+      const triggerRect = triggerRef.current.getBoundingClientRect();
+      const gap = tight ? 4 : 8;
+
+      // Recalculate top position with actual menu height
+      const newTop = triggerRect.top - gap - menuHeight;
+      if (Math.abs(newTop - menuPosition.top) > 1) {
+        setMenuPosition((prev) => prev ? { ...prev, top: newTop } : null);
+      }
+    }
+  }, [isOpen, portal, menuPosition?.flipped, tight]);
 
   const menuContent = (
     <div
@@ -90,7 +128,9 @@ export function DropdownMenu({
           ? {
               position: 'fixed',
               top: menuPosition.top,
-              left: menuPosition.left,
+              ...(menuPosition.right !== undefined
+                ? { right: menuPosition.right }
+                : { left: menuPosition.left }),
               minWidth: menuPosition.width || 200,
               zIndex: 10000,
               pointerEvents: 'auto',
@@ -237,8 +277,8 @@ export function DropdownMenuItem({
   className = '',
 }: DropdownMenuItemProps) {
   const variantClasses = {
-    default: 'text-ld hover:bg-lightgray dark:hover:bg-darkmuted hover:pl-5',
-    danger: 'text-error hover:bg-error/5 hover:pl-5',
+    default: 'text-ld hover:bg-lightgray dark:hover:bg-darkmuted',
+    danger: 'text-error hover:bg-error/5',
   };
 
   const baseClasses = `

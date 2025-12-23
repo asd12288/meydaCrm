@@ -18,6 +18,7 @@ interface LeadsTableProps {
   leads: LeadWithAssignee[];
   isAdmin: boolean;
   salesUsers: SalesUser[];
+  currentUserId?: string;
 }
 
 /**
@@ -28,6 +29,7 @@ export const LeadsTable = memo(function LeadsTable({
   leads,
   isAdmin,
   salesUsers,
+  currentUserId,
 }: LeadsTableProps) {
   const router = useRouter();
   const { toast } = useToast();
@@ -70,22 +72,46 @@ export const LeadsTable = memo(function LeadsTable({
     setMeetingLeadId(leadId);
   }, []);
 
+  const handleTransferSuccess = useCallback(() => {
+    toast.success('Lead transféré avec succès');
+    router.refresh();
+  }, [toast, router]);
+
+  const handleTransferError = useCallback(
+    (error: string) => {
+      toast.error(error);
+    },
+    [toast]
+  );
+
+  // Check if sales user can transfer (has other sales users to transfer to)
+  const canTransfer = !isAdmin && !!currentUserId && salesUsers.some(
+    (u) => u.id !== currentUserId && u.role === 'sales'
+  );
+
+  // Enable selection for admin (bulk assign) or sales users who can transfer
+  const enableSelection = isAdmin || canTransfer === true;
+
   const columns = useMemo(
     () =>
       getLeadColumns({
         isAdmin,
-        includeSelection: isAdmin,
+        includeSelection: enableSelection,
+        currentUserId,
+        salesUsers,
         onDelete: isAdmin ? handleDeleteClick : undefined,
         onCreateMeeting: handleCreateMeeting,
+        onTransferSuccess: handleTransferSuccess,
+        onTransferError: handleTransferError,
       }),
-    [isAdmin, handleDeleteClick, handleCreateMeeting]
+    [isAdmin, enableSelection, currentUserId, salesUsers, handleDeleteClick, handleCreateMeeting, handleTransferSuccess, handleTransferError]
   );
 
   const table = useReactTable({
     data: leads,
     columns,
     getCoreRowModel: getCoreRowModel(),
-    enableRowSelection: isAdmin,
+    enableRowSelection: enableSelection,
     onRowSelectionChange: setRowSelection,
     state: {
       rowSelection,
@@ -157,12 +183,14 @@ export const LeadsTable = memo(function LeadsTable({
         </table>
       </div>
 
-      {/* Floating bulk actions bar (admin only, shows when rows selected) */}
-      {isAdmin && selectedIds.length > 0 && (
+      {/* Floating bulk actions bar (shows when rows selected - admin for assign, sales for transfer) */}
+      {enableSelection && selectedIds.length > 0 && (
         <BulkActionsBar
           selectedIds={selectedIds}
           salesUsers={salesUsers}
           onClearSelection={clearSelection}
+          isAdmin={isAdmin}
+          currentUserId={currentUserId}
         />
       )}
 

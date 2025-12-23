@@ -247,6 +247,87 @@ INSERT INTO auth.users (
   reauthentication_token = EXCLUDED.reauthentication_token,
   updated_at = now();
 
+-- Sales users 4-23: Additional 20 sales users (password: 123456)
+-- Using a DO block to insert multiple users efficiently
+DO $$
+DECLARE
+  users_data text[][] := ARRAY[
+    ['00000000-0000-0000-0000-000000000006', 'pierre', 'Pierre Leroy', 'avatar-06'],
+    ['00000000-0000-0000-0000-000000000007', 'claire', 'Claire Moreau', 'avatar-07'],
+    ['00000000-0000-0000-0000-000000000008', 'lucas', 'Lucas Girard', 'avatar-08'],
+    ['00000000-0000-0000-0000-000000000009', 'emma', 'Emma Roux', 'avatar-09'],
+    ['00000000-0000-0000-0000-000000000010', 'hugo', 'Hugo Fournier', 'avatar-10'],
+    ['00000000-0000-0000-0000-000000000011', 'chloe', 'Chloe Lambert', 'avatar-01'],
+    ['00000000-0000-0000-0000-000000000012', 'nathan', 'Nathan Bonnet', 'avatar-02'],
+    ['00000000-0000-0000-0000-000000000013', 'lea', 'Lea Mercier', 'avatar-03'],
+    ['00000000-0000-0000-0000-000000000014', 'louis', 'Louis Duval', 'avatar-04'],
+    ['00000000-0000-0000-0000-000000000015', 'manon', 'Manon Petit', 'avatar-05'],
+    ['00000000-0000-0000-0000-000000000016', 'gabriel', 'Gabriel Simon', 'avatar-06'],
+    ['00000000-0000-0000-0000-000000000017', 'jade', 'Jade Michel', 'avatar-07'],
+    ['00000000-0000-0000-0000-000000000018', 'arthur', 'Arthur Lefevre', 'avatar-08'],
+    ['00000000-0000-0000-0000-000000000019', 'alice', 'Alice Garcia', 'avatar-09'],
+    ['00000000-0000-0000-0000-000000000020', 'raphael', 'Raphael Thomas', 'avatar-10'],
+    ['00000000-0000-0000-0000-000000000021', 'ines', 'Ines Robert', 'avatar-01'],
+    ['00000000-0000-0000-0000-000000000022', 'adam', 'Adam Richard', 'avatar-02'],
+    ['00000000-0000-0000-0000-000000000023', 'lina', 'Lina Durand', 'avatar-03'],
+    ['00000000-0000-0000-0000-000000000024', 'paul', 'Paul Morel', 'avatar-04'],
+    ['00000000-0000-0000-0000-000000000025', 'eva', 'Eva Blanc', 'avatar-05']
+  ];
+  user_record text[];
+BEGIN
+  FOREACH user_record SLICE 1 IN ARRAY users_data
+  LOOP
+    INSERT INTO auth.users (
+      id,
+      instance_id,
+      email,
+      encrypted_password,
+      email_confirmed_at,
+      raw_user_meta_data,
+      raw_app_meta_data,
+      is_sso_user,
+      created_at,
+      updated_at,
+      role,
+      aud,
+      confirmation_token,
+      recovery_token,
+      email_change_token_new,
+      email_change,
+      email_change_token_current,
+      phone_change_token,
+      phone_change,
+      reauthentication_token
+    ) VALUES (
+      user_record[1]::uuid,
+      '00000000-0000-0000-0000-000000000000',
+      user_record[2] || '@crm.local',
+      crypt('123456', gen_salt('bf')),
+      now(),
+      jsonb_build_object('username', user_record[2], 'display_name', user_record[3], 'role', 'sales'),
+      '{"provider": "email", "providers": ["email"]}'::jsonb,
+      false,
+      now(),
+      now(),
+      'authenticated',
+      'authenticated',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      ''
+    ) ON CONFLICT (id) DO UPDATE SET
+      encrypted_password = EXCLUDED.encrypted_password,
+      raw_app_meta_data = EXCLUDED.raw_app_meta_data,
+      raw_user_meta_data = EXCLUDED.raw_user_meta_data,
+      email_confirmed_at = EXCLUDED.email_confirmed_at,
+      updated_at = now();
+  END LOOP;
+END $$;
+
 -- =============================================================================
 -- SECTION 1b: Create auth.identities (required for email login)
 -- =============================================================================

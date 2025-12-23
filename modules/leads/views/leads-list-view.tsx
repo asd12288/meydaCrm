@@ -39,10 +39,11 @@ export async function LeadsListView({ searchParams }: LeadsListViewProps) {
   // Fetch data based on view mode
   // Kanban: only assigned leads with last comments
   // Table: all leads based on filters and RLS
+  // Note: salesUsers needed for both admin (bulk assign) and sales (transfer leads)
   const [leadsData, kanbanData, salesUsers, unassignedData] = await Promise.all([
     isKanbanView ? Promise.resolve({ leads: [], page: 1, pageSize: 20, hasMore: false }) : getLeads(filters),
     isKanbanView ? getLeadsForKanban(filters) : Promise.resolve({ leads: [], total: 0 }),
-    isAdmin ? getSalesUsers() : Promise.resolve([]),
+    getSalesUsers(), // Both admin and sales need this (sales for transfer feature)
     isAdmin && !isKanbanView ? getUnassignedNewLeadsCount() : Promise.resolve({ count: 0, leadIds: [] }),
   ]);
 
@@ -92,6 +93,7 @@ export async function LeadsListView({ searchParams }: LeadsListViewProps) {
               leads={leadsData.leads}
               isAdmin={isAdmin}
               salesUsers={salesUsers}
+              currentUserId={user?.id}
             />
           </ErrorBoundary>
 

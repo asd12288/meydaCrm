@@ -92,7 +92,9 @@
       "Bash(node scripts/reset-roland-password.mjs:*)",
       "Bash(gh pr merge:*)",
       "Bash(gh pr checks:*)",
-      "Bash(git branch:*)"
+      "Bash(git branch:*)",
+      "Bash(psql:*)",
+      "Bash(docker exec:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

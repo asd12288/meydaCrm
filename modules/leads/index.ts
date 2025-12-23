@@ -21,6 +21,8 @@ export {
   getUnassignedNewLeadsCount,
   updateLeadStatus,
   bulkAssignLeads,
+  bulkTransferLeads,
+  transferLead,
 } from './lib/actions';
 
 // Hooks
@@ -41,6 +43,7 @@ export {
 // Components
 export { LeadsTable } from './components/leads-table';
 export { BulkActionsBar } from './components/bulk-actions-bar';
+export { BulkTransferDialog } from './components/bulk-transfer-dialog';
 export { UnassignedLeadsBanner } from './components/unassigned-leads-banner';
 export { ViewToggle } from './components/view-toggle';
 
