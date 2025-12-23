@@ -40,7 +40,7 @@ function RowActionsDropdown({
   return (
     <DropdownMenu
       position="bottom-right"
-      widthClass="w-48"
+      widthClass="w-56"
       trigger={
         <Button variant="circleHover" size="circle">
           <IconDots size={20} />
