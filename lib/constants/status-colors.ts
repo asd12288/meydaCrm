@@ -14,12 +14,12 @@ import type { LeadStatus } from '@/db/types';
 export const STATUS_BADGE_CLASSES: Record<LeadStatus, string> = {
   // Active statuses (10 DISTINCT colors - maximum visual separation)
   new: 'badge-indigo', // Indigo - Fresh, exciting opportunity
-  rdv: 'badge-teal', // Teal - Meeting scheduled (achievement!)
+  rdv: 'badge-darkblue', // Dark blue - Meeting scheduled (achievement!)
   no_answer_1: 'badge-sky', // Sky blue - Calm "try again" (light, hopeful)
   no_answer_2: 'badge-slate', // Slate gray - Patient, neutral second attempt
   wrong_number: 'badge-gray', // Dark gray - Closed, move on
   not_interested: 'badge-rose', // Rose pink - Rejection (softer than red)
-  deposit: 'badge-deposit', // Vibrant lime-green - Money/celebration!
+  deposit: 'badge-deposit', // Solid success green - Money/celebration!
   callback: 'badge-orange', // Orange - Scheduled callback
   relance: 'badge-primary', // Blue - Professional follow-up
   mail: 'badge-fuchsia', // Fuchsia pink - Communication (distinct from purple)
@@ -53,11 +53,12 @@ export const BADGE_TO_CSS_VAR: Record<string, string> = {
   'badge-purple': 'var(--color-purple)',
   // NEW distinct colors
   'badge-teal': '#14b8a6',
-  'badge-deposit': '#4ade80',
+  'badge-deposit': '#16a34a',
   'badge-sky': '#0ea5e9',
   'badge-slate': '#64748b',
   'badge-rose': '#f43f5e',
   'badge-fuchsia': '#d946ef',
+  'badge-darkblue': '#1e40af',
 };
 
 /**
@@ -85,6 +86,7 @@ export const BADGE_TO_TEXT_CLASS: Record<string, string> = {
   'badge-slate': 'text-slate',
   'badge-rose': 'text-rose',
   'badge-fuchsia': 'text-fuchsia',
+  'badge-darkblue': 'text-darkblue',
 };
 
 /**
@@ -107,11 +109,12 @@ export const TEXT_CLASS_TO_CSS_VAR: Record<string, string> = {
   'text-purple': 'var(--color-purple)',
   // NEW distinct colors
   'text-teal': '#14b8a6',
-  'text-deposit': '#4ade80',
+  'text-deposit': '#16a34a',
   'text-sky': '#0ea5e9',
   'text-slate': '#64748b',
   'text-rose': '#f43f5e',
   'text-fuchsia': '#d946ef',
+  'text-darkblue': '#1e40af',
 };
 
 /**
@@ -121,12 +124,12 @@ export const TEXT_CLASS_TO_CSS_VAR: Record<string, string> = {
 export const STATUS_CHART_COLORS: Record<string, string> = {
   // 10 DISTINCT colors - maximum visual separation
   new: '#6366f1', // Indigo (blue-violet)
-  rdv: '#14b8a6', // Teal
+  rdv: '#1e40af', // Dark blue
   no_answer_1: '#0ea5e9', // Sky blue (light, hopeful)
   no_answer_2: '#64748b', // Slate gray (neutral)
   wrong_number: '#52525b', // Zinc (dark gray)
   not_interested: '#f43f5e', // Rose (softer pink-red)
-  deposit: '#4ade80', // Happy bright green
+  deposit: '#16a34a', // Solid success green
   callback: '#f97316', // Orange (warm, inviting)
   relance: '#3b82f6', // Blue (primary)
   mail: '#d946ef', // Fuchsia (bright pink)

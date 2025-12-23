@@ -3,7 +3,7 @@
 import dynamic from 'next/dynamic';
 import { CardBox } from '@/modules/shared';
 import { LEAD_STATUS_LABELS } from '@/db/types';
-import { getStatusCssVar } from '@/lib/constants';
+import { getStatusChartColor } from '@/lib/constants';
 
 const Chart = dynamic(() => import('react-apexcharts'), { ssr: false });
 
@@ -24,7 +24,7 @@ export function LeadsStatusChart({ leadsByStatus, totalLeads }: LeadsStatusChart
     ([status]) => LEAD_STATUS_LABELS[status as keyof typeof LEAD_STATUS_LABELS] || status
   );
   // Use semantic colors based on status (from centralized constants)
-  const chartColors = sortedStatuses.map(([status]) => getStatusCssVar(status));
+  const chartColors = sortedStatuses.map(([status]) => getStatusChartColor(status));
 
   const chartConfig: ApexCharts.ApexOptions = {
     series: chartSeries,
@@ -96,7 +96,7 @@ export function LeadsStatusChart({ leadsByStatus, totalLeads }: LeadsStatusChart
   return (
     <CardBox className="h-full">
       <h5 className="card-title mb-6">Répartition par statut</h5>
-      
+
       <div className="grid grid-cols-12 gap-6 items-center">
         <div className="lg:col-span-6 col-span-12">
           <Chart
@@ -107,12 +107,12 @@ export function LeadsStatusChart({ leadsByStatus, totalLeads }: LeadsStatusChart
             width="100%"
           />
         </div>
-        
+
         <div className="lg:col-span-6 col-span-12">
           <div className="space-y-3">
             {sortedStatuses.map(([status, count]) => {
               const percentage = totalLeads > 0 ? Math.round((count / totalLeads) * 100) : 0;
-              const chartColor = getStatusCssVar(status);
+              const chartColor = getStatusChartColor(status);
               return (
                 <div
                   key={status}
