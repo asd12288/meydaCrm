@@ -883,6 +883,23 @@ export async function transferLead(
     return { error: FR_MESSAGES.ERROR_TRANSFER };
   }
 
+  // Transfer scheduled meetings for this lead to the new assignee
+  const { error: meetingsError, count: meetingsCount } = await adminClient
+    .from('meetings')
+    .update({
+      assigned_to: newAssigneeId,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('lead_id', leadId)
+    .eq('status', 'scheduled');
+
+  if (meetingsError) {
+    console.error('Error transferring meetings:', meetingsError);
+    // Don't fail the operation - lead was transferred successfully
+  } else if (meetingsCount && meetingsCount > 0) {
+    console.log(`Transferred ${meetingsCount} scheduled meeting(s) with lead`);
+  }
+
   // Create history entry with transfer metadata
   const { error: historyError } = await supabase.from('lead_history').insert({
     lead_id: leadId,
@@ -997,6 +1014,23 @@ export async function bulkTransferLeads(
   if (updateError) {
     console.error('Error bulk transferring leads:', updateError);
     return { error: FR_MESSAGES.ERROR_TRANSFER };
+  }
+
+  // Transfer scheduled meetings for all transferred leads to the new assignee
+  const { error: meetingsError, count: meetingsCount } = await adminClient
+    .from('meetings')
+    .update({
+      assigned_to: newAssigneeId,
+      updated_at: new Date().toISOString(),
+    })
+    .in('lead_id', transferableIds)
+    .eq('status', 'scheduled');
+
+  if (meetingsError) {
+    console.error('Error transferring meetings:', meetingsError);
+    // Don't fail the operation - leads were transferred successfully
+  } else if (meetingsCount && meetingsCount > 0) {
+    console.log(`Transferred ${meetingsCount} scheduled meeting(s) with leads`);
   }
 
   // Create history entries for all transferred leads

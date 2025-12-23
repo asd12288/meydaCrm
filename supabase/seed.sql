@@ -388,6 +388,60 @@ ON CONFLICT (provider, provider_id) DO UPDATE SET
   last_sign_in_at = now(),
   updated_at = now();
 
+-- Identities for additional 20 sales users
+DO $$
+DECLARE
+  users_data text[][] := ARRAY[
+    ['00000000-0000-0000-0000-000000000006', 'pierre'],
+    ['00000000-0000-0000-0000-000000000007', 'claire'],
+    ['00000000-0000-0000-0000-000000000008', 'lucas'],
+    ['00000000-0000-0000-0000-000000000009', 'emma'],
+    ['00000000-0000-0000-0000-000000000010', 'hugo'],
+    ['00000000-0000-0000-0000-000000000011', 'chloe'],
+    ['00000000-0000-0000-0000-000000000012', 'nathan'],
+    ['00000000-0000-0000-0000-000000000013', 'lea'],
+    ['00000000-0000-0000-0000-000000000014', 'louis'],
+    ['00000000-0000-0000-0000-000000000015', 'manon'],
+    ['00000000-0000-0000-0000-000000000016', 'gabriel'],
+    ['00000000-0000-0000-0000-000000000017', 'jade'],
+    ['00000000-0000-0000-0000-000000000018', 'arthur'],
+    ['00000000-0000-0000-0000-000000000019', 'alice'],
+    ['00000000-0000-0000-0000-000000000020', 'raphael'],
+    ['00000000-0000-0000-0000-000000000021', 'ines'],
+    ['00000000-0000-0000-0000-000000000022', 'adam'],
+    ['00000000-0000-0000-0000-000000000023', 'lina'],
+    ['00000000-0000-0000-0000-000000000024', 'paul'],
+    ['00000000-0000-0000-0000-000000000025', 'eva']
+  ];
+  user_record text[];
+BEGIN
+  FOREACH user_record SLICE 1 IN ARRAY users_data
+  LOOP
+    INSERT INTO auth.identities (
+      id,
+      user_id,
+      identity_data,
+      provider,
+      provider_id,
+      last_sign_in_at,
+      created_at,
+      updated_at
+    ) VALUES (
+      user_record[1]::uuid,
+      user_record[1]::uuid,
+      jsonb_build_object('sub', user_record[1], 'email', user_record[2] || '@crm.local', 'email_verified', true),
+      'email',
+      user_record[2] || '@crm.local',
+      now(),
+      now(),
+      now()
+    ) ON CONFLICT (provider, provider_id) DO UPDATE SET
+      identity_data = EXCLUDED.identity_data,
+      last_sign_in_at = now(),
+      updated_at = now();
+  END LOOP;
+END $$;
+
 -- =============================================================================
 -- SECTION 2: Create/Update Profiles
 -- =============================================================================
@@ -398,7 +452,28 @@ VALUES
   ('00000000-0000-0000-0000-000000000001', 'Admin Test', 'admin', 'avatar-01', now(), now()),
   ('00000000-0000-0000-0000-000000000002', 'Marie Dupont', 'sales', 'avatar-02', now(), now()),
   ('00000000-0000-0000-0000-000000000003', 'Jean Martin', 'sales', 'avatar-03', now(), now()),
-  ('00000000-0000-0000-0000-000000000004', 'Sophie Bernard', 'sales', 'avatar-04', now(), now())
+  ('00000000-0000-0000-0000-000000000004', 'Sophie Bernard', 'sales', 'avatar-04', now(), now()),
+  -- Additional 20 sales users
+  ('00000000-0000-0000-0000-000000000006', 'Pierre Leroy', 'sales', 'avatar-06', now(), now()),
+  ('00000000-0000-0000-0000-000000000007', 'Claire Moreau', 'sales', 'avatar-07', now(), now()),
+  ('00000000-0000-0000-0000-000000000008', 'Lucas Girard', 'sales', 'avatar-08', now(), now()),
+  ('00000000-0000-0000-0000-000000000009', 'Emma Roux', 'sales', 'avatar-09', now(), now()),
+  ('00000000-0000-0000-0000-000000000010', 'Hugo Fournier', 'sales', 'avatar-10', now(), now()),
+  ('00000000-0000-0000-0000-000000000011', 'Chloe Lambert', 'sales', 'avatar-01', now(), now()),
+  ('00000000-0000-0000-0000-000000000012', 'Nathan Bonnet', 'sales', 'avatar-02', now(), now()),
+  ('00000000-0000-0000-0000-000000000013', 'Lea Mercier', 'sales', 'avatar-03', now(), now()),
+  ('00000000-0000-0000-0000-000000000014', 'Louis Duval', 'sales', 'avatar-04', now(), now()),
+  ('00000000-0000-0000-0000-000000000015', 'Manon Petit', 'sales', 'avatar-05', now(), now()),
+  ('00000000-0000-0000-0000-000000000016', 'Gabriel Simon', 'sales', 'avatar-06', now(), now()),
+  ('00000000-0000-0000-0000-000000000017', 'Jade Michel', 'sales', 'avatar-07', now(), now()),
+  ('00000000-0000-0000-0000-000000000018', 'Arthur Lefevre', 'sales', 'avatar-08', now(), now()),
+  ('00000000-0000-0000-0000-000000000019', 'Alice Garcia', 'sales', 'avatar-09', now(), now()),
+  ('00000000-0000-0000-0000-000000000020', 'Raphael Thomas', 'sales', 'avatar-10', now(), now()),
+  ('00000000-0000-0000-0000-000000000021', 'Ines Robert', 'sales', 'avatar-01', now(), now()),
+  ('00000000-0000-0000-0000-000000000022', 'Adam Richard', 'sales', 'avatar-02', now(), now()),
+  ('00000000-0000-0000-0000-000000000023', 'Lina Durand', 'sales', 'avatar-03', now(), now()),
+  ('00000000-0000-0000-0000-000000000024', 'Paul Morel', 'sales', 'avatar-04', now(), now()),
+  ('00000000-0000-0000-0000-000000000025', 'Eva Blanc', 'sales', 'avatar-05', now(), now())
 ON CONFLICT (id) DO UPDATE SET
   role = EXCLUDED.role,
   display_name = EXCLUDED.display_name,
@@ -1005,8 +1080,12 @@ VALUES
 -- Login with USERNAME (not email), password: 123456
 --
 -- Admin:     admin / 123456
--- Sales:     marie / 123456
--- Sales:     jean / 123456
--- Sales:     sophie / 123456
 -- Developer: roland / 123456
+--
+-- Sales Users (23 total):
+-- marie, jean, sophie (original 3)
+-- pierre, claire, lucas, emma, hugo, chloe, nathan, lea, louis, manon
+-- gabriel, jade, arthur, alice, raphael, ines, adam, lina, paul, eva
+--
+-- All passwords: 123456
 -- =============================================================================
