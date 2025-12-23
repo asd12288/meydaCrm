@@ -1,5 +1,8 @@
 'use client';
 
+import { useEffect } from 'react';
+import posthog from 'posthog-js';
+
 /**
  * Global error boundary - catches errors in root layout and during SSR
  * This is a REQUIRED file for production error handling in Next.js App Router
@@ -14,6 +17,15 @@ export default function GlobalError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  useEffect(() => {
+    // Capture critical error to PostHog
+    posthog.captureException(error, {
+      source: 'global_error_boundary',
+      digest: error.digest,
+      severity: 'critical',
+    });
+  }, [error]);
+
   return (
     <html lang="fr">
       <body className="bg-gray-50 dark:bg-gray-900">

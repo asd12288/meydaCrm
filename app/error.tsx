@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { useEffect } from 'react';
 import Link from 'next/link';
+import posthog from 'posthog-js';
 
 interface ErrorProps {
   error: Error & { digest?: string };
@@ -11,6 +12,12 @@ interface ErrorProps {
 
 export default function Error({ error, reset }: ErrorProps) {
   useEffect(() => {
+    // Capture error to PostHog
+    posthog.captureException(error, {
+      source: 'error_boundary',
+      digest: error.digest,
+    });
+
     // Log error to console in development
     if (process.env.NODE_ENV === 'development') {
       console.error('Error:', error);
