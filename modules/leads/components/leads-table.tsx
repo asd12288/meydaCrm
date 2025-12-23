@@ -7,7 +7,8 @@ import {
   getCoreRowModel,
   flexRender,
 } from '@tanstack/react-table';
-import { TableEmptyState, ConfirmDialog, useToast } from '@/modules/shared';
+import { TableEmptyState, ConfirmDialog, useToast, Modal } from '@/modules/shared';
+import { MeetingForm } from '@/modules/meetings';
 import { getLeadColumns } from '../config/columns';
 import { BulkActionsBar } from './bulk-actions-bar';
 import { deleteLead } from '../lib/actions';
@@ -32,6 +33,7 @@ export const LeadsTable = memo(function LeadsTable({
   const { toast } = useToast();
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
   const [deleteLeadId, setDeleteLeadId] = useState<string | null>(null);
+  const [meetingLeadId, setMeetingLeadId] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
 
   const handleDeleteClick = useCallback((leadId: string) => {
@@ -64,14 +66,19 @@ export const LeadsTable = memo(function LeadsTable({
     setDeleteLeadId(null);
   }, []);
 
+  const handleCreateMeeting = useCallback((leadId: string) => {
+    setMeetingLeadId(leadId);
+  }, []);
+
   const columns = useMemo(
     () =>
       getLeadColumns({
         isAdmin,
         includeSelection: isAdmin,
         onDelete: isAdmin ? handleDeleteClick : undefined,
+        onCreateMeeting: handleCreateMeeting,
       }),
-    [isAdmin, handleDeleteClick]
+    [isAdmin, handleDeleteClick, handleCreateMeeting]
   );
 
   const table = useReactTable({
@@ -172,6 +179,24 @@ export const LeadsTable = memo(function LeadsTable({
           variant="danger"
           isPending={isPending}
         />
+      )}
+
+      {/* Create meeting modal */}
+      {meetingLeadId && (
+        <Modal
+          isOpen={!!meetingLeadId}
+          onClose={() => setMeetingLeadId(null)}
+          title="Planifier un rendez-vous"
+        >
+          <MeetingForm
+            leadId={meetingLeadId}
+            onSuccess={() => {
+              setMeetingLeadId(null);
+              toast.success('Rendez-vous créé');
+            }}
+            onCancel={() => setMeetingLeadId(null)}
+          />
+        </Modal>
       )}
     </>
   );

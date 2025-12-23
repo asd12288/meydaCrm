@@ -9,15 +9,16 @@ import {
   IconCheck,
   IconX,
   IconAlertCircle,
+  IconTrash,
 } from '@tabler/icons-react';
 import { Button } from '@/components/ui/button';
-import { EmptyState, Modal } from '@/modules/shared';
+import { EmptyState, Modal, ConfirmDialog, useToast } from '@/modules/shared';
 import {
   MEETING_STATUS_LABELS,
   MEETING_STATUS_COLORS,
   MeetingForm,
 } from '@/modules/meetings';
-import { updateMeetingStatus } from '@/modules/meetings/lib/actions';
+import { updateMeetingStatus, deleteMeeting } from '@/modules/meetings/lib/actions';
 import type { MeetingWithDetails, MeetingStatus } from '@/modules/meetings/types';
 
 interface LeadMeetingsProps {
@@ -26,10 +27,13 @@ interface LeadMeetingsProps {
 }
 
 export function LeadMeetings({ leadId, meetings }: LeadMeetingsProps) {
+  const { toast } = useToast();
   const [showForm, setShowForm] = useState(false);
   const [editingMeeting, setEditingMeeting] = useState<MeetingWithDetails | null>(
     null
   );
+  const [deletingMeetingId, setDeletingMeetingId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const now = new Date();
 
@@ -39,6 +43,29 @@ export function LeadMeetings({ leadId, meetings }: LeadMeetingsProps) {
   const pastMeetings = meetings.filter(
     (m) => m.status !== 'scheduled' || new Date(m.scheduled_start) < now
   );
+
+  const handleDeleteClick = (meetingId: string) => {
+    setDeletingMeetingId(meetingId);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deletingMeetingId || isDeleting) return;
+
+    setIsDeleting(true);
+    const result = await deleteMeeting(deletingMeetingId);
+    setIsDeleting(false);
+    setDeletingMeetingId(null);
+
+    if (result.error) {
+      toast.error(result.error);
+    } else {
+      toast.success('Rendez-vous supprimé');
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeletingMeetingId(null);
+  };
 
   return (
     <div className="space-y-4">
@@ -70,6 +97,8 @@ export function LeadMeetings({ leadId, meetings }: LeadMeetingsProps) {
                   key={meeting.id}
                   meeting={meeting}
                   onEdit={() => setEditingMeeting(meeting)}
+                  onDelete={() => handleDeleteClick(meeting.id)}
+                  toast={toast}
                 />
               ))}
             </div>
@@ -82,7 +111,14 @@ export function LeadMeetings({ leadId, meetings }: LeadMeetingsProps) {
                 Passées
               </p>
               {pastMeetings.map((meeting) => (
-                <MeetingCard key={meeting.id} meeting={meeting} isPast />
+                <MeetingCard
+                  key={meeting.id}
+                  meeting={meeting}
+                  isPast
+                  onEdit={() => setEditingMeeting(meeting)}
+                  onDelete={() => handleDeleteClick(meeting.id)}
+                  toast={toast}
+                />
               ))}
             </div>
           )}
@@ -97,7 +133,10 @@ export function LeadMeetings({ leadId, meetings }: LeadMeetingsProps) {
       >
         <MeetingForm
           leadId={leadId}
-          onSuccess={() => setShowForm(false)}
+          onSuccess={() => {
+            setShowForm(false);
+            toast.success('Rendez-vous créé');
+          }}
           onCancel={() => setShowForm(false)}
         />
       </Modal>
@@ -112,24 +151,52 @@ export function LeadMeetings({ leadId, meetings }: LeadMeetingsProps) {
           <MeetingForm
             leadId={leadId}
             meeting={editingMeeting}
-            onSuccess={() => setEditingMeeting(null)}
+            onSuccess={() => {
+              setEditingMeeting(null);
+              toast.success('Rendez-vous modifié');
+            }}
             onCancel={() => setEditingMeeting(null)}
           />
         </Modal>
       )}
+
+      {/* Delete confirmation dialog */}
+      <ConfirmDialog
+        isOpen={deletingMeetingId !== null}
+        onClose={handleDeleteCancel}
+        onConfirm={handleDeleteConfirm}
+        title="Supprimer le rendez-vous"
+        message="Êtes-vous sûr de vouloir supprimer ce rendez-vous ? Cette action est irréversible."
+        confirmLabel="Supprimer"
+        cancelLabel="Annuler"
+        variant="danger"
+        isPending={isDeleting}
+      />
     </div>
   );
 }
+
+// Toast type from useToast hook
+type ToastFunctions = {
+  success: (message: string, duration?: number) => void;
+  error: (message: string, duration?: number) => void;
+  warning: (message: string, duration?: number) => void;
+  info: (message: string, duration?: number) => void;
+};
 
 // Meeting card subcomponent
 function MeetingCard({
   meeting,
   isPast = false,
   onEdit,
+  onDelete,
+  toast,
 }: {
   meeting: MeetingWithDetails;
   isPast?: boolean;
   onEdit?: () => void;
+  onDelete?: () => void;
+  toast: ToastFunctions;
 }) {
   const [isPending, startTransition] = useTransition();
   const statusColor = MEETING_STATUS_COLORS[meeting.status as MeetingStatus] || 'secondary';
@@ -147,7 +214,12 @@ function MeetingCard({
 
   const handleStatusChange = (newStatus: MeetingStatus) => {
     startTransition(async () => {
-      await updateMeetingStatus(meeting.id, newStatus);
+      const result = await updateMeetingStatus(meeting.id, newStatus);
+      if (result.error) {
+        toast.error(result.error);
+      } else {
+        toast.success('Statut mis à jour');
+      }
     });
   };
 
@@ -190,43 +262,59 @@ function MeetingCard({
         </p>
       )}
 
-      {/* Action buttons for upcoming scheduled meetings */}
-      {isUpcoming && (
-        <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-ld">
-          {onEdit && (
-            <Button size="sm" variant="ghost" onClick={onEdit} disabled={isPending}>
-              Modifier
-            </Button>
-          )}
-          <Button
-            size="sm"
-            variant="success"
-            onClick={() => handleStatusChange('completed')}
-            disabled={isPending}
-          >
-            <IconCheck size={14} />
-            Terminé
+      {/* Action buttons - Edit/Delete for all, status buttons only for upcoming */}
+      <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-ld">
+        {onEdit && (
+          <Button size="sm" variant="ghost" onClick={onEdit} disabled={isPending}>
+            Modifier
           </Button>
-          <Button
-            size="sm"
-            variant="warning"
-            onClick={() => handleStatusChange('no_show')}
-            disabled={isPending}
-          >
-            <IconAlertCircle size={14} />
-            Absent
-          </Button>
+        )}
+        {onDelete && (
           <Button
             size="sm"
             variant="ghost"
-            onClick={() => handleStatusChange('cancelled')}
+            onClick={onDelete}
             disabled={isPending}
+            className="text-error hover:bg-lighterror"
           >
-            <IconX size={14} />
-            Annuler
+            <IconTrash size={14} />
+            Supprimer
           </Button>
-        </div>
-      )}
+        )}
+
+        {/* Status change buttons ONLY for upcoming scheduled meetings */}
+        {isUpcoming && (
+          <>
+            <Button
+              size="sm"
+              variant="success"
+              onClick={() => handleStatusChange('completed')}
+              disabled={isPending}
+            >
+              <IconCheck size={14} />
+              Terminé
+            </Button>
+            <Button
+              size="sm"
+              variant="warning"
+              onClick={() => handleStatusChange('no_show')}
+              disabled={isPending}
+            >
+              <IconAlertCircle size={14} />
+              Absent
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => handleStatusChange('cancelled')}
+              disabled={isPending}
+            >
+              <IconX size={14} />
+              Annuler
+            </Button>
+          </>
+        )}
+      </div>
     </div>
   );
 }
