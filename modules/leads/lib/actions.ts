@@ -7,7 +7,7 @@ import { extractValidationError } from '@/lib/validation';
 import { FR_MESSAGES } from '@/lib/errors';
 import { LEAD_STATUS_LABELS } from '@/db/types';
 import type { LeadStatus } from '@/db/types';
-import { notifyLeadAssigned, notifyLeadComment } from '@/modules/notifications';
+import { notifyLeadAssigned, notifyBulkLeadsTransferred, notifyLeadComment } from '@/modules/notifications';
 import { getCached, invalidateDashboardCache, CACHE_KEYS, CACHE_TTL } from '@/lib/cache';
 import type {
   LeadFilters,
@@ -1057,10 +1057,11 @@ export async function bulkTransferLeads(
   }
 
   // Notify new assignee (single notification for bulk transfer)
-  await notifyLeadAssigned(
+  const fromUserName = user.profile?.displayName || 'Un commercial';
+  await notifyBulkLeadsTransferred(
     newAssigneeId,
-    transferableIds[0],
-    `${transferableIds.length} leads`
+    transferableIds.length,
+    fromUserName
   );
 
   // Revalidate paths

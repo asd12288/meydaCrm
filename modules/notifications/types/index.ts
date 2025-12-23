@@ -29,8 +29,12 @@ export interface Notification {
  * Notification metadata types per notification type
  */
 export interface LeadAssignedMetadata {
-  leadId: string;
+  leadId?: string;
   leadName?: string;
+  // For bulk transfers
+  leadCount?: number;
+  fromUserName?: string;
+  bulk?: boolean;
 }
 
 export interface LeadCommentMetadata {

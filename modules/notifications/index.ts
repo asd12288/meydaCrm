@@ -21,6 +21,7 @@ export {
   createNotificationForUser,
   createNotificationForUsers,
   notifyLeadAssigned,
+  notifyBulkLeadsTransferred,
   notifyLeadComment,
   notifyImportCompleted,
   notifyImportFailed,
