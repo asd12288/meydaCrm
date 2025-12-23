@@ -123,8 +123,6 @@ export interface ValidatedRow extends MappedRow {
 export interface AssignmentConfig {
   /** Assignment mode */
   mode: AssignmentMode;
-  /** Selected user ID (for 'single' mode) */
-  singleUserId?: string;
   /** Selected user IDs (for 'round_robin' mode) */
   roundRobinUserIds?: string[];
   /** Column to use for assignment (for 'by_column' mode) */

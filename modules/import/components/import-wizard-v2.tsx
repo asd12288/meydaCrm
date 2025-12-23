@@ -104,7 +104,6 @@ export function ImportWizardV2({ salesUsers, onImportComplete }: ImportWizardV2P
         return state.mapping?.mappings.some((m) => m.targetField !== null);
       case 'options':
         // Validate assignment config
-        if (state.assignment.mode === 'single' && !state.assignment.singleUserId) return false;
         if (state.assignment.mode === 'round_robin') {
           if (!state.assignment.roundRobinUserIds || state.assignment.roundRobinUserIds.length < 2) return false;
         }

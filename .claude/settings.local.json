@@ -96,7 +96,8 @@
       "Bash(psql:*)",
       "Bash(docker exec:*)",
       "Bash(docker ps:*)",
-      "Bash(git stash:*)"
+      "Bash(git stash:*)",
+      "Bash(git restore:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

@@ -120,7 +120,6 @@ export function OptionsStep({
                 onClick={() =>
                   onUpdateAssignment({
                     mode: option.value as AssignmentConfig['mode'],
-                    singleUserId: undefined,
                     // Auto-select all sales users when choosing round_robin
                     roundRobinUserIds: option.value === 'round_robin'
                       ? activeSalesUsers.map(u => u.id)

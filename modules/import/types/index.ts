@@ -137,13 +137,11 @@ export const columnMappingConfigSchema = z.object({
 // =============================================================================
 
 export const assignmentConfigSchema = z.object({
-  mode: z.enum(['none', 'single', 'round_robin', 'by_column']),
-  singleUserId: z.string().uuid().optional(),
+  mode: z.enum(['none', 'round_robin', 'by_column']),
   roundRobinUserIds: z.array(z.string().uuid()).optional(),
   assignmentColumn: z.string().optional(),
 }).refine(
   (data) => {
-    if (data.mode === 'single' && !data.singleUserId) return false;
     if (data.mode === 'round_robin' && (!data.roundRobinUserIds || data.roundRobinUserIds.length === 0)) return false;
     if (data.mode === 'by_column' && !data.assignmentColumn) return false;
     return true;
