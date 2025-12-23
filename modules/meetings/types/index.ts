@@ -21,25 +21,27 @@ export interface Meeting {
 }
 
 // Meeting with lead relation (for dashboard widget)
+// Note: lead can be null if the lead was deleted or doesn't exist
 export interface MeetingWithLead extends Meeting {
   lead: {
     id: string;
     first_name: string | null;
     last_name: string | null;
-  };
+  } | null;
 }
 
 // Meeting with full details (for lead detail page)
+// Note: lead/assignee can be null if deleted
 export interface MeetingWithDetails extends Meeting {
   lead: {
     id: string;
     first_name: string | null;
     last_name: string | null;
-  };
+  } | null;
   assignee: {
     id: string;
     display_name: string;
-  };
+  } | null;
 }
 
 // Zod schema for create/edit form

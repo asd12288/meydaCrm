@@ -2,6 +2,7 @@
   "mcpServers": {
     "supabase": {
       "type": "http",
+      "args": ["--read-only"],
       "url": "https://mcp.supabase.com/mcp"
     },
     "upstash": {

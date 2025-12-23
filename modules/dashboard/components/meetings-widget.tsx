@@ -32,7 +32,8 @@ export function MeetingsWidget({
   const getLeadName = (lead: {
     first_name: string | null;
     last_name: string | null;
-  }) => {
+  } | null) => {
+    if (!lead) return 'Sans nom';
     return (
       [lead.first_name, lead.last_name].filter(Boolean).join(' ') || 'Sans nom'
     );

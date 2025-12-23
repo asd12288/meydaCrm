@@ -489,6 +489,34 @@ h1, h2, h3, h4, h5, h6 {
   background-color: var(--color-muted);
 }
 
+/* Scrollbar utilities */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
+}
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: var(--color-border);
+  border-radius: 3px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-darklink);
+}
+.dark .scrollbar-thin {
+  scrollbar-color: var(--color-darkborder) transparent;
+}
+.dark .scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: var(--color-darkborder);
+}
+.dark .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-darklink);
+}
+
 /* ============================================
    Card Component
    ============================================ */

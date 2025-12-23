@@ -85,6 +85,11 @@ export const FR_MESSAGES = {
   NO_LEADS_SELECTED: 'Aucun lead sélectionné',
   CANNOT_DELETE_OTHERS_COMMENTS: 'Vous ne pouvez supprimer que vos propres commentaires',
 
+  // Transfer
+  ERROR_TRANSFER: 'Erreur lors du transfert du lead',
+  CANNOT_SELF_TRANSFER: 'Vous ne pouvez pas vous transférer un lead à vous-même',
+  TRANSFER_TO_SALES_ONLY: 'Le transfert est uniquement possible vers un commercial',
+
   // Success
   SUCCESS_CREATE: 'Créé avec succès',
   SUCCESS_UPDATE: 'Modifications enregistrées',

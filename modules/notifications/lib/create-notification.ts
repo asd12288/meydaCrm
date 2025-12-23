@@ -89,6 +89,24 @@ export async function notifyLeadAssigned(
 }
 
 /**
+ * Helper to create bulk leads transferred notification
+ */
+export async function notifyBulkLeadsTransferred(
+  userId: string,
+  leadCount: number,
+  fromUserName: string
+): Promise<void> {
+  const title = leadCount === 1 ? 'Lead transféré' : 'Leads transférés';
+  const message = leadCount === 1
+    ? `${fromUserName} vous a transféré 1 lead`
+    : `${fromUserName} vous a transféré ${leadCount} leads`;
+  const metadata = { leadCount, fromUserName, bulk: true };
+  const actionUrl = '/leads';
+
+  await createNotificationForUser(userId, 'lead_assigned', title, message, metadata, actionUrl);
+}
+
+/**
  * Helper to create lead comment notification
  */
 export async function notifyLeadComment(

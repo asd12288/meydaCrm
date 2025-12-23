@@ -1,13 +1,13 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { getCurrentUser, requireAdmin } from '@/modules/auth';
 import { extractValidationError } from '@/lib/validation';
 import { FR_MESSAGES } from '@/lib/errors';
 import { LEAD_STATUS_LABELS } from '@/db/types';
 import type { LeadStatus } from '@/db/types';
-import { notifyLeadAssigned, notifyLeadComment } from '@/modules/notifications';
+import { notifyLeadAssigned, notifyBulkLeadsTransferred, notifyLeadComment } from '@/modules/notifications';
 import { getCached, invalidateDashboardCache, CACHE_KEYS, CACHE_TTL } from '@/lib/cache';
 import type {
   LeadFilters,
@@ -811,4 +811,264 @@ export async function deleteLead(
   await invalidateDashboardCache();
 
   return { success: true };
+}
+
+/**
+ * Transfer a lead to another sales user (sales users only)
+ * Allows sales to transfer their own leads to other sales users
+ */
+export async function transferLead(
+  leadId: string,
+  newAssigneeId: string
+): Promise<{ success?: boolean; error?: string }> {
+  const supabase = await createClient();
+  const user = await getCurrentUser();
+
+  if (!user) {
+    return { error: FR_MESSAGES.UNAUTHENTICATED };
+  }
+
+  // Only sales users can use this action (admins use assignLead instead)
+  if (user.profile?.role !== 'sales') {
+    return { error: FR_MESSAGES.UNAUTHORIZED };
+  }
+
+  // Cannot transfer to yourself
+  if (newAssigneeId === user.id) {
+    return { error: FR_MESSAGES.CANNOT_SELF_TRANSFER };
+  }
+
+  // Verify lead exists and is assigned to current user
+  const { data: currentLead, error: fetchError } = await supabase
+    .from('leads')
+    .select('id, assigned_to, first_name, last_name')
+    .eq('id', leadId)
+    .eq('assigned_to', user.id) // Must be assigned to current user
+    .is('deleted_at', null)
+    .single();
+
+  if (fetchError || !currentLead) {
+    return { error: FR_MESSAGES.LEAD_NOT_FOUND };
+  }
+
+  // Verify new assignee is a valid sales user
+  const { data: newAssignee, error: assigneeError } = await supabase
+    .from('profiles')
+    .select('id, display_name, role')
+    .eq('id', newAssigneeId)
+    .single();
+
+  if (assigneeError || !newAssignee) {
+    return { error: FR_MESSAGES.USER_NOT_FOUND };
+  }
+
+  // Only allow transfer to sales users (not admin or developer)
+  if (newAssignee.role !== 'sales') {
+    return { error: FR_MESSAGES.TRANSFER_TO_SALES_ONLY };
+  }
+
+  // Perform the transfer using service role client to bypass RLS
+  // (RLS would block because the row becomes invisible to the user after transfer)
+  const adminClient = createServiceRoleClient();
+  const { error: updateError } = await adminClient
+    .from('leads')
+    .update({
+      assigned_to: newAssigneeId,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', leadId);
+
+  if (updateError) {
+    console.error('Error transferring lead:', updateError);
+    return { error: FR_MESSAGES.ERROR_TRANSFER };
+  }
+
+  // Transfer scheduled meetings for this lead to the new assignee
+  const { error: meetingsError, count: meetingsCount } = await adminClient
+    .from('meetings')
+    .update({
+      assigned_to: newAssigneeId,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('lead_id', leadId)
+    .eq('status', 'scheduled');
+
+  if (meetingsError) {
+    console.error('Error transferring meetings:', meetingsError);
+    // Don't fail the operation - lead was transferred successfully
+  } else if (meetingsCount && meetingsCount > 0) {
+    console.log(`Transferred ${meetingsCount} scheduled meeting(s) with lead`);
+  }
+
+  // Create history entry with transfer metadata
+  const { error: historyError } = await supabase.from('lead_history').insert({
+    lead_id: leadId,
+    actor_id: user.id,
+    event_type: 'assigned',
+    before_data: { assigned_to: user.id },
+    after_data: { assigned_to: newAssigneeId },
+    metadata: {
+      transfer: true,
+      from_user_name: user.profile?.displayName,
+      to_user_name: newAssignee.display_name,
+    },
+  });
+
+  if (historyError) {
+    console.error('Error creating history entry:', historyError);
+    // Don't fail the operation for history errors
+  }
+
+  // Notify new assignee
+  const leadName =
+    currentLead.first_name || currentLead.last_name
+      ? `${currentLead.first_name || ''} ${currentLead.last_name || ''}`.trim()
+      : undefined;
+
+  await notifyLeadAssigned(newAssigneeId, leadId, leadName);
+
+  // Revalidate paths
+  revalidatePath(`/leads/${leadId}`);
+  revalidatePath('/leads');
+
+  // Invalidate dashboard cache
+  await invalidateDashboardCache();
+
+  return { success: true };
+}
+
+/**
+ * Bulk transfer multiple leads to another sales user
+ * Only sales users can use this action
+ */
+export async function bulkTransferLeads(
+  leadIds: string[],
+  newAssigneeId: string
+): Promise<{ success?: boolean; error?: string; count?: number }> {
+  const supabase = await createClient();
+  const user = await getCurrentUser();
+
+  if (!user) {
+    return { error: FR_MESSAGES.UNAUTHENTICATED };
+  }
+
+  // Only sales users can use this action
+  if (user.profile?.role !== 'sales') {
+    return { error: FR_MESSAGES.UNAUTHORIZED };
+  }
+
+  if (!leadIds.length) {
+    return { error: FR_MESSAGES.INVALID_DATA };
+  }
+
+  // Cannot transfer to yourself
+  if (newAssigneeId === user.id) {
+    return { error: FR_MESSAGES.CANNOT_SELF_TRANSFER };
+  }
+
+  // Verify new assignee is a valid sales user
+  const { data: newAssignee, error: assigneeError } = await supabase
+    .from('profiles')
+    .select('id, display_name, role')
+    .eq('id', newAssigneeId)
+    .single();
+
+  if (assigneeError || !newAssignee) {
+    return { error: FR_MESSAGES.USER_NOT_FOUND };
+  }
+
+  if (newAssignee.role !== 'sales') {
+    return { error: FR_MESSAGES.TRANSFER_TO_SALES_ONLY };
+  }
+
+  // Verify all leads exist and are assigned to current user
+  const { data: leadsToTransfer, error: fetchError } = await supabase
+    .from('leads')
+    .select('id, assigned_to, first_name, last_name')
+    .in('id', leadIds)
+    .eq('assigned_to', user.id)
+    .is('deleted_at', null);
+
+  if (fetchError) {
+    console.error('Error fetching leads for transfer:', fetchError);
+    return { error: FR_MESSAGES.ERROR_TRANSFER };
+  }
+
+  if (!leadsToTransfer || leadsToTransfer.length === 0) {
+    return { error: FR_MESSAGES.LEAD_NOT_FOUND };
+  }
+
+  // Get IDs of leads that can be transferred
+  const transferableIds = leadsToTransfer.map((l) => l.id);
+
+  // Perform the bulk transfer using service role client to bypass RLS
+  const adminClient = createServiceRoleClient();
+  const { error: updateError } = await adminClient
+    .from('leads')
+    .update({
+      assigned_to: newAssigneeId,
+      updated_at: new Date().toISOString(),
+    })
+    .in('id', transferableIds);
+
+  if (updateError) {
+    console.error('Error bulk transferring leads:', updateError);
+    return { error: FR_MESSAGES.ERROR_TRANSFER };
+  }
+
+  // Transfer scheduled meetings for all transferred leads to the new assignee
+  const { error: meetingsError, count: meetingsCount } = await adminClient
+    .from('meetings')
+    .update({
+      assigned_to: newAssigneeId,
+      updated_at: new Date().toISOString(),
+    })
+    .in('lead_id', transferableIds)
+    .eq('status', 'scheduled');
+
+  if (meetingsError) {
+    console.error('Error transferring meetings:', meetingsError);
+    // Don't fail the operation - leads were transferred successfully
+  } else if (meetingsCount && meetingsCount > 0) {
+    console.log(`Transferred ${meetingsCount} scheduled meeting(s) with leads`);
+  }
+
+  // Create history entries for all transferred leads
+  const historyEntries = transferableIds.map((leadId) => ({
+    lead_id: leadId,
+    actor_id: user.id,
+    event_type: 'assigned' as const,
+    before_data: { assigned_to: user.id },
+    after_data: { assigned_to: newAssigneeId },
+    metadata: {
+      transfer: true,
+      bulk: true,
+      from_user_name: user.profile?.displayName,
+      to_user_name: newAssignee.display_name,
+    },
+  }));
+
+  const { error: historyError } = await supabase
+    .from('lead_history')
+    .insert(historyEntries);
+
+  if (historyError) {
+    console.error('Error creating history entries:', historyError);
+  }
+
+  // Notify new assignee (single notification for bulk transfer)
+  const fromUserName = user.profile?.displayName || 'Un commercial';
+  await notifyBulkLeadsTransferred(
+    newAssigneeId,
+    transferableIds.length,
+    fromUserName
+  );
+
+  // Revalidate paths
+  revalidatePath('/leads');
+
+  // Invalidate dashboard cache
+  await invalidateDashboardCache();
+
+  return { success: true, count: transferableIds.length };
 }

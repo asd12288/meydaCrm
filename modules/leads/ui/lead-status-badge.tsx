@@ -68,6 +68,7 @@ export function LeadStatusBadge({
       position="bottom-left"
       widthClass="w-48"
       portal
+      autoFlip
       trigger={
         <button
           type="button"

@@ -1,8 +1,17 @@
 'use client';
 
+import { useState } from 'react';
 import { createColumnHelper } from '@tanstack/react-table';
 import Link from 'next/link';
-import { IconDots, IconEye, IconEdit, IconTrash, IconCalendar } from '@tabler/icons-react';
+import {
+  IconDots,
+  IconEye,
+  IconEdit,
+  IconTrash,
+  IconCalendar,
+  IconTransfer,
+  IconChevronLeft,
+} from '@tabler/icons-react';
 import { Button } from '@/components/ui/button';
 import {
   CopyableText,
@@ -13,71 +22,145 @@ import {
 } from '@/modules/shared';
 import { LeadStatusBadge } from '../ui/lead-status-badge';
 import { SortableHeader } from '../ui/sortable-header';
+import { TransferLeadSubmenu } from '../ui/transfer-lead-submenu';
 import { COLUMN_LABELS } from './constants';
-import type { LeadWithAssignee } from '../types';
+import type { LeadWithAssignee, SalesUser } from '../types';
 
 const columnHelper = createColumnHelper<LeadWithAssignee>();
 
 interface ColumnOptions {
   isAdmin: boolean;
   includeSelection: boolean;
+  currentUserId?: string;
+  salesUsers?: SalesUser[];
   onDelete?: (leadId: string) => void;
   onCreateMeeting?: (leadId: string) => void;
+  onTransferSuccess?: () => void;
+  onTransferError?: (error: string) => void;
 }
 
 // Row actions dropdown component
 function RowActionsDropdown({
   leadId,
   isAdmin,
+  currentUserId,
+  salesUsers,
   onDelete,
   onCreateMeeting,
+  onTransferSuccess,
+  onTransferError,
 }: {
   leadId: string;
   isAdmin: boolean;
+  currentUserId?: string;
+  salesUsers?: SalesUser[];
   onDelete?: (leadId: string) => void;
   onCreateMeeting?: (leadId: string) => void;
+  onTransferSuccess?: () => void;
+  onTransferError?: (error: string) => void;
 }) {
+  const [showTransferSubmenu, setShowTransferSubmenu] = useState(false);
+
+  // Check if transfer option should be shown (non-admin with valid data)
+  const otherSalesUsers = salesUsers?.filter((u) => u.id !== currentUserId && u.role === 'sales') || [];
+  const canTransfer = !isAdmin && !!currentUserId && salesUsers && otherSalesUsers.length > 0;
+
+  // Reset submenu state when dropdown closes (via click outside)
+  const handleTriggerClick = () => {
+    // Reset submenu state for next open
+    setShowTransferSubmenu(false);
+  };
+
   return (
     <DropdownMenu
       position="bottom-right"
-      widthClass="w-56"
+      widthClass="w-60"
+      closeOnClick={!showTransferSubmenu}
+      portal
+      autoFlip
       trigger={
-        <Button variant="circleHover" size="circle">
-          <IconDots size={20} />
-        </Button>
+        <div onClick={handleTriggerClick}>
+          <Button variant="circleHover" size="circle">
+            <IconDots size={20} />
+          </Button>
+        </div>
       }
     >
       <DropdownMenuContent>
-        <DropdownMenuItem
-          href={`/leads/${leadId}`}
-          icon={<IconEye size={16} />}
-        >
-          Voir détails
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          href={`/leads/${leadId}`}
-          icon={<IconEdit size={16} />}
-        >
-          Modifier
-        </DropdownMenuItem>
-        {onCreateMeeting && (
-          <DropdownMenuItem
-            onClick={() => onCreateMeeting(leadId)}
-            icon={<IconCalendar size={16} />}
-          >
-            Planifier un rendez-vous
-          </DropdownMenuItem>
-        )}
-        {isAdmin && onDelete && (
+        {showTransferSubmenu ? (
           <>
-            <DropdownMenuDivider />
-            <DropdownMenuItem
-              onClick={() => onDelete(leadId)}
-              icon={<IconTrash size={16} />}
-              variant="danger"
+            {/* Back button + Transfer header */}
+            <button
+              type="button"
+              onClick={() => setShowTransferSubmenu(false)}
+              className="w-full flex items-center gap-2 px-4 py-2 text-xs font-medium text-darklink uppercase tracking-wide border-b border-ld hover:bg-lightgray dark:hover:bg-darkmuted"
             >
-              Supprimer
+              <IconChevronLeft size={14} />
+              Transférer à
+            </button>
+            <TransferLeadSubmenu
+              leadId={leadId}
+              currentUserId={currentUserId!}
+              salesUsers={salesUsers!}
+              onSuccess={onTransferSuccess}
+              onError={onTransferError}
+            />
+          </>
+        ) : (
+          <>
+            <DropdownMenuItem
+              href={`/leads/${leadId}`}
+              icon={<IconEye size={16} />}
+            >
+              Voir détails
             </DropdownMenuItem>
+            <DropdownMenuItem
+              href={`/leads/${leadId}`}
+              icon={<IconEdit size={16} />}
+            >
+              Modifier
+            </DropdownMenuItem>
+            {onCreateMeeting && (
+              <DropdownMenuItem
+                onClick={() => onCreateMeeting(leadId)}
+                icon={<IconCalendar size={16} />}
+              >
+                Planifier un rendez-vous
+              </DropdownMenuItem>
+            )}
+
+            {/* Transfer option - only for sales users */}
+            {canTransfer && (
+              <>
+                <DropdownMenuDivider />
+                {/* Custom button without data-menu-item to prevent dropdown close */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowTransferSubmenu(true);
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-ld hover:bg-lightgray dark:hover:bg-darkmuted transition-all duration-150 cursor-pointer"
+                >
+                  <span className="text-darklink"><IconTransfer size={16} /></span>
+                  Transférer le lead
+                </button>
+              </>
+            )}
+
+            {/* Delete option - admin only */}
+            {isAdmin && onDelete && (
+              <>
+                <DropdownMenuDivider />
+                <DropdownMenuItem
+                  onClick={() => onDelete(leadId)}
+                  icon={<IconTrash size={16} />}
+                  variant="danger"
+                >
+                  Supprimer
+                </DropdownMenuItem>
+              </>
+            )}
           </>
         )}
       </DropdownMenuContent>
@@ -85,7 +168,16 @@ function RowActionsDropdown({
   );
 }
 
-export function getLeadColumns({ isAdmin, includeSelection, onDelete, onCreateMeeting }: ColumnOptions) {
+export function getLeadColumns({
+  isAdmin,
+  includeSelection,
+  currentUserId,
+  salesUsers,
+  onDelete,
+  onCreateMeeting,
+  onTransferSuccess,
+  onTransferError,
+}: ColumnOptions) {
   const columns = [];
 
   // Selection column (admin only)
@@ -251,8 +343,12 @@ export function getLeadColumns({ isAdmin, includeSelection, onDelete, onCreateMe
         <RowActionsDropdown
           leadId={info.row.original.id}
           isAdmin={isAdmin}
+          currentUserId={currentUserId}
+          salesUsers={salesUsers}
           onDelete={onDelete}
           onCreateMeeting={onCreateMeeting}
+          onTransferSuccess={onTransferSuccess}
+          onTransferError={onTransferError}
         />
       ),
       size: 50,
