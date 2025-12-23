@@ -12,6 +12,12 @@ import {
   IconSparkles,
 } from '@tabler/icons-react';
 
+// Import centralized color constants
+import {
+  STATUS_BADGE_CLASSES,
+  BADGE_TO_CSS_VAR,
+} from '@/lib/constants';
+
 // Map status to icon component
 export const STATUS_ICON_MAP: Record<
   string,
@@ -29,37 +35,9 @@ export const STATUS_ICON_MAP: Record<
   mail: IconMail,
 };
 
-// Map badge classes to CSS color values for inline styles
-export const BADGE_TO_COLOR: Record<string, string> = {
-  'badge-success': 'var(--color-success)',
-  'badge-warning': 'var(--color-warning)',
-  'badge-error': 'var(--color-error)',
-  'badge-info': 'var(--color-info)',
-  'badge-primary': 'var(--color-primary)',
-  'badge-secondary': 'var(--color-secondary)',
-};
-
-// Status colors mapping to globals.css badge classes
-export const STATUS_COLORS: Record<LeadStatus, string> = {
-  rdv: 'badge-success',
-  no_answer_1: 'badge-warning',
-  no_answer_2: 'badge-error',
-  wrong_number: 'badge-error',
-  not_interested: 'badge-error',
-  deposit: 'badge-success',
-  callback: 'badge-info',
-  relance: 'badge-primary',
-  mail: 'badge-secondary',
-  // Legacy statuses
-  new: 'badge-primary',
-  contacted: 'badge-info',
-  qualified: 'badge-secondary',
-  proposal: 'badge-warning',
-  negotiation: 'badge-warning',
-  won: 'badge-success',
-  lost: 'badge-error',
-  no_answer: 'badge-error',
-};
+// Re-export centralized constants for backwards compatibility
+export const BADGE_TO_COLOR = BADGE_TO_CSS_VAR;
+export const STATUS_COLORS = STATUS_BADGE_CLASSES;
 
 // Status options for dropdowns (French labels) - ALL ACTIVE STATUSES
 export const LEAD_STATUS_OPTIONS: { value: LeadStatus; label: string }[] = [
@@ -84,16 +62,16 @@ export const KANBAN_COLUMNS: {
   label: string;
   color: KanbanBoardCircleColor;
 }[] = [
-  { status: 'new', label: 'Nouveau', color: 'primary' },
-  { status: 'callback', label: 'Rappeler', color: 'cyan' },
-  { status: 'relance', label: 'Relance', color: 'blue' },
-  { status: 'no_answer_1', label: 'Pas de réponse 1', color: 'yellow' },
-  { status: 'no_answer_2', label: 'Pas de réponse 2', color: 'red' },
-  { status: 'mail', label: 'Mail', color: 'purple' },
-  { status: 'rdv', label: 'RDV', color: 'green' },
-  { status: 'deposit', label: 'Dépôt', color: 'green' },
-  { status: 'not_interested', label: 'Pas intéressé', color: 'gray' },
-  { status: 'wrong_number', label: 'Faux numéro', color: 'gray' },
+  { status: 'new', label: 'Nouveau', color: 'indigo' },         // Indigo - Fresh leads
+  { status: 'callback', label: 'Rappeler', color: 'cyan' },     // Cyan - Scheduled action
+  { status: 'relance', label: 'Relance', color: 'blue' },       // Blue - Follow-up needed
+  { status: 'no_answer_1', label: 'Pas de réponse 1', color: 'yellow' }, // Yellow - First attempt
+  { status: 'no_answer_2', label: 'Pas de réponse 2', color: 'orange' }, // Orange - Second attempt
+  { status: 'mail', label: 'Mail', color: 'purple' },           // Purple - Email contact
+  { status: 'rdv', label: 'RDV', color: 'green' },              // Green - Meeting scheduled
+  { status: 'deposit', label: 'Dépôt', color: 'emerald' },      // Emerald - Won/money
+  { status: 'not_interested', label: 'Pas intéressé', color: 'red' }, // Red - Negative outcome
+  { status: 'wrong_number', label: 'Faux numéro', color: 'gray' }, // Gray - Invalid/dead end
 ];
 
 // Kanban page size (show more leads per column for better overview)

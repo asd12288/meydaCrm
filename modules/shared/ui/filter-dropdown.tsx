@@ -4,6 +4,7 @@ import { useState, useRef } from 'react';
 import { IconChevronDown, IconCheck } from '@tabler/icons-react';
 import { Button } from '@/components/ui/button';
 import { useClickOutside } from '../hooks/use-click-outside';
+import { TEXT_CLASS_TO_CSS_VAR } from '@/lib/constants';
 
 export interface FilterOption {
   value: string;
@@ -12,16 +13,6 @@ export interface FilterOption {
   /** Color class for the icon (e.g., 'text-success', 'text-warning') */
   iconColorClass?: string;
 }
-
-// Map color classes to CSS variable colors
-const COLOR_MAP: Record<string, string> = {
-  'text-success': 'var(--color-success)',
-  'text-warning': 'var(--color-warning)',
-  'text-error': 'var(--color-error)',
-  'text-info': 'var(--color-info)',
-  'text-primary': 'var(--color-primary)',
-  'text-secondary': 'var(--color-secondary)',
-};
 
 interface FilterDropdownProps {
   options: FilterOption[];
@@ -101,7 +92,7 @@ export function FilterDropdown({
 
       {/* Dropdown menu */}
       {isOpen && (
-        <div className={`absolute top-full left-0 mt-1 min-w-full w-max ${menuMaxWidth} z-9999 bg-white dark:bg-zinc-900 border border-border dark:border-darkborder rounded-md shadow-lg dark:shadow-dark-md`}>
+        <div className={`absolute top-full left-0 mt-1 min-w-full w-max ${menuMaxWidth} z-9999 bg-white dark:bg-zinc-900 border border-border dark:border-darkborder rounded-xl shadow-lg dark:shadow-dark-md overflow-hidden`}>
           {/* Clear option - sticky at top */}
           <div className="py-1 border-b border-border dark:border-darkborder">
             <Button
@@ -109,8 +100,9 @@ export function FilterDropdown({
               variant="ghost"
               onClick={() => handleSelect('')}
               className={`
-                w-full px-3 py-2 justify-start gap-2 rounded-none
-                hover:bg-lightgray dark:hover:bg-darkmuted
+                w-full px-3 py-2.5 justify-start gap-2 rounded-none
+                hover:bg-lightgray dark:hover:bg-darkmuted hover:pl-5
+                transition-all duration-150 dropdown-item-stagger
                 ${!value ? 'text-primary font-medium' : 'text-darklink'}
               `}
             >
@@ -126,7 +118,7 @@ export function FilterDropdown({
               const isSelected = option.value === value;
               // Get inline color style for guaranteed color application
               const iconColorStyle = option.iconColorClass
-                ? { color: COLOR_MAP[option.iconColorClass] || undefined }
+                ? { color: TEXT_CLASS_TO_CSS_VAR[option.iconColorClass] || undefined }
                 : undefined;
               // Build hover class for text color on hover
               const hoverColorClass = option.iconColorClass
@@ -140,8 +132,9 @@ export function FilterDropdown({
                   variant="ghost"
                   onClick={() => handleSelect(option.value)}
                   className={`
-                    w-full px-3 py-2 justify-start gap-2 rounded-none
-                    hover:bg-lightgray dark:hover:bg-darkmuted
+                    w-full px-3 py-2.5 justify-start gap-2 rounded-none
+                    hover:bg-lightgray dark:hover:bg-darkmuted hover:pl-5
+                    transition-all duration-150 dropdown-item-stagger
                     ${isSelected ? 'text-primary font-medium bg-lightprimary/50 dark:bg-primary/10' : 'text-ld'}
                     ${!isSelected && hoverColorClass ? hoverColorClass : ''}
                   `}

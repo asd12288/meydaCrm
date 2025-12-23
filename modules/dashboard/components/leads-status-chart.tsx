@@ -3,6 +3,7 @@
 import dynamic from 'next/dynamic';
 import { CardBox } from '@/modules/shared';
 import { LEAD_STATUS_LABELS } from '@/db/types';
+import { getStatusCssVar } from '@/lib/constants';
 
 const Chart = dynamic(() => import('react-apexcharts'), { ssr: false });
 
@@ -10,56 +11,6 @@ interface LeadsStatusChartProps {
   leadsByStatus: Record<string, number>;
   totalLeads: number;
 }
-
-// Semantic color mapping for each status (uses DB keys, not French labels)
-// Colors match the status meaning for better visual understanding
-const STATUS_CHART_COLORS: Record<string, string> = {
-  // Success (green) - Won/positive outcomes
-  deposit: 'var(--color-success)',
-  won: '#16a34a', // green-600
-
-  // Warning (orange/yellow) - Active/in progress
-  rdv: 'var(--color-warning)',
-  callback: '#ea580c', // orange-600
-  relance: '#d97706', // amber-600
-
-  // Primary (blue) - Outreach
-  mail: 'var(--color-primary)',
-  contacted: '#0284c7', // sky-600
-
-  // Info (cyan) - New
-  new: 'var(--color-info)',
-
-  // Secondary (purple/gray) - No response
-  no_answer: 'var(--color-secondary)',
-  no_answer_1: '#7c3aed', // violet-600
-  no_answer_2: '#6366f1', // indigo-500
-
-  // Error (red) - Lost/negative
-  not_interested: 'var(--color-error)',
-  wrong_number: '#dc2626', // red-600
-  lost: '#be123c', // rose-700
-};
-
-// Get chart color for a status, with fallback
-const getStatusChartColor = (status: string): string => {
-  return STATUS_CHART_COLORS[status] || 'var(--color-secondary)';
-};
-
-// Tailwind classes for legend dots (for CSS variable colors)
-const STATUS_DOT_CLASSES: Record<string, string> = {
-  deposit: 'bg-success',
-  rdv: 'bg-warning',
-  mail: 'bg-primary',
-  new: 'bg-info',
-  no_answer: 'bg-secondary',
-  not_interested: 'bg-error',
-};
-
-// Get dot class or return empty for inline style fallback
-const getStatusDotClass = (status: string): string => {
-  return STATUS_DOT_CLASSES[status] || '';
-};
 
 export function LeadsStatusChart({ leadsByStatus, totalLeads }: LeadsStatusChartProps) {
   // Sort statuses by count and get top 6
@@ -72,8 +23,8 @@ export function LeadsStatusChart({ leadsByStatus, totalLeads }: LeadsStatusChart
   const chartLabels = sortedStatuses.map(
     ([status]) => LEAD_STATUS_LABELS[status as keyof typeof LEAD_STATUS_LABELS] || status
   );
-  // Use semantic colors based on status
-  const chartColors = sortedStatuses.map(([status]) => getStatusChartColor(status));
+  // Use semantic colors based on status (from centralized constants)
+  const chartColors = sortedStatuses.map(([status]) => getStatusCssVar(status));
 
   const chartConfig: ApexCharts.ApexOptions = {
     series: chartSeries,
@@ -82,7 +33,7 @@ export function LeadsStatusChart({ leadsByStatus, totalLeads }: LeadsStatusChart
       type: 'donut',
       height: 280,
       fontFamily: 'inherit',
-      foreColor: '#adb0bb',
+      foreColor: '#64748b',
     },
     plotOptions: {
       pie: {
@@ -108,7 +59,7 @@ export function LeadsStatusChart({ leadsByStatus, totalLeads }: LeadsStatusChart
               label: 'Total',
               fontSize: '14px',
               fontWeight: 400,
-              color: '#adb0bb',
+              color: '#64748b',
               formatter: () => totalLeads.toString(),
             },
           },
@@ -161,16 +112,15 @@ export function LeadsStatusChart({ leadsByStatus, totalLeads }: LeadsStatusChart
           <div className="space-y-3">
             {sortedStatuses.map(([status, count]) => {
               const percentage = totalLeads > 0 ? Math.round((count / totalLeads) * 100) : 0;
-              const chartColor = getStatusChartColor(status);
-              const dotClass = getStatusDotClass(status);
+              const chartColor = getStatusCssVar(status);
               return (
                 <div
                   key={status}
                   className="flex items-center gap-3 py-1"
                 >
                   <div
-                    className={`w-3 h-3 rounded-full shrink-0 ${dotClass}`}
-                    style={!dotClass ? { backgroundColor: chartColor } : undefined}
+                    className="w-3 h-3 rounded-full shrink-0"
+                    style={{ backgroundColor: chartColor }}
                   />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
