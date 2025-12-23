@@ -393,9 +393,110 @@ Never put service role key in client-side code.
 - **Region**: `eu-central-1`
 - **Database Host**: `db.owwyxrxojltmupqrvqcp.supabase.co`
 
+### PostHog Analytics (for internal tracking)
+
+- `NEXT_PUBLIC_POSTHOG_KEY` - PostHog project API key
+- `NEXT_PUBLIC_POSTHOG_HOST` - PostHog host (https://eu.i.posthog.com for EU)
+
+**Dashboard**: https://eu.posthog.com
+
 ---
 
-## 10.1) Database Migrations (Best Practice)
+## 10.1) Analytics (PostHog + Vercel)
+
+### What's Tracked Automatically
+
+| Feature | Tool | Notes |
+|---------|------|-------|
+| Page views | PostHog | Every navigation |
+| Click tracking | PostHog | All button/link clicks |
+| Session replays | PostHog | Watch user sessions |
+| Error tracking | PostHog | JS exceptions |
+| User identification | PostHog | Links events to users (name, role) |
+| Traffic analytics | Vercel Analytics | Visitors, geography |
+| Performance | Vercel Speed Insights | Core Web Vitals |
+
+### Files Structure
+
+```
+lib/analytics/
+├── index.tsx           # Main provider + exports
+├── posthog-provider.tsx # PostHog initialization
+├── identify.tsx        # User identification component
+└── events.ts           # Custom event helpers
+```
+
+### Using Custom Events
+
+Import the `analytics` helper in any **client component**:
+
+```typescript
+import { analytics } from '@/lib/analytics';
+
+// After a successful action:
+analytics.leadStatusChanged({
+  leadId: lead.id,
+  from: 'nouveau',
+  to: 'contacté',
+});
+
+analytics.bulkLeadsTransferred({
+  leadCount: 5,
+  fromUserId: 'uuid-1',
+  toUserId: 'uuid-2',
+});
+
+analytics.commentAdded({ leadId: 'uuid' });
+
+analytics.searchPerformed({
+  query: 'dupont',
+  resultsCount: 12,
+});
+
+analytics.importCompleted({
+  rowCount: 500,
+  fileType: 'xlsx',
+  durationMs: 3000,
+});
+
+analytics.featureUsed('bulk_export', { format: 'csv' });
+```
+
+### Available Events
+
+| Event | Properties | When to Use |
+|-------|------------|-------------|
+| `leadStatusChanged` | `leadId`, `from`, `to` | Status dropdown change |
+| `leadTransferred` | `leadId`, `fromUserId`, `toUserId` | Single lead transfer |
+| `bulkLeadsTransferred` | `leadCount`, `fromUserId`, `toUserId` | Bulk transfer |
+| `commentAdded` | `leadId` | After comment saved |
+| `searchPerformed` | `query`, `resultsCount`, `filters?` | After search |
+| `importStarted` | `fileType`, `fileName` | Import begins |
+| `importCompleted` | `rowCount`, `fileType`, `durationMs?` | Import success |
+| `importFailed` | `error`, `fileType?` | Import error |
+| `userCreated` | `role` | Admin creates user |
+| `featureUsed` | `feature`, `...props` | Generic feature tracking |
+
+### Testing Locally
+
+1. Set `ENABLE_DEV_TRACKING = true` in `lib/analytics/posthog-provider.tsx`
+2. Open browser DevTools → Console
+3. Navigate around, you'll see `[PostHog] Capturing event: ...`
+4. Check https://eu.posthog.com → Activity for live events
+5. **Remember to set back to `false` before deploying**
+
+### PostHog Dashboard Quick Links
+
+- **Activity Feed**: See live events
+- **Persons**: View individual users (Marie, Jean, etc.)
+- **Session Replays**: Watch user sessions
+- **Error Tracking**: View JS errors
+- **Insights**: Create funnels, trends, retention charts
+- **Dashboards**: Build custom dashboards
+
+---
+
+## 10.2) Database Migrations (Best Practice)
 
 ### Preferred Approach: Local Migration Files
 
