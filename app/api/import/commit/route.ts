@@ -20,18 +20,33 @@ import { handleCommitDirectly } from '@/modules/import/workers';
 export const maxDuration = 300; // 5 minutes max
 export const dynamic = 'force-dynamic';
 
+const LOG_PREFIX = '[API/ImportCommit]';
+
 /**
  * POST handler - called by QStash
  * Delegates to the shared commit worker which handles status normalization
  */
 export const POST = createQStashHandler<CommitJobPayload>(async (payload) => {
-  return handleCommitDirectly(
+  console.log(LOG_PREFIX, 'Received commit job', {
+    importJobId: payload.importJobId,
+    assignmentMode: payload.assignment?.mode,
+    duplicateStrategy: payload.duplicates?.strategy,
+    defaultStatus: payload.defaultStatus,
+  });
+  const result = await handleCommitDirectly(
     payload.importJobId,
     payload.assignment,
     payload.duplicates,
     payload.defaultStatus,
     payload.defaultSource
   );
+  console.log(LOG_PREFIX, 'Commit job completed', {
+    importJobId: payload.importJobId,
+    success: result.success,
+    importedCount: result.importedCount,
+    skippedCount: result.skippedCount,
+  });
+  return result;
 });
 
 /**

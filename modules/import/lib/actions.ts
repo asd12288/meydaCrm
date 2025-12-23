@@ -11,7 +11,10 @@ import type {
   ColumnMappingConfig,
   AssignmentConfig,
   DuplicateConfig,
+  DetailedValidationSummary,
+  PreviewIssueRow,
 } from '../types';
+import { buildDedupeSet, type DedupeField } from './processors/dedupe';
 
 // =============================================================================
 // FILE UPLOAD
@@ -337,6 +340,7 @@ export async function startImportParsing(
   importJobId: string
 ): Promise<ImportActionResult<{ messageId: string }>> {
   try {
+    console.log('[startImportParsing] START for job:', importJobId);
     await requireAdmin();
     const supabase = await createClient();
 
@@ -348,26 +352,34 @@ export async function startImportParsing(
       .single();
 
     if (jobError || !job) {
+      console.log('[startImportParsing] Job not found:', jobError);
       return { success: false, error: 'Job non trouvé' };
     }
 
+    console.log('[startImportParsing] Current job status:', job.status);
+
     // Allow retrying from pending, failed, or stuck states
     if (!['pending', 'failed', 'validating', 'parsing'].includes(job.status)) {
+      console.log('[startImportParsing] Invalid status for parsing:', job.status);
       return { success: false, error: 'Ce job ne peut pas être relancé (statut: ' + job.status + ')' };
     }
 
     // Update status to queued
+    console.log('[startImportParsing] Updating status to queued...');
     await supabase
       .from('import_jobs')
       .update({ status: 'queued', error_message: null })
       .eq('id', importJobId);
 
     // Enqueue parse job via QStash
+    console.log('[startImportParsing] Enqueueing parse job via QStash...');
     const messageId = await enqueueParseJob({ importJobId });
+    console.log('[startImportParsing] Job enqueued, messageId:', messageId);
 
     revalidatePath('/import');
     return { success: true, data: { messageId } };
   } catch (error) {
+    console.error('[startImportParsing] ERROR:', error);
 
     // Try to update status to failed
     try {
@@ -773,6 +785,7 @@ export async function pollImportJobStatus(
   }>
 > {
   try {
+    console.log('[pollImportJobStatus] Checking status for job:', importJobId);
     await requireAdmin();
     const supabase = await createClient();
 
@@ -793,9 +806,11 @@ export async function pollImportJobStatus(
       .single();
 
     if (error || !job) {
+      console.log('[pollImportJobStatus] Job not found:', error);
       return { success: false, error: 'Job non trouvé' };
     }
 
+    console.log('[pollImportJobStatus] Job status:', job.status, { totalRows: job.total_rows, validRows: job.valid_rows });
     return {
       success: true,
       data: {
@@ -811,6 +826,7 @@ export async function pollImportJobStatus(
       },
     };
   } catch (error) {
+    console.error('[pollImportJobStatus] Error:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Erreur inconnue',
@@ -933,6 +949,177 @@ export async function downloadImportFile(
       },
     };
   } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Erreur inconnue',
+    };
+  }
+}
+
+// =============================================================================
+// DETAILED VALIDATION (DB DUPLICATE CHECK)
+// =============================================================================
+
+/**
+ * Check import rows against existing database leads for duplicates
+ * Also returns invalid rows and file duplicates for detailed preview
+ */
+export async function checkDatabaseDuplicates(
+  importJobId: string
+): Promise<ImportActionResult<DetailedValidationSummary>> {
+  try {
+    console.log('[checkDatabaseDuplicates] START for job:', importJobId);
+    await requireAdmin();
+    const supabase = await createClient();
+
+    // Get import job with duplicate config and status
+    console.log('[checkDatabaseDuplicates] Fetching job config...');
+    const { data: job, error: jobError } = await supabase
+      .from('import_jobs')
+      .select('status, duplicate_config, total_rows, valid_rows, invalid_rows')
+      .eq('id', importJobId)
+      .single();
+
+    if (jobError || !job) {
+      console.log('[checkDatabaseDuplicates] Job not found:', jobError);
+      return { success: false, error: 'Job non trouve' };
+    }
+    console.log('[checkDatabaseDuplicates] Job found:', { totalRows: job.total_rows, validRows: job.valid_rows });
+
+    // Extract check fields from config (default to email only)
+    const duplicateConfig = job.duplicate_config as { checkFields?: string[] } | null;
+    const checkFields = (duplicateConfig?.checkFields || ['email']) as DedupeField[];
+    console.log('[checkDatabaseDuplicates] Check fields:', checkFields);
+
+    // Build dedupe set from existing leads
+    console.log('[checkDatabaseDuplicates] Building dedupe set from DB...');
+    const dedupeSet = await buildDedupeSet(supabase, {
+      checkFields,
+      checkDatabase: true,
+      checkWithinFile: false,
+    });
+    console.log('[checkDatabaseDuplicates] Dedupe set size:', dedupeSet.size);
+
+    // Fetch all import rows
+    console.log('[checkDatabaseDuplicates] Fetching import rows...');
+    const { data: rows, error: rowsError } = await supabase
+      .from('import_rows')
+      .select('row_number, status, normalized_data, validation_errors')
+      .eq('import_job_id', importJobId)
+      .order('row_number', { ascending: true });
+
+    if (rowsError) {
+      console.log('[checkDatabaseDuplicates] Error fetching rows:', rowsError);
+      return { success: false, error: rowsError.message };
+    }
+    console.log('[checkDatabaseDuplicates] Found', rows?.length || 0, 'import rows');
+
+    // Categorize rows
+    const invalidRows: PreviewIssueRow[] = [];
+    const fileDuplicateRows: PreviewIssueRow[] = [];
+    const dbDuplicateRows: PreviewIssueRow[] = [];
+    const seenInFile = new Map<string, number>(); // value -> first row number
+
+    let validCount = 0;
+
+    for (const row of rows || []) {
+      const data = row.normalized_data as Record<string, string | null> | null;
+      const errors = row.validation_errors as Record<string, string> | null;
+
+      // Extract display data
+      const displayData = {
+        email: data?.email || null,
+        phone: data?.phone || null,
+        first_name: data?.first_name || null,
+        last_name: data?.last_name || null,
+        company: data?.company || null,
+      };
+
+      // Check if invalid (validation errors)
+      if (row.status === 'invalid' && errors) {
+        const firstErrorField = Object.keys(errors)[0];
+        invalidRows.push({
+          rowNumber: row.row_number,
+          data: displayData,
+          issueType: 'invalid',
+          field: firstErrorField,
+          message: errors[firstErrorField],
+        });
+        continue;
+      }
+
+      // Check for duplicates (any row that's not invalid)
+      // Note: rows can be 'valid', 'imported', 'skipped', or 'pending'
+      if (row.status !== 'invalid' && data) {
+        let isDuplicate = false;
+
+        for (const field of checkFields) {
+          const value = data[field]?.toLowerCase?.()?.trim();
+          if (!value) continue;
+
+          const key = `${field}:${value}`;
+
+          // Check file duplicate first
+          if (seenInFile.has(key)) {
+            fileDuplicateRows.push({
+              rowNumber: row.row_number,
+              data: displayData,
+              issueType: 'file_duplicate',
+              field,
+              message: `Doublon de la ligne ${seenInFile.get(key)}`,
+              matchedValue: value,
+              matchedRowNumber: seenInFile.get(key),
+            });
+            isDuplicate = true;
+            break;
+          }
+
+          // Check database duplicate
+          if (dedupeSet.has(key)) {
+            dbDuplicateRows.push({
+              rowNumber: row.row_number,
+              data: displayData,
+              issueType: 'db_duplicate',
+              field,
+              message: 'Existe deja en base',
+              matchedValue: value,
+            });
+            isDuplicate = true;
+            break;
+          }
+
+          // Track for within-file detection
+          seenInFile.set(key, row.row_number);
+        }
+
+        if (!isDuplicate) {
+          validCount++;
+        }
+      }
+    }
+
+    const summary: DetailedValidationSummary = {
+      total: job.total_rows || rows?.length || 0,
+      valid: validCount,
+      invalid: invalidRows.length,
+      fileDuplicates: fileDuplicateRows.length,
+      dbDuplicates: dbDuplicateRows.length,
+      invalidRows,
+      fileDuplicateRows,
+      dbDuplicateRows,
+      jobStatus: job.status,
+    };
+
+    console.log('[checkDatabaseDuplicates] COMPLETE:', {
+      total: summary.total,
+      valid: summary.valid,
+      invalid: summary.invalid,
+      fileDuplicates: summary.fileDuplicates,
+      dbDuplicates: summary.dbDuplicates,
+    });
+    return { success: true, data: summary };
+  } catch (error) {
+    console.error('[checkDatabaseDuplicates] ERROR:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Erreur inconnue',

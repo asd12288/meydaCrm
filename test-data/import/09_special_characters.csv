@@ -1,0 +1,9 @@
+prenom,nom,email,telephone,entreprise,fonction,adresse,notes
+François,Müller,francois@test.com,0612345678,Café & Co,Gérant,123 Rue de l'Église,"Notes avec virgule, point et point-virgule; ok"
+Héloïse,O'Brien,heloise@test.com,0698765432,L'Épicerie Fine,Directrice,"45, Avenue des Champs-Élysées",Notes avec accent: été à côté
+José,García-López,jose@test.com,0645678901,Ñoño Inc,CEO,Calle Mayor 12,Caractères espagnols: ñ ¿ ¡
+Zoë,Böhm,zoe@test.com,0687654321,Größe GmbH,Manager,Königstraße 78,Caractères allemands: ä ö ü ß
+André,Œuf,andre@test.com,0611223344,Œuvre d'Art,Artiste,Place de l'Hôtel,Ligature œ et apostrophe
+Marie-Claire,De la Fontaine,marie@test.com,0622334455,Jean & Marie SARL,Associée,BP 123 - Cedex 01,"Tirets, esperluette, abréviations"
+"Jean ""Johnny""",Dupont,johnny@test.com,0633445566,Rock'n'Roll Inc,Musicien,1bis Rue du Rock,Guillemets dans le nom
+Pierre;Paul,Martin,pp@test.com,0644556677,Semi;Colon Ltd,Consultant,Adresse normale,Point-virgule dans le nom

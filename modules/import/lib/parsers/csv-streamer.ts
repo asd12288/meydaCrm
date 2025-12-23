@@ -14,6 +14,7 @@
 
 import Papa from 'papaparse';
 import type { ColumnMapping } from '../../types';
+import { tryFixEmailDomain } from '../validators';
 
 // ============================================================================
 // TYPES
@@ -295,8 +296,11 @@ function normalizeValue(field: string, value: string): string | null {
   const trimmed = value.trim();
 
   switch (field) {
-    case 'email':
-      return trimmed.toLowerCase();
+    case 'email': {
+      // Auto-fix common email domain typos (gmailcom -> gmail.com, etc.)
+      const { email: fixed } = tryFixEmailDomain(trimmed);
+      return fixed;
+    }
 
     case 'phone': {
       let normalized = trimmed;

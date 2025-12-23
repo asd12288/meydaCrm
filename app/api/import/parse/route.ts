@@ -18,12 +18,17 @@ import { handleParseDirectly } from '@/modules/import/workers';
 export const maxDuration = 300; // 5 minutes max
 export const dynamic = 'force-dynamic';
 
+const LOG_PREFIX = '[API/ImportParse]';
+
 /**
  * POST handler - called by QStash
  * Delegates to the shared parse worker which handles parse → commit chaining
  */
 export const POST = createQStashHandler<ParseJobPayload>(async (payload) => {
-  return handleParseDirectly(payload.importJobId);
+  console.log(LOG_PREFIX, 'Received parse job', { importJobId: payload.importJobId, startChunk: payload.startChunk });
+  const result = await handleParseDirectly(payload.importJobId);
+  console.log(LOG_PREFIX, 'Parse job completed', { importJobId: payload.importJobId, success: result.success });
+  return result;
 });
 
 /**

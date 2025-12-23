@@ -1,0 +1,11 @@
+prenom,nom,email,telephone,entreprise,ville,code_postal,notes
+Jean,Dupont,jean1@test.com,0612345678,Acme,Paris,75001,Code postal standard Paris
+Marie,Martin,marie2@test.com,0698765432,Tech,Corse,20000,Code postal Corse commence par 2
+Pierre,Bernard,pierre3@test.com,0645678901,Startup,Ain,01000,Code postal avec zero initial
+Sophie,Durand,sophie4@test.com,0687654321,Consult,Monaco,98000,Code postal Monaco
+Luc,Petit,luc5@test.com,0611223344,Big,DOM,97100,Code postal DOM-TOM
+Emma,Blanc,emma6@test.com,0622334455,Small,Suisse,1201,Code postal suisse 4 chiffres
+Paul,Rouge,paul7@test.com,0633445566,Medium,Belgique,1000,Code postal belge
+Claire,Noir,claire8@test.com,0644556677,Large,Paris,75 001,Code postal avec espace
+Marc,Vert,marc9@test.com,0655667788,Micro,Lyon,69001.0,Code postal comme nombre decimal
+Julie,Bleu,julie10@test.com,0666778899,Nano,Marseille,1300,Code postal 4 chiffres France - devrait etre 01300

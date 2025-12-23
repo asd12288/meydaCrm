@@ -1,0 +1,5 @@
+external_id,prenom,nom,email,telephone,entreprise,fonction,adresse,ville,code_postal,pays,source,statut,notes,assigned_to
+EXT001,Jean,Dupont,jean.dupont@acme.com,0612345678,Acme Corporation,Directeur Général,123 Avenue des Champs-Élysées,Paris,75008,France,LinkedIn,Nouveau,Premier contact issu de LinkedIn. Très intéressé par notre solution. À rappeler la semaine prochaine.,marie
+EXT002,Marie,Martin,marie.martin@tech.fr,0698765432,Tech Solutions SAS,Responsable Commercial,45 Rue de la Paix,Lyon,69002,France,Salon professionnel,RDV,Rencontrée au salon IT Paris. RDV prévu le 15 janvier.,jean
+EXT003,Pierre,Bernard,pierre.bernard@startup.io,0645678901,StartupXYZ,CEO et Fondateur,78 Boulevard Haussmann,Marseille,13001,France,Site web,Dépôt,Dépôt effectué. En attente de confirmation bancaire.,sophie
+EXT004,Sophie,Durand,sophie.durand@consulting.com,0687654321,Consulting Experts,Senior Partner,12 Place Vendôme,Bordeaux,33000,France,Recommandation client,Rappeler,Recommandée par M. Lambert. Très bon potentiel. Rappeler vendredi matin.,marie

@@ -73,6 +73,14 @@ export const navigationItems: NavItem[] = [
     group: 'admin',
   },
   {
+    id: 'import-v2',
+    title: 'Import V2',
+    href: '/import-v2',
+    icon: IconUpload,
+    adminOnly: true,
+    group: 'admin',
+  },
+  {
     id: 'subscription',
     title: 'Abonnement',
     href: '/subscription',

@@ -1,0 +1,12 @@
+prenom,nom,email,telephone,entreprise,fonction,ville,notes
+Jean,Dupont,jean@test.com,0612345678,Acme,Directeur,Paris,Tous les champs remplis
+,Dupont,marie@test.com,0698765432,Tech,Manager,Lyon,Prenom vide
+Pierre,,pierre@test.com,0645678901,Startup,CEO,Marseille,Nom vide
+Sophie,Durand,,0687654321,Consult,Consultant,Bordeaux,Email vide
+Luc,Petit,luc@test.com,,Big Corp,Analyst,Lille,Telephone vide
+Emma,Blanc,emma@test.com,0622334455,,Dev,Nantes,Entreprise vide
+Paul,Rouge,paul@test.com,0633445566,Medium,,Nice,Fonction vide
+Claire,Noir,claire@test.com,0644556677,Large,Designer,,Ville vide
+,,,,,,,Tout vide sauf ligne
+,,,0655667788,,,,Seulement telephone
+Marc,Vert,marc@test.com,,,,,Seulement nom prenom email

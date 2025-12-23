@@ -1,12 +1,14 @@
 /**
  * Client-side file upload with progress tracking
- * 
+ *
  * Uploads directly to Supabase Storage with progress events
  */
 
 'use client';
 
 import { createClient } from '@/lib/supabase/client';
+
+const LOG_PREFIX = '[ClientUpload]';
 
 export interface UploadProgress {
   phase: 'hashing' | 'uploading' | 'creating_job' | 'complete';
@@ -25,16 +27,21 @@ export async function uploadFileWithProgress(
   storagePath?: string;
   error?: string;
 }> {
+  console.log(LOG_PREFIX, 'uploadFileWithProgress START', { fileName: file.name, fileSize: file.size });
   try {
     const supabase = createClient();
 
     // Get current user
+    console.log(LOG_PREFIX, 'Getting current user...');
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
+      console.error(LOG_PREFIX, 'Auth error:', authError);
       return { success: false, error: 'Non authentifié' };
     }
+    console.log(LOG_PREFIX, 'User authenticated:', user.id);
 
     // Phase 1: Calculate hash
+    console.log(LOG_PREFIX, 'Phase 1: Calculating hash...');
     onProgress({
       phase: 'hashing',
       percentage: 10,
@@ -46,6 +53,7 @@ export async function uploadFileWithProgress(
     const fileHash = Array.from(new Uint8Array(hashBuffer))
       .map(b => b.toString(16).padStart(2, '0'))
       .join('');
+    console.log(LOG_PREFIX, 'Hash calculated:', fileHash.substring(0, 16) + '...');
 
     onProgress({
       phase: 'hashing',
@@ -57,6 +65,7 @@ export async function uploadFileWithProgress(
     // For now, skip to keep it fast
 
     // Phase 2: Upload to storage
+    console.log(LOG_PREFIX, 'Phase 2: Uploading to storage...');
     onProgress({
       phase: 'uploading',
       percentage: 30,
@@ -69,6 +78,7 @@ export async function uploadFileWithProgress(
     const timestamp = Date.now();
     const sanitizedName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
     const storagePath = `imports/${user.id}/${timestamp}_${sanitizedName}`;
+    console.log(LOG_PREFIX, 'Storage path:', storagePath);
 
     // Upload with XMLHttpRequest to track progress
     const uploadResult = await new Promise<{ success: boolean; error?: string }>(
@@ -123,7 +133,9 @@ export async function uploadFileWithProgress(
       }
     );
 
+    console.log(LOG_PREFIX, 'Upload result:', uploadResult);
     if (!uploadResult.success) {
+      console.error(LOG_PREFIX, 'Upload failed:', uploadResult.error);
       return { success: false, error: uploadResult.error || 'Erreur de téléchargement' };
     }
 
@@ -132,8 +144,10 @@ export async function uploadFileWithProgress(
       percentage: 80,
       message: 'Téléchargement terminé',
     });
+    console.log(LOG_PREFIX, 'Upload complete');
 
     // Phase 3: Create job record
+    console.log(LOG_PREFIX, 'Phase 3: Creating import job record...');
     onProgress({
       phase: 'creating_job',
       percentage: 90,
@@ -154,17 +168,21 @@ export async function uploadFileWithProgress(
       .single();
 
     if (dbError) {
+      console.error(LOG_PREFIX, 'DB insert error:', dbError);
       // Clean up uploaded file
+      console.log(LOG_PREFIX, 'Cleaning up uploaded file...');
       await supabase.storage.from('imports').remove([storagePath]);
       return { success: false, error: `Erreur lors de la création: ${dbError.message}` };
     }
 
+    console.log(LOG_PREFIX, 'Import job created:', importJob.id);
     onProgress({
       phase: 'complete',
       percentage: 100,
       message: 'Import créé avec succès',
     });
 
+    console.log(LOG_PREFIX, 'uploadFileWithProgress COMPLETE', { importJobId: importJob.id, storagePath });
     return {
       success: true,
       importJobId: importJob.id,
@@ -172,7 +190,7 @@ export async function uploadFileWithProgress(
     };
 
   } catch (error) {
-    console.error('[ClientUpload] Error:', error);
+    console.error(LOG_PREFIX, 'uploadFileWithProgress ERROR:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Erreur inconnue',

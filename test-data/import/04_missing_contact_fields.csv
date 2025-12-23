@@ -1,0 +1,6 @@
+prenom,nom,email,telephone,entreprise,fonction,external_id
+Jean,Dupont,,,Acme Corp,Directeur,
+Marie,Martin,,,Tech Solutions,Manager,
+Pierre,Bernard,pierre@test.com,,StartupXYZ,CEO,
+Sophie,Durand,,0612345678,Consulting Pro,Consultant,
+Luc,Petit,,,Big Corp,Analyst,EXT001

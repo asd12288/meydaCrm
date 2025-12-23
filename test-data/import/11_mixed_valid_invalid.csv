@@ -1,0 +1,11 @@
+prenom,nom,email,telephone,entreprise,notes
+Jean,Dupont,jean@gmail.com,0612345678,Acme Corp,VALIDE - tous les champs OK
+Marie,Martin,notanemail,0698765432,Tech,INVALIDE - email malformé
+Pierre,Bernard,pierre@test.com,,Startup,VALIDE - telephone manquant mais email present
+Sophie,Durand,,,Consulting,INVALIDE - aucun champ contact
+Luc,Petit,luc@test.com,0611223344,,VALIDE - entreprise manquante (warning)
+Emma,Blanc,,0622334455,Small Inc,VALIDE - email manquant mais telephone present
+Paul,Rouge,paul@outlookcom,0633445566,Medium,VALIDE - email auto-fixable
+Claire,Noir,claire@.com,0644556677,Large,INVALIDE - email domaine invalide
+Marc,Vert,marc@test.fr,12345,Micro,VALIDE avec WARNING - telephone court
+Julie,Bleu,julie@test.com,0666778899,Nano Corp,VALIDE - complet

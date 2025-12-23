@@ -1,0 +1,9 @@
+prénom,nom,email,téléphone,entreprise,ville,notes
+François,Müller,francois@test.com,0612345678,Bäckerei Café,München,Allemand: ä ö ü ß Ä Ö Ü
+Héloïse,Œuf,heloise@test.com,0698765432,L'Œuvre d'Art,Genève,Français: é è ê ë à â ù û ç œ æ
+José,García,jose@test.com,0645678901,Mañana Inc,Barcelona,Espagnol: ñ ¿ ¡ á é í ó ú ü
+Zoë,Çelik,zoe@test.com,0687654321,İstanbul Ltd,İstanbul,Turc: ç ğ ı İ ö ş ü
+北京,王,beijing@test.com,0611223344,北京公司,北京,Chinois (ne devrait pas casser le parsing)
+東京,田中,tokyo@test.com,0622334455,東京株式会社,東京,Japonais
+Москва,Иванов,moscow@test.com,0633445566,Компания,Москва,Cyrillique russe
+Αθήνα,Παπαδόπουλος,athens@test.com,0644556677,Εταιρεία,Αθήνα,Grec

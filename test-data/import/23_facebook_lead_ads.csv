@@ -1,0 +1,5 @@
+fb_lead_id,first_name,last_name,email,phone_number,company_name,job_title,city,zip_code,platform,created_time
+FB001,Jean,Dupont,jean.dupont@gmail.com,+33612345678,Acme Corp,Director,Paris,75001,Facebook,2024-01-15T10:30:00Z
+FB002,Marie,Martin,marie.martin@yahoo.fr,+33698765432,Tech Solutions,Manager,Lyon,69001,Facebook,2024-01-15T11:45:00Z
+FB003,Pierre,Bernard,pierre@hotmail.com,+33645678901,StartupXYZ,CEO,Marseille,13001,Instagram,2024-01-16T09:00:00Z
+FB004,Sophie,Durand,sophie.d@outlook.com,+33687654321,Consulting,Consultant,Bordeaux,33000,Facebook,2024-01-16T14:20:00Z

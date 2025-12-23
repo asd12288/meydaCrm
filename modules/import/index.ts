@@ -53,6 +53,7 @@ export {
   // Normalizers
   normalizePhone,
   normalizeEmail,
+  tryFixEmailDomain,
   normalizeText,
   normalizePostalCode,
   normalizeRowData,
