@@ -1,0 +1,4 @@
+prenom,nom,email,telephone,entreprise,notes
+Jean,Dupont,jean@test.com,0612345678,Acme Corp,Windows line endings CRLF
+Marie,Martin,marie@test.com,0698765432,Tech Solutions,Deuxieme ligne
+Pierre,Bernard,pierre@test.com,0645678901,StartupXYZ,Troisieme ligne

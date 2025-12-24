@@ -1,0 +1,10 @@
+prenom,nom,email,telephone,entreprise,notes
+Jean,Dupont,jean@gmailcom,0612345678,Acme,Gmail sans point - devrait etre fixe
+Marie,Martin,marie@yahoofr,0698765432,Tech,Yahoo FR sans point
+Pierre,Bernard,pierre@hotmailfr,0645678901,Startup,Hotmail FR sans point
+Sophie,Durand,sophie@orangefr,0687654321,Consult,Orange sans point
+Luc,Petit,luc@freefr,0611223344,Big Corp,Free sans point
+Emma,Blanc,emma@lapostenet,0622334455,Small Inc,Laposte sans point
+Paul,Rouge,paul@outlookcom,0633445566,Medium,Outlook sans point
+Claire,Noir,claire@sfr.fr,0644556677,Large,SFR correct - pas de changement
+Marc,Vert,marc@test.fr,0655667788,Micro,Domaine correct

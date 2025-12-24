@@ -1,0 +1,5 @@
+lead_id,contact_first_name,contact_last_name,contact_email,mobile_phone,account_name,contact_title,mailing_address,mailing_city,mailing_zip,mailing_country,lead_source,internal_notes
+HS001,Jean,Dupont,jean@test.com,0612345678,Acme Corp,Director,123 Rue de Paris,Paris,75001,France,Hubspot,Imported from Hubspot CRM
+SF002,Marie,Martin,marie@test.com,0698765432,Tech Solutions,Manager,45 Avenue Victor Hugo,Lyon,69001,France,Salesforce,Imported from Salesforce
+ZH003,Pierre,Bernard,pierre@test.com,0645678901,StartupXYZ,CEO,78 Boulevard Haussmann,Marseille,13001,France,Zoho,Imported from Zoho CRM
+PD004,Sophie,Durand,sophie@test.com,0687654321,Consulting Pro,Consultant,12 Rue du Commerce,Bordeaux,33000,France,Pipedrive,Imported from Pipedrive

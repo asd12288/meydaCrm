@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
-import { CardBox } from '@/modules/shared';
+import { CardBox, InlineDropdown } from '@/modules/shared';
 import type { TrendYearsData } from '../types';
 
 const Chart = dynamic(() => import('react-apexcharts'), { ssr: false });
@@ -176,17 +176,16 @@ export function LeadsTrendChart({ trendData }: LeadsTrendChartProps) {
 
           {/* Year selector (only visible in year mode) */}
           {viewMode === 'year' && (
-            <select
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(Number(e.target.value))}
-              className="select-md min-w-24"
-            >
-              {years.map((year) => (
-                <option key={year} value={year}>
-                  {year}
-                </option>
-              ))}
-            </select>
+            <InlineDropdown
+              options={years.map((year) => ({
+                value: String(year),
+                label: String(year),
+              }))}
+              value={String(selectedYear)}
+              onChange={(v) => setSelectedYear(Number(v))}
+              widthClass="w-20"
+              size="md"
+            />
           )}
         </div>
       </div>

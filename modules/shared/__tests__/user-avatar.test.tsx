@@ -1,5 +1,6 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/react';
+import { render, cleanup } from '@testing-library/react';
+import { screen } from '@testing-library/dom';
 import { UserAvatar } from '../ui/user-avatar';
 
 describe('UserAvatar', () => {

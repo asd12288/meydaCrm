@@ -1,0 +1,10 @@
+prenom,nom,email,telephone,entreprise,notes
+  Jean  ,  Dupont  ,  jean@test.com  ,  0612345678  ,  Acme  ,Espaces avant et apres chaque champ
+Marie,Martin,marie@test.com,0698765432,Tech   Solutions,Espaces multiples au milieu
+Pierre,Bernard,pierre@test.com,0645678901,	Tab Corp	,Tabulations
+Sophie,Durand,sophie@test.com,0687654321,
+  ,Entreprise vide avec espace
+Luc,Petit,luc@test.com,0611223344,   ,Entreprise que des espaces
+,,,0622334455,Anonymous Inc,Tous les champs nom vides
+Jean,,jean2@test.com,0633445566,NoLastName,Nom de famille vide
+,Martin,martin@test.com,0644556677,NoFirstName,Prenom vide

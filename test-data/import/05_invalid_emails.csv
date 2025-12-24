@@ -1,0 +1,11 @@
+prenom,nom,email,telephone,entreprise,notes
+Jean,Dupont,notanemail,0612345678,Acme,Email sans arobase
+Marie,Martin,@nodomain.com,0698765432,Tech,Email sans partie locale
+Pierre,Bernard,user@,0645678901,Startup,Email sans domaine
+Sophie,Durand,user@domain,0687654321,Consult,Email sans TLD
+Luc,Petit,user@.com,0611223344,Big Corp,Email avec point seul
+Emma,Blanc,user..double@test.com,0622334455,Small Inc,Email double point
+Paul,Rouge,user @test.com,0633445566,Medium,Email avec espace
+Claire,Noir,user@test .com,0644556677,Large,Email espace dans domaine
+Marc,Vert,user@test.c,0655667788,Micro,TLD trop court
+Julie,Bleu,,0666778899,Nano,Email vide valide car telephone present

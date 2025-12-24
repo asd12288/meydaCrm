@@ -1,0 +1,13 @@
+prenom,nom,email,telephone,entreprise,statut,notes
+Jean,Dupont,jean1@test.com,0612345671,Acme1,Nouveau,Statut valide - new
+Marie,Martin,marie1@test.com,0698765431,Tech1,RDV,Statut valide - rdv
+Pierre,Bernard,pierre1@test.com,0645678901,Startup1,Pas de réponse 1,Statut valide - no_answer_1
+Sophie,Durand,sophie1@test.com,0687654321,Consult1,Faux numéro,Statut valide - wrong_number
+Luc,Petit,luc1@test.com,0611223341,Big1,Pas intéressé,Statut valide - not_interested
+Emma,Blanc,emma1@test.com,0622334451,Small1,Dépôt,Statut valide - deposit
+Paul,Rouge,paul1@test.com,0633445561,Medium1,Rappeler,Statut valide - callback
+Claire,Noir,claire1@test.com,0644556671,Large1,Relance,Statut valide - relance
+Marc,Vert,marc1@test.com,0655667781,Micro1,Mail,Statut valide - mail
+Julie,Bleu,julie1@test.com,0666778891,Nano1,STATUT_INVALIDE,Statut non reconnu - devrait passer en nouveau
+Anne,Rose,anne1@test.com,0677889901,Ultra1,,Statut vide - devrait etre nouveau par defaut
+Tom,Gris,tom1@test.com,0688990011,Tiny1,en attente,Statut non standard

@@ -8,12 +8,12 @@ import {
   IconRefresh,
   IconPlus,
   IconCheck,
-  IconChevronDown,
 } from '@tabler/icons-react';
 import {
   UserAvatar,
   OptionCard,
   OptionCardGroup,
+  InlineDropdown,
 } from '@/modules/shared';
 import type { AssignmentConfig, DuplicateConfig } from '../types';
 import type { SalesUser } from '@/modules/leads/types';
@@ -194,21 +194,17 @@ export function OptionsStep({
                 Colonne d&apos;attribution
               </label>
               {sortedColumns.length > 0 ? (
-                <div className="relative">
-                  <select
-                    value={assignment.assignmentColumn || ''}
-                    onChange={(e) => onUpdateAssignment({ assignmentColumn: e.target.value || undefined })}
-                    className="form-control-input w-full pr-10"
-                  >
-                    <option value="">Sélectionner une colonne...</option>
-                    {sortedColumns.map((col) => (
-                      <option key={col} value={col}>
-                        {col}
-                      </option>
-                    ))}
-                  </select>
-                  <IconChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-darklink pointer-events-none" />
-                </div>
+                <InlineDropdown
+                  options={sortedColumns.map((col) => ({
+                    value: col,
+                    label: col,
+                  }))}
+                  value={assignment.assignmentColumn || ''}
+                  onChange={(v) => onUpdateAssignment({ assignmentColumn: v || undefined })}
+                  placeholder="Sélectionner une colonne..."
+                  widthClass="w-full"
+                  size="md"
+                />
               ) : (
                 <p className="text-sm text-warning">
                   Aucune colonne disponible. Vérifiez le mapping des colonnes.

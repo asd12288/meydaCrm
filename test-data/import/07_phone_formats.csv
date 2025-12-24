@@ -1,0 +1,14 @@
+prenom,nom,email,telephone,entreprise,notes
+Jean,Dupont,jean@test.com,0612345678,Acme,Format FR standard 10 chiffres
+Marie,Martin,marie@test.com,06 12 34 56 78,Tech,Avec espaces
+Pierre,Bernard,pierre@test.com,06.12.34.56.78,Startup,Avec points
+Sophie,Durand,sophie@test.com,06-12-34-56-78,Consult,Avec tirets
+Luc,Petit,luc@test.com,+33612345678,Big Corp,Format international
+Emma,Blanc,emma@test.com,+33 6 12 34 56 78,Small Inc,International avec espaces
+Paul,Rouge,paul@test.com,0033612345678,Medium,00 prefix
+Claire,Noir,claire@test.com,33612345678,Large,Sans + ni 0
+Marc,Vert,marc@test.com,p:0612345678,Micro,Prefix p: de certains CRM
+Julie,Bleu,julie@test.com,t:0612345678,Nano,Prefix t: de certains CRM
+Anne,Rose,anne@test.com,612345678,Ultra,9 chiffres sans 0
+Tom,Gris,tom@test.com,12345,Tiny,Numero trop court - warning
+Eve,Jaune,eve@test.com,012345678901234567890,Huge,Numero trop long - warning

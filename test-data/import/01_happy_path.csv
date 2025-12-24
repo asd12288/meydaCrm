@@ -1,0 +1,5 @@
+prenom,nom,email,telephone,entreprise,fonction,adresse,ville,code_postal,pays,source,notes
+Jean,Dupont,jean.dupont@gmail.com,0612345678,Acme Corp,Directeur,123 Rue de Paris,Paris,75001,France,Web,Premier contact
+Marie,Martin,marie.martin@orange.fr,0698765432,Tech Solutions,Manager,45 Avenue Victor Hugo,Lyon,69001,France,Salon,Interessee par le produit
+Pierre,Bernard,pierre.bernard@free.fr,0645678901,StartupXYZ,CEO,78 Boulevard Haussmann,Marseille,13001,France,LinkedIn,A rappeler
+Sophie,Durand,sophie.durand@laposte.net,0687654321,Consulting Pro,Consultant,12 Rue du Commerce,Bordeaux,33000,France,Referral,Contact chaud

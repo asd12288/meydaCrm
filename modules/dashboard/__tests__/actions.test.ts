@@ -104,7 +104,7 @@ describe('Dashboard Server Actions - Authorization', () => {
       const result = await getAdminQuickStatsData();
       expect(result).toEqual({
         totalUsers: 0,
-        recentImports: 0,
+        unassignedLeads: 0,
         activeSales: 0,
         wonLeads: 0,
       });
@@ -222,8 +222,8 @@ describe('Dashboard Server Actions - Sales functions', () => {
       const result = await getSalesQuickStatsData();
       expect(result).toEqual({
         totalLeads: 0,
-        commentsCount: 0,
-        activeLeads: 0,
+        newLeads: 0,
+        callbackLeads: 0,
         wonLeads: 0,
       });
     });
@@ -271,9 +271,10 @@ describe('Dashboard Server Actions - Sales functions', () => {
         data: {
           totalLeads: 100,
           leadsByStatus: {
-            Nouveau: 12,
-            'A rappeler': 8,
-            Gagne: 5,
+            new: 12,
+            callback: 5,
+            relance: 3,
+            deposit: 5,
           },
         },
         error: null,
@@ -283,7 +284,7 @@ describe('Dashboard Server Actions - Sales functions', () => {
 
       expect(result.totalLeads).toBe(100);
       expect(result.newLeads).toBe(12);
-      expect(result.callbackLeads).toBe(8);
+      expect(result.callbackLeads).toBe(8); // callback + relance
       expect(result.wonLeads).toBe(5);
     });
   });
@@ -320,8 +321,8 @@ describe('Dashboard Server Actions - Edge cases', () => {
 
     expect(result).toEqual({
       totalLeads: 0,
-      commentsCount: 0,
-      activeLeads: 0,
+      newLeads: 0,
+      callbackLeads: 0,
       wonLeads: 0,
     });
   });

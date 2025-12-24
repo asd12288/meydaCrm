@@ -1,0 +1,4 @@
+prenom,nom,email,telephone,entreprise,colonne_inconnue_1,random_field,xyz_data,notes
+Jean,Dupont,jean@test.com,0612345678,Acme,valeur1,data1,xyz1,Colonnes inconnues doivent etre ignorees
+Marie,Martin,marie@test.com,0698765432,Tech,valeur2,data2,xyz2,Test colonnes supplementaires
+Pierre,Bernard,pierre@test.com,0645678901,Startup,valeur3,data3,xyz3,Les colonnes non mappees sont ignorees

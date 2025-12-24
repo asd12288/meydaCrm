@@ -2,6 +2,7 @@
 
 import { IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
 import { Button } from '@/components/ui/button';
+import { InlineDropdown } from '@/modules/shared';
 import { useFilterNavigation } from '../hooks/use-filter-navigation';
 import { PAGE_SIZE_OPTIONS } from '../config/constants';
 
@@ -25,17 +26,16 @@ export function LeadsPagination({
       {/* Page size selector */}
       <div className="flex items-center gap-2">
         <span className="text-sm text-darklink">Afficher</span>
-        <select
-          value={pageSize}
-          onChange={(e) => setPageSize(Number(e.target.value))}
-          className="h-8 px-2 text-sm border border-ld rounded bg-white dark:bg-darkgray"
-        >
-          {PAGE_SIZE_OPTIONS.map((size) => (
-            <option key={size} value={size}>
-              {size}
-            </option>
-          ))}
-        </select>
+        <InlineDropdown
+          options={PAGE_SIZE_OPTIONS.map((size) => ({
+            value: String(size),
+            label: String(size),
+          }))}
+          value={String(pageSize)}
+          onChange={(v) => setPageSize(Number(v))}
+          widthClass="w-16"
+          size="md"
+        />
         <span className="text-sm text-darklink">par page</span>
       </div>
 

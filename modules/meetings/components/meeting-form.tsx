@@ -11,6 +11,7 @@ import {
   FormSuccessAlert,
   FormActions,
   useFormState,
+  InlineDropdown,
 } from '@/modules/shared';
 import { DateTimePicker } from '@/components/ui/datetime-picker';
 import { meetingFormSchema, type MeetingFormInput } from '../types';
@@ -182,17 +183,16 @@ export function MeetingForm({
         </div>
         <div>
           <label className="form-label">{MEETING_FIELD_LABELS.duration}</label>
-          <select
-            className="select-md w-full"
-            value={duration}
-            onChange={handleDurationChange}
-          >
-            {MEETING_DURATION_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
+          <InlineDropdown
+            options={MEETING_DURATION_OPTIONS.map((opt) => ({
+              value: String(opt.value),
+              label: opt.label,
+            }))}
+            value={String(duration)}
+            onChange={(v) => handleDurationChange({ target: { value: v } } as React.ChangeEvent<HTMLSelectElement>)}
+            widthClass="w-full"
+            size="md"
+          />
         </div>
       </div>
 

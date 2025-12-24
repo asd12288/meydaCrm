@@ -1,0 +1,8 @@
+prenom,nom,email,telephone,entreprise,external_id,notes
+Jean,Dupont,jean.dupont@gmail.com,0612345678,Acme Corp,EXT001,Premier enregistrement
+Marie,Martin,marie@test.com,0698765432,Tech Solutions,EXT002,Unique
+Jean,Dupont,jean.dupont@gmail.com,0612345678,Acme Corp,EXT001,Doublon exact meme email et phone et external_id
+Pierre,Bernard,pierre@different.com,0612345678,StartupXYZ,EXT003,Meme telephone que Jean
+Sophie,Durand,jean.dupont@gmail.com,0687654321,Consulting,EXT004,Meme email que Jean
+Luc,Petit,luc@test.com,0611223344,Big Corp,EXT001,Meme external_id que Jean
+Emma,Blanc,JEAN.DUPONT@GMAIL.COM,0622334455,Small Inc,EXT005,Email en majuscules doublon
