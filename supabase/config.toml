@@ -95,7 +95,7 @@ minimum_password_length = 6
 [auth.email]
 enable_confirmations = false
 double_confirm_changes = false
-enable_signup = false
+enable_signup = true
 
 [auth.sms]
 enable_signup = false

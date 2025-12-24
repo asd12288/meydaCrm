@@ -21,7 +21,8 @@ import {
   detectDelimiter,
   type ParseProgressCallback,
 } from '../lib/parsers';
-import { findBestMatch, normalizeHeader } from '../../import/config/column-aliases';
+import { findBestMatch } from '../../import/config/column-aliases';
+import { FILE_CONSTRAINTS } from '../config/constants';
 
 // =============================================================================
 // TYPES
@@ -297,10 +298,15 @@ export function useClientParser(): UseClientParserReturn {
           });
         };
 
-        // Parse file
+        // Parse file with memory-safe row limit
+        // Parse 1 extra row to detect if file exceeds limit
+        const effectiveMaxRows = opts.maxRows > 0
+          ? opts.maxRows
+          : FILE_CONSTRAINTS.MAX_ROWS + 1;
+
         const parseResult = await parseFile(file, {
           onProgress,
-          maxRows: opts.maxRows,
+          maxRows: effectiveMaxRows,
           sheetName: opts.sheetName || undefined,
           hasHeaderRow: opts.hasHeaderRow,
         });
@@ -310,6 +316,18 @@ export function useClientParser(): UseClientParserReturn {
 
         if (!parseResult.success || !parseResult.data) {
           setError(parseResult.error || 'Erreur lors de l\'analyse du fichier');
+          setIsParsing(false);
+          setProgress(INITIAL_PROGRESS);
+          return null;
+        }
+
+        // Check row count limit (only if user didn't specify a custom maxRows)
+        if (opts.maxRows === 0 && parseResult.data.rowCount > FILE_CONSTRAINTS.MAX_ROWS) {
+          const formattedCount = parseResult.data.rowCount.toLocaleString('fr-FR');
+          const formattedLimit = FILE_CONSTRAINTS.MAX_ROWS.toLocaleString('fr-FR');
+          setError(
+            `Le fichier contient ${formattedCount} lignes. Maximum autorisé: ${formattedLimit} lignes. Veuillez diviser le fichier.`
+          );
           setIsParsing(false);
           setProgress(INITIAL_PROGRESS);
           return null;

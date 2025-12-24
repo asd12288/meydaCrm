@@ -197,62 +197,8 @@ export function detectFileDuplicates(
 }
 
 // =============================================================================
-// UTILITIES
+// INTERNAL UTILITIES
 // =============================================================================
-
-/**
- * Get the first occurrence row from a duplicate group
- */
-export function getFirstOccurrence(
-  group: FileDuplicateGroupV2
-): FileDuplicateRowV2 | undefined {
-  return group.rows.find((r) => r.isFirstOccurrence);
-}
-
-/**
- * Get duplicate rows (excluding first occurrence)
- */
-export function getDuplicateRows(
-  group: FileDuplicateGroupV2
-): FileDuplicateRowV2[] {
-  return group.rows.filter((r) => !r.isFirstOccurrence);
-}
-
-/**
- * Get display summary for a duplicate group
- */
-export function getDuplicateGroupSummary(
-  group: FileDuplicateGroupV2
-): string {
-  const fieldLabels: Record<DuplicateCheckField, string> = {
-    email: 'Email',
-  };
-
-  const fieldLabel = fieldLabels[group.matchedField] || group.matchedField;
-  return `${group.count} lignes avec le même ${fieldLabel}: "${group.matchedValue}"`;
-}
-
-/**
- * Filter to get only unique rows (first occurrences and non-duplicates)
- */
-export function getUniqueRows(
-  result: FileDuplicateResult
-): RowWithFileDuplicateInfo[] {
-  return result.rows.filter((r) => !r.isFileDuplicate || r.isFirstOccurrence);
-}
-
-/**
- * Check if any of the check fields have a value
- */
-export function hasCheckableFields(
-  row: RowValidationResultV2,
-  checkFields: DuplicateCheckField[]
-): boolean {
-  return checkFields.some((field) => {
-    const value = row.normalizedData[field as LeadFieldKey];
-    return value && typeof value === 'string' && value.trim() !== '';
-  });
-}
 
 /**
  * Build display data from a validation result

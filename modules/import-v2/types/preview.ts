@@ -15,10 +15,7 @@ import type { RowValidationResultV2 } from './validation';
 // PREVIEW ROW TYPES
 // =============================================================================
 
-/**
- * Issue type for categorizing preview rows
- */
-export type PreviewIssueTypeV2 = 'invalid' | 'file_duplicate' | 'db_duplicate';
+// Note: PreviewIssueType is defined in config/constants.ts (not here)
 
 /**
  * Base interface for all preview rows
@@ -283,39 +280,3 @@ export interface ComparisonDataV2 {
  * Preview tab identifiers
  */
 export type PreviewTabV2 = 'invalid' | 'file_duplicates' | 'db_duplicates';
-
-/**
- * Preview tab configuration
- */
-export interface PreviewTabConfigV2 {
-  id: PreviewTabV2;
-  label: string;
-  count: number;
-  icon: 'error' | 'warning' | 'info';
-}
-
-/**
- * Get tab configurations from preview data
- */
-export function getPreviewTabs(preview: DetailedPreviewDataV2): PreviewTabConfigV2[] {
-  return [
-    {
-      id: 'invalid',
-      label: 'Invalides',
-      count: preview.summary.invalid,
-      icon: 'error',
-    },
-    {
-      id: 'file_duplicates',
-      label: 'Doublons fichier',
-      count: preview.summary.fileDuplicates,
-      icon: 'warning',
-    },
-    {
-      id: 'db_duplicates',
-      label: 'Doublons base',
-      count: preview.summary.dbDuplicates,
-      icon: 'info',
-    },
-  ];
-}

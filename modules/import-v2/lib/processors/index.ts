@@ -6,11 +6,6 @@
 
 export {
   detectFileDuplicates,
-  getFirstOccurrence,
-  getDuplicateRows,
-  getDuplicateGroupSummary,
-  getUniqueRows,
-  hasCheckableFields,
   type FileDuplicateResult,
   type RowWithFileDuplicateInfo,
 } from './file-dedupe';

@@ -21,6 +21,7 @@ import { validateRows } from '../lib/validators/row-validator';
 import { detectFileDuplicates } from '../lib/processors';
 import { startImportV2 } from '../lib/actions';
 import { analytics } from '@/lib/analytics';
+import type { SalesUser } from '@/modules/leads/types';
 import { UploadStep, UploadStepSkeleton } from './upload-step';
 import { PreviewStep } from './preview-step';
 import { ImportStep } from './import-step';
@@ -112,7 +113,11 @@ interface ModalState {
 // WIZARD CONTENT
 // =============================================================================
 
-function WizardContent() {
+interface WizardContentProps {
+  salesUsers: SalesUser[];
+}
+
+function WizardContent({ salesUsers }: WizardContentProps) {
   const router = useRouter();
   const {
     state,
@@ -130,6 +135,9 @@ function WizardContent() {
     row: null,
     issueType: null,
   });
+
+  // Warning state for DB duplicate check failures
+  const [dbCheckWarning, setDbCheckWarning] = useState<string | null>(null);
 
   // Client-side parser hook
   const { parse, isParsing, error: parseError } = useClientParser();
@@ -259,12 +267,16 @@ function WizardContent() {
             if (data.success && data.duplicateRows) {
               dbDuplicateRows = data.duplicateRows;
             }
+            // Clear any previous warning on success
+            setDbCheckWarning(null);
           } else {
-            console.warn('[ImportWizard] DB duplicate check failed:', await response.text());
+            const errorText = await response.text();
+            console.warn('[ImportWizard] DB duplicate check failed:', errorText);
+            setDbCheckWarning('La vérification des doublons en base a échoué. Les doublons existants ne seront pas détectés.');
           }
         } catch (err) {
           console.warn('[ImportWizard] DB duplicate check error:', err);
-          // Continue without DB duplicates - non-blocking error
+          setDbCheckWarning('La vérification des doublons en base a échoué. Les doublons existants ne seront pas détectés.');
         }
       }
 
@@ -416,6 +428,30 @@ function WizardContent() {
       });
     },
     [modalState.row, dispatch]
+  );
+
+  // ==========================================================================
+  // ASSIGNMENT HANDLERS
+  // ==========================================================================
+
+  const handleAssignmentToggle = useCallback(
+    (enabled: boolean) => {
+      dispatch({
+        type: 'SET_ASSIGNMENT',
+        payload: { mode: enabled ? 'round_robin' : 'none' },
+      });
+    },
+    [dispatch]
+  );
+
+  const handleAssignmentUsersChange = useCallback(
+    (userIds: string[]) => {
+      dispatch({
+        type: 'SET_ASSIGNMENT',
+        payload: { selectedUserIds: userIds },
+      });
+    },
+    [dispatch]
   );
 
   // ==========================================================================
@@ -670,6 +706,12 @@ function WizardContent() {
             onBack={prevStep}
             canImport={canProceedToImport}
             isImporting={state.isImporting}
+            salesUsers={salesUsers}
+            assignmentMode={state.assignment.mode}
+            assignmentUserIds={state.assignment.selectedUserIds}
+            onAssignmentToggle={handleAssignmentToggle}
+            onAssignmentUsersChange={handleAssignmentUsersChange}
+            dbCheckWarning={dbCheckWarning}
           />
 
           {/* Unified Modal */}
@@ -711,10 +753,14 @@ function WizardContent() {
 // MAIN EXPORT
 // =============================================================================
 
-export function ImportWizardV2() {
+interface ImportWizardV2Props {
+  salesUsers: SalesUser[];
+}
+
+export function ImportWizardV2({ salesUsers }: ImportWizardV2Props) {
   return (
     <ImportWizardProvider>
-      <WizardContent />
+      <WizardContent salesUsers={salesUsers} />
     </ImportWizardProvider>
   );
 }

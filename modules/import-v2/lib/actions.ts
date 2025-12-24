@@ -6,7 +6,7 @@
 
 'use server';
 
-import { createClient } from '@supabase/supabase-js';
+import { createServiceRoleClient } from '@/lib/supabase/server';
 import { getCurrentUser } from '@/modules/auth';
 import { handleCommitV2 } from '../workers';
 import type {
@@ -75,26 +75,6 @@ interface StartImportV2Result {
 }
 
 // =============================================================================
-// HELPERS
-// =============================================================================
-
-function createAdminClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!url || !serviceKey) {
-    throw new Error('Missing Supabase environment variables');
-  }
-
-  return createClient(url, serviceKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  });
-}
-
-// =============================================================================
 // SERVER ACTIONS
 // =============================================================================
 
@@ -124,7 +104,7 @@ export async function startImportV2(
       rowActionsCount: input.rowActions.length,
     });
 
-    const supabase = createAdminClient();
+    const supabase = createServiceRoleClient();
 
     // 1. Create import_job
     // Note: storage_path is 'client-parsed' since V2 parses on client, not server
@@ -197,17 +177,46 @@ export async function startImportV2(
       .eq('id', importJobId);
 
     // 3. Run commit worker directly
-    // Map UnifiedRowAction 'import' -> 'create' for commit worker
+
+    // Build set of valid row numbers for validation
+    const validRowNumbers = new Set(
+      input.validatedRows
+        .filter((r) => r.isValid && !r.isFileDuplicate)
+        .map((r) => r.rowNumber)
+    );
+    const validActions = new Set(['skip', 'import', 'update']);
+
+    // Map UnifiedRowAction 'import' -> 'create' for commit worker (with validation)
     const rowActionsMap = new Map<number, 'skip' | 'update' | 'create'>();
     for (const [rowNumber, action] of input.rowActions) {
+      // Validate row number exists
+      if (!validRowNumbers.has(rowNumber)) {
+        console.warn(LOG_PREFIX, `Ignoring invalid row number in rowActions: ${rowNumber}`);
+        continue;
+      }
+      // Validate action type
+      if (!validActions.has(action)) {
+        console.warn(LOG_PREFIX, `Ignoring invalid action type: ${action} for row ${rowNumber}`);
+        continue;
+      }
       // 'import' in UI means 'create' for the worker (force create as new lead)
       rowActionsMap.set(rowNumber, action === 'import' ? 'create' : action);
     }
 
-    // Build DB duplicate info map
+    // Build DB duplicate info map (with validation)
     const dbDuplicateInfoMap = new Map<number, DbDuplicateInfoV2>();
     if (input.dbDuplicateInfo) {
       for (const info of input.dbDuplicateInfo) {
+        // Validate row number exists
+        if (!validRowNumbers.has(info.rowNumber)) {
+          console.warn(LOG_PREFIX, `Ignoring invalid row number in dbDuplicateInfo: ${info.rowNumber}`);
+          continue;
+        }
+        // Validate existingLeadId is UUID-like (basic check)
+        if (!info.existingLeadId || typeof info.existingLeadId !== 'string' || info.existingLeadId.length < 32) {
+          console.warn(LOG_PREFIX, `Ignoring invalid existingLeadId for row ${info.rowNumber}`);
+          continue;
+        }
         dbDuplicateInfoMap.set(info.rowNumber, info);
       }
     }
@@ -258,7 +267,7 @@ export async function getImportJobStatus(
     const user = await getCurrentUser();
     if (!user) return null;
 
-    const supabase = createAdminClient();
+    const supabase = createServiceRoleClient();
 
     const { data: job } = await supabase
       .from('import_jobs')

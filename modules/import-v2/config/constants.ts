@@ -125,6 +125,7 @@ export const ROW_RESULT_LABELS: Record<RowResultStatus, string> = {
 export const FILE_CONSTRAINTS = {
   MAX_SIZE_MB: 50,
   MAX_SIZE_BYTES: 50 * 1024 * 1024,
+  MAX_ROWS: 50000,
   ALLOWED_EXTENSIONS: ['csv', 'xlsx', 'xls'] as const,
   ALLOWED_MIME_TYPES: [
     'text/csv',

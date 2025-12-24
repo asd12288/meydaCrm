@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createServiceRoleClient } from '@/lib/supabase/server';
 import { getCurrentUser } from '@/modules/auth';
 import { detectDbDuplicates } from '@/modules/import-v2/lib/processors/db-dedupe';
 import type { RowValidationResultV2 } from '@/modules/import-v2/types';
@@ -21,26 +21,6 @@ interface CheckDuplicatesRequest {
   validatedRows: RowValidationResultV2[];
   /** Fields to check for duplicates */
   checkFields: DuplicateCheckField[];
-}
-
-// =============================================================================
-// HELPERS
-// =============================================================================
-
-function createAdminClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!url || !serviceKey) {
-    throw new Error('Missing Supabase environment variables');
-  }
-
-  return createClient(url, serviceKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  });
 }
 
 // =============================================================================
@@ -100,8 +80,8 @@ export async function POST(request: NextRequest) {
       checkFields: body.checkFields,
     });
 
-    // Create admin client
-    const supabase = createAdminClient();
+    // Create service role client
+    const supabase = createServiceRoleClient();
 
     // Detect DB duplicates
     const result = await detectDbDuplicates(

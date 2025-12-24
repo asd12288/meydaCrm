@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { detectFileDuplicates, getUniqueRows } from '../lib/processors/file-dedupe';
+import { detectFileDuplicates } from '../lib/processors/file-dedupe';
 import type { RowValidationResultV2 } from '../types';
 
 // =============================================================================
@@ -160,19 +160,4 @@ describe('detectFileDuplicates', () => {
   });
 });
 
-describe('getUniqueRows', () => {
-  it('should return only first occurrences and non-duplicates', () => {
-    const rows: RowValidationResultV2[] = [
-      createValidRow(1, { email: 'jean@test.com' }),
-      createValidRow(2, { email: 'marie@test.com' }),
-      createValidRow(3, { email: 'jean@test.com' }), // Duplicate
-    ];
-
-    const result = detectFileDuplicates(rows, ['email']);
-    const unique = getUniqueRows(result);
-
-    expect(unique).toHaveLength(2);
-    expect(unique[0].validation.rowNumber).toBe(1);
-    expect(unique[1].validation.rowNumber).toBe(2);
-  });
-});
+// Note: getUniqueRows test removed as the function is no longer exported

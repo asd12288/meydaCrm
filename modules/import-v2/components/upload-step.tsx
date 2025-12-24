@@ -191,7 +191,7 @@ function DropZone({ onFileSelect, isParsing }: DropZoneProps) {
             </p>
           </div>
           <p className="text-xs text-darklink">
-            Formats acceptés: CSV, XLSX, XLS (max {FILE_CONSTRAINTS.MAX_SIZE_MB}MB)
+            Formats acceptés: CSV, XLSX, XLS • Max {FILE_CONSTRAINTS.MAX_SIZE_MB} MB • Max {FILE_CONSTRAINTS.MAX_ROWS.toLocaleString('fr-FR')} lignes
           </p>
         </div>
       )}

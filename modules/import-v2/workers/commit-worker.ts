@@ -5,7 +5,8 @@
  * and full transparency results tracking.
  */
 
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { createServiceRoleClient } from '@/lib/supabase/server';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import type {
   ImportResultsSummaryV2,
   ImportRowResultV2,
@@ -86,22 +87,6 @@ export interface CommitProgress {
 // =============================================================================
 // HELPERS
 // =============================================================================
-
-function createAdminClient(): SupabaseClient {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!url || !serviceKey) {
-    throw new Error('Missing Supabase environment variables');
-  }
-
-  return createClient(url, serviceKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  });
-}
 
 function normalizeStatus(rawStatus: string | null, fallback: string): string {
   if (!rawStatus) return fallback;
@@ -209,7 +194,7 @@ export async function handleCommitV2(
     rowActionsCount: options.rowActions.size,
   });
 
-  const supabase = createAdminClient();
+  const supabase = createServiceRoleClient();
   const { importJobId, defaultStatus = 'new', rowActions, onProgress } = options;
 
   // Results tracking
@@ -308,10 +293,54 @@ export async function handleCommitV2(
 
       console.log(LOG_PREFIX, `Batch ${batchNumber}: ${batch.length} rows`);
 
-      // Process each row
+      // =================================================================
+      // PHASE 1: Categorize all rows by action (no DB calls yet)
+      // =================================================================
+      interface SkipItem {
+        rowNumber: number;
+        importRowId: string;
+        normalizedData: Record<string, string | null>;
+        duplicateInfo?: { matchedField: DuplicateCheckField; matchedValue: string; existingLeadId: string };
+      }
+      interface UpdateItem {
+        rowNumber: number;
+        importRowId: string;
+        normalizedData: Record<string, string | null>;
+        existingLeadId: string;
+        leadData: Record<string, unknown>;
+        duplicateInfo?: { matchedField: DuplicateCheckField; matchedValue: string; existingLeadId: string };
+      }
+      interface CreateItem {
+        rowNumber: number;
+        importRowId: string;
+        normalizedData: Record<string, string | null>;
+        leadData: Record<string, unknown>;
+        assignedTo: string | null;
+      }
+
+      const toSkip: SkipItem[] = [];
+      const toUpdate: UpdateItem[] = [];
+      const toCreate: CreateItem[] = [];
+
       for (const row of batch) {
+        // Validate row data before processing
+        if (!row.normalized_data || typeof row.normalized_data !== 'object') {
+          const result = createRowResult(row.row_number ?? 0, 'error', {}, {
+            reason: `Row ${row.id} missing normalized_data`,
+          });
+          errorRows.push(result);
+          continue;
+        }
+        if (typeof row.row_number !== 'number') {
+          const result = createRowResult(0, 'error', {}, {
+            reason: `Row ${row.id} has invalid row_number`,
+          });
+          errorRows.push(result);
+          continue;
+        }
+
         const normalizedData = row.normalized_data as Record<string, string | null>;
-        const rowNumber = row.row_number as number;
+        const rowNumber = row.row_number;
 
         // Check if this is a DB duplicate with per-row action
         const rowAction = rowActions.get(rowNumber);
@@ -328,137 +357,173 @@ export async function handleCommitV2(
         if (isDbDuplicate && rowAction) {
           action = rowAction;
         } else if (isDbDuplicate) {
-          // DuplicateStrategyV2 already uses 'skip' | 'update' | 'create'
           action = options.duplicates.strategy;
         } else {
-          action = 'create'; // New rows are always created
+          action = 'create';
         }
 
-        // Execute action
+        // Categorize by action
+        const duplicateInfo = duplicateField && duplicateValue && existingLeadId
+          ? { matchedField: duplicateField, matchedValue: duplicateValue, existingLeadId }
+          : undefined;
+
+        if (action === 'skip') {
+          toSkip.push({ rowNumber, importRowId: row.id, normalizedData, duplicateInfo });
+        } else if (action === 'update' && existingLeadId) {
+          const leadData = buildLeadData(normalizedData, defaultStatus, defaultSource, null, importJobId);
+          toUpdate.push({ rowNumber, importRowId: row.id, normalizedData, existingLeadId, leadData, duplicateInfo });
+        } else {
+          const assignedTo = getAssignment(assignmentContext, normalizedData);
+          const leadData = buildLeadData(normalizedData, defaultStatus, defaultSource, assignedTo, importJobId);
+          toCreate.push({ rowNumber, importRowId: row.id, normalizedData, leadData, assignedTo });
+        }
+      }
+
+      // =================================================================
+      // PHASE 2: Execute batch operations
+      // =================================================================
+
+      // 2a. Process all skips (1 bulk update instead of N)
+      if (toSkip.length > 0) {
+        await supabase
+          .from('import_rows')
+          .update({ status: 'skipped' })
+          .in('id', toSkip.map(s => s.importRowId));
+
+        for (const item of toSkip) {
+          const result = createRowResult(item.rowNumber, 'skipped', item.normalizedData, {
+            reason: 'Doublon ignoré par choix utilisateur',
+            duplicateInfo: item.duplicateInfo,
+          });
+          skippedRows.push(result);
+        }
+      }
+
+      // 2b. Process all updates (batch where possible)
+      // Note: Each update targets a different lead ID with different data
+      // We process them sequentially but collect history for batch insert
+      const updateHistoryEntries: Array<{
+        lead_id: string;
+        actor_id: string;
+        event_type: string;
+        before_data: null;
+        after_data: Record<string, unknown>;
+        metadata: Record<string, unknown>;
+      }> = [];
+      const successfulUpdateIds: string[] = [];
+
+      for (const item of toUpdate) {
         try {
-          if (action === 'skip') {
-            // Skip this row
-            const result = createRowResult(rowNumber, 'skipped', normalizedData, {
-              reason: 'Doublon ignoré par choix utilisateur',
-              duplicateInfo: duplicateField && duplicateValue && existingLeadId
-                ? {
-                    matchedField: duplicateField,
-                    matchedValue: duplicateValue,
-                    existingLeadId,
-                  }
-                : undefined,
+          const { error: updateError } = await supabase
+            .from('leads')
+            .update(item.leadData)
+            .eq('id', item.existingLeadId);
+
+          if (updateError) {
+            const result = createRowResult(item.rowNumber, 'error', item.normalizedData, {
+              reason: `Erreur de mise à jour: ${updateError.message}`,
             });
-            skippedRows.push(result);
-
-            await supabase
-              .from('import_rows')
-              .update({ status: 'skipped' })
-              .eq('id', row.id);
-
-          } else if (action === 'update' && existingLeadId) {
-            // Update existing lead
-            const updateData = buildLeadData(
-              normalizedData,
-              defaultStatus,
-              defaultSource,
-              null, // Don't change assignment on update
-              importJobId
-            );
-
-            const { error: updateError } = await supabase
-              .from('leads')
-              .update(updateData)
-              .eq('id', existingLeadId);
-
-            if (updateError) {
-              const result = createRowResult(rowNumber, 'error', normalizedData, {
-                reason: `Erreur de mise à jour: ${updateError.message}`,
-              });
-              errorRows.push(result);
-            } else {
-              // Create history event
-              await supabase.from('lead_history').insert({
-                lead_id: existingLeadId,
-                actor_id: actorId,
-                event_type: 'updated',
-                before_data: null,
-                after_data: updateData,
-                metadata: {
-                  import_job_id: importJobId,
-                  action: 'import_update',
-                },
-              });
-
-              const result = createRowResult(rowNumber, 'updated', normalizedData, {
-                leadId: existingLeadId,
-                duplicateInfo: duplicateField && duplicateValue
-                  ? {
-                      matchedField: duplicateField,
-                      matchedValue: duplicateValue,
-                      existingLeadId,
-                    }
-                  : undefined,
-              });
-              updatedRows.push(result);
-
-              await supabase
-                .from('import_rows')
-                .update({ status: 'imported' })
-                .eq('id', row.id);
-            }
-
+            errorRows.push(result);
           } else {
-            // Create new lead
-            const assignedTo = getAssignment(assignmentContext, normalizedData);
-            const leadData = buildLeadData(
-              normalizedData,
-              defaultStatus,
-              defaultSource,
-              assignedTo,
-              importJobId
-            );
+            // Collect history entry for batch insert
+            updateHistoryEntries.push({
+              lead_id: item.existingLeadId,
+              actor_id: actorId,
+              event_type: 'updated',
+              before_data: null,
+              after_data: item.leadData,
+              metadata: { import_job_id: importJobId, action: 'import_update' },
+            });
+            successfulUpdateIds.push(item.importRowId);
 
-            const { data: insertedLead, error: insertError } = await supabase
-              .from('leads')
-              .insert(leadData)
-              .select('id')
-              .single();
-
-            if (insertError || !insertedLead) {
-              const result = createRowResult(rowNumber, 'error', normalizedData, {
-                reason: `Erreur d'insertion: ${insertError?.message || 'Unknown error'}`,
-              });
-              errorRows.push(result);
-            } else {
-              // Create history event
-              await supabase.from('lead_history').insert({
-                lead_id: insertedLead.id,
-                actor_id: actorId,
-                event_type: 'imported',
-                before_data: null,
-                after_data: leadData,
-                metadata: {
-                  import_job_id: importJobId,
-                  source: defaultSource,
-                },
-              });
-
-              const result = createRowResult(rowNumber, 'imported', normalizedData, {
-                leadId: insertedLead.id,
-              });
-              importedRows.push(result);
-
-              await supabase
-                .from('import_rows')
-                .update({ status: 'imported' })
-                .eq('id', row.id);
-            }
+            const result = createRowResult(item.rowNumber, 'updated', item.normalizedData, {
+              leadId: item.existingLeadId,
+              duplicateInfo: item.duplicateInfo,
+            });
+            updatedRows.push(result);
           }
         } catch (error) {
-          const result = createRowResult(rowNumber, 'error', normalizedData, {
+          const result = createRowResult(item.rowNumber, 'error', item.normalizedData, {
             reason: error instanceof Error ? error.message : 'Erreur inconnue',
           });
           errorRows.push(result);
+        }
+      }
+
+      // Batch insert update history entries
+      if (updateHistoryEntries.length > 0) {
+        await supabase.from('lead_history').insert(updateHistoryEntries);
+      }
+
+      // Batch update import_rows status for successful updates
+      if (successfulUpdateIds.length > 0) {
+        await supabase
+          .from('import_rows')
+          .update({ status: 'imported' })
+          .in('id', successfulUpdateIds);
+      }
+
+      // 2c. Process all creates (batch insert leads, then batch insert history)
+      if (toCreate.length > 0) {
+        // Batch insert all leads at once
+        const leadsToInsert = toCreate.map(item => item.leadData);
+        const { data: insertedLeads, error: insertError } = await supabase
+          .from('leads')
+          .insert(leadsToInsert)
+          .select('id');
+
+        if (insertError || !insertedLeads) {
+          // If batch insert fails, mark all as errors
+          for (const item of toCreate) {
+            const result = createRowResult(item.rowNumber, 'error', item.normalizedData, {
+              reason: `Erreur d'insertion: ${insertError?.message || 'Unknown error'}`,
+            });
+            errorRows.push(result);
+          }
+        } else {
+          // Match inserted leads back to original rows (Supabase returns in same order)
+          const createHistoryEntries: Array<{
+            lead_id: string;
+            actor_id: string;
+            event_type: string;
+            before_data: null;
+            after_data: Record<string, unknown>;
+            metadata: Record<string, unknown>;
+          }> = [];
+          const successfulCreateIds: string[] = [];
+
+          for (let i = 0; i < insertedLeads.length; i++) {
+            const insertedLead = insertedLeads[i];
+            const item = toCreate[i];
+
+            createHistoryEntries.push({
+              lead_id: insertedLead.id,
+              actor_id: actorId,
+              event_type: 'imported',
+              before_data: null,
+              after_data: item.leadData,
+              metadata: { import_job_id: importJobId, source: defaultSource },
+            });
+            successfulCreateIds.push(item.importRowId);
+
+            const result = createRowResult(item.rowNumber, 'imported', item.normalizedData, {
+              leadId: insertedLead.id,
+            });
+            importedRows.push(result);
+          }
+
+          // Batch insert all history entries
+          if (createHistoryEntries.length > 0) {
+            await supabase.from('lead_history').insert(createHistoryEntries);
+          }
+
+          // Batch update import_rows status
+          if (successfulCreateIds.length > 0) {
+            await supabase
+              .from('import_rows')
+              .update({ status: 'imported' })
+              .in('id', successfulCreateIds);
+          }
         }
       }
 

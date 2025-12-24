@@ -316,12 +316,10 @@ export function UnifiedRowModal({
   const [editValues, setEditValues] = useState<Partial<Record<LeadFieldKey, string>>>(initialValues);
 
   // Reset edit values when row changes (modal opens for different row)
-  const prevRowNumber = useMemo(() => rowNumber, [rowNumber]);
   useEffect(() => {
-    // Reset when opening modal for a new row
     setEditValues(initialValues);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- Only reset when row changes
-  }, [prevRowNumber]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Only reset when rowNumber changes, not initialValues
+  }, [rowNumber]);
 
   // Get mapped fields to display
   const mappedFields = useMemo(() => {

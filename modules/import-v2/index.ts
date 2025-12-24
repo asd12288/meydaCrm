@@ -92,11 +92,6 @@ export {
 export {
   // File duplicates
   detectFileDuplicates,
-  getFirstOccurrence,
-  getDuplicateRows,
-  getDuplicateGroupSummary,
-  getUniqueRows,
-  hasCheckableFields,
   type FileDuplicateResult,
   type RowWithFileDuplicateInfo,
   // DB duplicates

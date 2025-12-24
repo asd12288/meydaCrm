@@ -7,7 +7,12 @@
 'use client';
 
 import { ImportWizardV2 } from '../components';
+import type { SalesUser } from '@/modules/leads/types';
 
-export function ImportV2View() {
-  return <ImportWizardV2 />;
+interface ImportV2ViewProps {
+  salesUsers: SalesUser[];
+}
+
+export function ImportV2View({ salesUsers }: ImportV2ViewProps) {
+  return <ImportWizardV2 salesUsers={salesUsers} />;
 }

@@ -10,16 +10,18 @@
 'use client';
 
 import { useState, useCallback, useMemo, useEffect } from 'react';
-import { IconCheck, IconRefresh, IconX, IconReplace, IconPlus } from '@tabler/icons-react';
+import { IconCheck, IconRefresh, IconX, IconReplace, IconPlus, IconAlertTriangle } from '@tabler/icons-react';
 import { CardBox } from '@/modules/shared';
 import { Button } from '@/components/ui/button';
 import { PreviewSummaryCards, PreviewSummaryCardsSkeleton } from './preview-summary-cards';
 import { PreviewIssueTable, PreviewIssueTableSkeleton, type IssueRow } from './preview-issue-table';
+import { AssignmentConfig } from './assignment-config';
+import type { SalesUser } from '@/modules/leads/types';
 import type {
   DetailedPreviewDataV2,
   PreviewTabV2,
 } from '../types/preview';
-import type { UnifiedRowAction, PreviewIssueType } from '../config/constants';
+import type { UnifiedRowAction, PreviewIssueType, AssignmentModeV2 } from '../config/constants';
 import { UNIFIED_ROW_ACTION_LABELS, AVAILABLE_ACTIONS_BY_TYPE } from '../config/constants';
 import type { LeadFieldKey } from '../../import/types/mapping';
 
@@ -50,6 +52,18 @@ interface PreviewStepProps {
   canImport: boolean;
   /** Import button loading state */
   isImporting?: boolean;
+  /** Sales users for assignment */
+  salesUsers: SalesUser[];
+  /** Assignment mode */
+  assignmentMode: AssignmentModeV2;
+  /** Selected user IDs for assignment */
+  assignmentUserIds: string[];
+  /** Toggle assignment on/off */
+  onAssignmentToggle: (enabled: boolean) => void;
+  /** Update selected users for assignment */
+  onAssignmentUsersChange: (userIds: string[]) => void;
+  /** Warning message for DB duplicate check failures */
+  dbCheckWarning?: string | null;
 }
 
 // =============================================================================
@@ -161,6 +175,12 @@ export function PreviewStep({
   onBack,
   canImport,
   isImporting = false,
+  salesUsers,
+  assignmentMode,
+  assignmentUserIds,
+  onAssignmentToggle,
+  onAssignmentUsersChange,
+  dbCheckWarning,
 }: PreviewStepProps) {
   // Determine default tab: first one with data (invalid > file_dup > db_dup)
   const defaultTab = useMemo((): PreviewTabV2 | null => {
@@ -232,6 +252,14 @@ export function PreviewStep({
 
   return (
     <div className="flex flex-col gap-4">
+      {/* DB Check Warning Banner */}
+      {dbCheckWarning && (
+        <div className="flex items-center gap-2 p-3 bg-warning/10 border border-warning/30 rounded-lg text-warning">
+          <IconAlertTriangle size={18} className="shrink-0" />
+          <span className="text-sm">{dbCheckWarning}</span>
+        </div>
+      )}
+
       {/* Summary Stats + Effective Counts */}
       <CardBox>
         <div className="flex flex-col gap-3">
@@ -243,6 +271,16 @@ export function PreviewStep({
           <EffectiveCountsSummary {...preview.effectiveCounts} />
         </div>
       </CardBox>
+
+      {/* Assignment Configuration */}
+      <AssignmentConfig
+        enabled={assignmentMode === 'round_robin'}
+        selectedUserIds={assignmentUserIds}
+        salesUsers={salesUsers}
+        leadsToAssign={preview.effectiveCounts.willImport}
+        onToggle={onAssignmentToggle}
+        onUsersChange={onAssignmentUsersChange}
+      />
 
       {/* Issue Tables (if any issues exist) */}
       {hasIssues && activeTab && currentIssueType && (
