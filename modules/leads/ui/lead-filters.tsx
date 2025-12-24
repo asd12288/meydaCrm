@@ -11,7 +11,7 @@ import {
   IconDownload,
 } from '@tabler/icons-react';
 import { FilterDropdown, type FilterOption, UserAvatar, useModal } from '@/modules/shared';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/modules/shared';
 import { useFilterNavigation } from '../hooks/use-filter-navigation';
 import { ExportModal } from '@/modules/export/components/export-modal';
 import type { ExportFilters } from '@/modules/export/types';

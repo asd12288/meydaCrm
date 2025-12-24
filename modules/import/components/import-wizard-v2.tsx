@@ -10,7 +10,7 @@ import {
   IconX,
 } from '@tabler/icons-react';
 import { ErrorBoundary, SectionErrorFallback } from '@/modules/shared';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/modules/shared';
 
 // Step components
 import { WizardStepper } from './wizard-stepper';

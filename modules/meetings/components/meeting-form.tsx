@@ -13,7 +13,7 @@ import {
   useFormState,
   InlineDropdown,
 } from '@/modules/shared';
-import { DateTimePicker } from '@/components/ui/datetime-picker';
+import { DateTimePicker } from '@/modules/shared';
 import { meetingFormSchema, type MeetingFormInput } from '../types';
 import { createMeeting, updateMeeting } from '../lib/actions';
 import {

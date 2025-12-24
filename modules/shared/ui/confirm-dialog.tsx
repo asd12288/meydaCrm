@@ -2,7 +2,7 @@
 
 import { IconAlertTriangle } from '@tabler/icons-react';
 import { Modal } from './modal';
-import { Button } from '@/components/ui/button';
+import { Button } from './button';
 
 export interface ConfirmDialogProps {
   /** Dialog open state */

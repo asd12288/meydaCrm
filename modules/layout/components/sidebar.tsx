@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/modules/shared";
 import { navigationItems, navGroups } from "../config/navigation";
 import { Logo } from "@/modules/shared";
 import { useSidebar } from "../context/sidebar-context";

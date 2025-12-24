@@ -1,7 +1,7 @@
 'use client';
 
 import { IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/modules/shared';
 import { InlineDropdown } from '@/modules/shared';
 import { useFilterNavigation } from '../hooks/use-filter-navigation';
 import { PAGE_SIZE_OPTIONS } from '../config/constants';

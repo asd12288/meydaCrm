@@ -22,7 +22,7 @@ import {
   ConfirmDialog,
   Badge,
 } from '@/modules/shared';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/modules/shared';
 import {
   getAllBanners,
   toggleBannerActive,

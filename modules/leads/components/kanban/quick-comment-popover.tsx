@@ -7,10 +7,10 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+} from '@/modules/shared';
+import { Button } from '@/modules/shared';
+import { Textarea } from '@/modules/shared';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/modules/shared';
 import { addComment } from '../../lib/actions';
 
 interface QuickCommentPopoverProps {

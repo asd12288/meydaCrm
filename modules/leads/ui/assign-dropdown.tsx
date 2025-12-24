@@ -8,7 +8,7 @@ import {
   IconUsers,
   IconCheck,
 } from '@tabler/icons-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/modules/shared';
 import { UserAvatar, useClickOutside } from '@/modules/shared';
 import type { SalesUser } from '../types';
 

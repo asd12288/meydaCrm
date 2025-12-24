@@ -2,7 +2,7 @@
 
 import { IconLock, IconCreditCard } from '@tabler/icons-react';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/modules/shared';
 
 interface SubscriptionBlockedModalProps {
   isOpen: boolean;

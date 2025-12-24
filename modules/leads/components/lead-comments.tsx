@@ -2,8 +2,7 @@
 
 import { useState, useTransition, useOptimistic } from "react";
 import { IconSend, IconTrash, IconMessageOff, IconLoader2 } from "@tabler/icons-react";
-import { Button } from "@/components/ui/button";
-import { UserAvatar, ConfirmDialog } from "@/modules/shared";
+import { Button, UserAvatar, ConfirmDialog } from "@/modules/shared";
 import { addComment, deleteComment } from "../lib/actions";
 import { formatRelativeTime } from "../lib/format";
 import type { CommentWithAuthor } from "../types";

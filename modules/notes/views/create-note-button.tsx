@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { IconPlus, IconNote } from '@tabler/icons-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/modules/shared';
 import { Modal } from '@/modules/shared';
 import { NoteForm } from '../components/note-form';
 

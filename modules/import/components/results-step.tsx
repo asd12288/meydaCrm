@@ -9,7 +9,7 @@ import {
   IconFileSpreadsheet,
   IconClock,
 } from '@tabler/icons-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/modules/shared';
 import type { ImportJobProgress } from '../types';
 
 interface ResultsStepProps {

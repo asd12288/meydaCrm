@@ -12,8 +12,8 @@ export function PHProvider({ children }: { children: React.ReactNode }) {
     if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_POSTHOG_KEY) {
       posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
         api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://eu.i.posthog.com',
-        // Debug mode shows events in console
-        debug: process.env.NODE_ENV === 'development',
+        // Debug mode shows events in console (only when dev tracking is enabled)
+        debug: process.env.NODE_ENV === 'development' && ENABLE_DEV_TRACKING,
         // Enable error tracking
         capture_exceptions: true,
         loaded: (ph) => {

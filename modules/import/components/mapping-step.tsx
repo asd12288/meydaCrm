@@ -10,7 +10,7 @@ import {
   IconChevronDown,
   IconChevronUp,
 } from '@tabler/icons-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/modules/shared';
 import { Select } from '@/modules/shared';
 import type { ColumnMappingConfig, LeadFieldKey, UploadedFile, RawRow } from '../types';
 import { getAvailableTargetFields, checkRequiredMappings, getMappingSummary } from '../lib/auto-mapper';

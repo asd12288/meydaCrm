@@ -18,7 +18,7 @@ import {
   IconChevronUp,
 } from '@tabler/icons-react';
 import { CardBox, Spinner } from '@/modules/shared';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/modules/shared';
 import { PROGRESS_PHASE_LABELS } from '../config/constants';
 import type { ImportProgressV2, ImportResultsSummaryV2 } from '../types';
 

@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import { IconX, IconFilter } from '@tabler/icons-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/modules/shared';
 import { FilterDropdown, SearchInput, type FilterOption } from '@/modules/shared';
 import { USER_ROLE_OPTIONS, ROLE_LABELS } from '@/lib/constants';
 import { ROLE_COLORS } from '../config/constants';

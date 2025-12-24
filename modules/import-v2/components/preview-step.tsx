@@ -12,7 +12,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import { IconCheck, IconRefresh, IconX, IconReplace, IconPlus, IconAlertTriangle } from '@tabler/icons-react';
 import { CardBox } from '@/modules/shared';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/modules/shared';
 import { PreviewSummaryCards, PreviewSummaryCardsSkeleton } from './preview-summary-cards';
 import { PreviewIssueTable, PreviewIssueTableSkeleton, type IssueRow } from './preview-issue-table';
 import { AssignmentConfig } from './assignment-config';

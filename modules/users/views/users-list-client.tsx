@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { IconUserPlus } from '@tabler/icons-react';
 import { CardBox, PageHeader, ErrorBoundary, SectionErrorFallback } from '@/modules/shared';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/modules/shared';
 import { UsersTable } from '../components/users-table';
 import { CreateUserModal } from '../components/create-user-modal';
 import { UserFilters } from '../ui/user-filters';

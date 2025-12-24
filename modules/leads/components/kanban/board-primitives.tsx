@@ -21,15 +21,15 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 
-import { Button, buttonVariants } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Textarea } from '@/components/ui/textarea';
+import { Button, buttonVariants } from '@/modules/shared/ui/button';
+import { Skeleton } from '@/modules/shared/ui/skeleton';
+import { Textarea } from '@/modules/shared/ui/textarea';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
+} from '@/modules/shared/ui/tooltip';
 import { cn } from '@/lib/utils';
 
 /*

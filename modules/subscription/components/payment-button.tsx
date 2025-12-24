@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { IconCurrencyBitcoin, IconExternalLink } from '@tabler/icons-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/modules/shared';
 import { Spinner, FormErrorAlert } from '@/modules/shared';
 import type { SubscriptionPlan, SubscriptionPeriod } from '@/db/types';
 import { createPayment } from '../lib/actions';

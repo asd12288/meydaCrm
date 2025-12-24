@@ -2,7 +2,7 @@
 
 import { createColumnHelper } from '@tanstack/react-table';
 import { IconDots, IconKey, IconEdit, IconTrash } from '@tabler/icons-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/modules/shared';
 import {
   UserAvatar,
   DropdownMenu,

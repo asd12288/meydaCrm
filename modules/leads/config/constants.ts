@@ -55,7 +55,7 @@ export const LEAD_STATUS_OPTIONS: { value: LeadStatus; label: string }[] = [
 
 // Kanban column configuration (order reflects sales workflow)
 // Colors map to KanbanBoardCircleColor from shadcn-kanban-board
-import type { KanbanBoardCircleColor } from '@/components/kanban';
+import type { KanbanBoardCircleColor } from '../components/kanban/board-primitives';
 
 export const KANBAN_COLUMNS: {
   status: LeadStatus;

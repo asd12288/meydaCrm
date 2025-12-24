@@ -12,11 +12,12 @@ export const leadFiltersSchema = z.object({
   pageSize: z.coerce.number().min(10).max(500).default(20),
   search: z.string().optional(),
   status: z.string().optional(),
-  // Accept UUID or 'unassigned' special value
+  // Accept UUID or 'unassigned' special value (empty string treated as undefined)
   assignedTo: z
     .string()
+    .transform((val) => (val === '' ? undefined : val))
     .refine(
-      (val) => val === UNASSIGNED_FILTER_VALUE || z.string().uuid().safeParse(val).success,
+      (val) => val === undefined || val === UNASSIGNED_FILTER_VALUE || z.string().uuid().safeParse(val).success,
       { message: 'Must be a valid UUID or "unassigned"' }
     )
     .optional(),

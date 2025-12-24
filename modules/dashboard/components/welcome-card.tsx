@@ -3,6 +3,23 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 
+// Holiday messages (auto-expire after the holidays)
+const CHRISTMAS_SUBTITLES = [
+  'Que la magie de Noël illumine ta journée !',
+  'Ho ho ho ! Joyeuses fêtes !',
+  'Que tous tes leads se transforment en cadeaux !',
+  'Le plus beau cadeau ? Une équipe comme toi !',
+  'Noël au bureau, c\'est toi le plus beau !',
+];
+
+const NEW_YEAR_SUBTITLES = [
+  'Nouvelle année, nouveaux objectifs !',
+  'Que 2025 soit remplie de succès !',
+  'Prêt à exploser les records cette année ?',
+  'Bonne année ! On commence fort !',
+  'Les meilleurs deals t\'attendent en 2025 !',
+];
+
 // Random subtitles for each time period
 const MORNING_SUBTITLES = [
   'Prêt pour une belle journée ?',
@@ -61,8 +78,33 @@ const DEFAULT_GREETING: GreetingData = {
   subtitle: 'Prêt à travailler !',
 };
 
+// Check if it's a holiday period
+function getHolidayGreeting(seed: number): GreetingData | null {
+  const now = new Date();
+  const month = now.getMonth(); // 0-indexed (11 = December, 0 = January)
+  const day = now.getDate();
+
+  // Christmas: Dec 24-26
+  if (month === 11 && day >= 24 && day <= 26) {
+    return { text: 'Joyeux Noël', emoji: '🎄', subtitle: pickRandom(CHRISTMAS_SUBTITLES, seed) };
+  }
+
+  // New Year: Dec 31 - Jan 2
+  if ((month === 11 && day === 31) || (month === 0 && day <= 2)) {
+    return { text: 'Bonne Année', emoji: '🎉', subtitle: pickRandom(NEW_YEAR_SUBTITLES, seed) };
+  }
+
+  return null;
+}
+
 // Get time-based greeting with emoji (client-only)
 function getTimeGreeting(seed: number): GreetingData {
+  // Check for holiday greeting first
+  const holidayGreeting = getHolidayGreeting(seed);
+  if (holidayGreeting) {
+    return holidayGreeting;
+  }
+
   const hour = new Date().getHours();
   if (hour >= 5 && hour < 12) {
     return { text: 'Bon matin', emoji: '☀️', subtitle: pickRandom(MORNING_SUBTITLES, seed) };
