@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Drawer } from 'flowbite-react';
 import { IconPlus } from '@tabler/icons-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/modules/shared';
 import { CardBox, PageHeader, useModal, ErrorBoundary, SectionErrorFallback } from '@/modules/shared';
 import { getCurrentUser } from '@/modules/auth';
 import { TicketListPanel } from '../components/ticket-list-panel';

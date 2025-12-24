@@ -7,7 +7,7 @@ import {
   KanbanBoardCardTitle,
   KanbanBoardCardDescription,
   KanbanBoardCardButton,
-} from '@/components/kanban';
+} from './board-primitives';
 import { UserAvatar } from '@/modules/shared';
 import type { LeadForKanban } from '../../types';
 import { formatLeadName } from '../../lib/kanban-utils';

@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
 import { IconSearch, IconX, IconLoader2 } from '@tabler/icons-react';
-import { Button } from '@/components/ui/button';
+import { Button } from './button';
 
 export interface SearchInputProps {
   /** Initial/controlled value */

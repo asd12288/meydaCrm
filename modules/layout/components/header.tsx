@@ -1,7 +1,7 @@
 'use client';
 
 import { IconLogout, IconUser, IconChevronDown, IconShield } from '@tabler/icons-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/modules/shared';
 import { logout } from '@/modules/auth/lib/actions';
 import {
   ThemeSwitcher,

@@ -6,7 +6,7 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
+} from '@/modules/shared';
 import { NOTE_COLOR_OPTIONS } from '../config/constants';
 import type { NoteColor } from '../types';
 

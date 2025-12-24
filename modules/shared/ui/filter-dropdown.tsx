@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { IconChevronDown, IconCheck } from '@tabler/icons-react';
-import { Button } from '@/components/ui/button';
+import { Button } from './button';
 import { useClickOutside } from '../hooks/use-click-outside';
 import { TEXT_CLASS_TO_CSS_VAR } from '@/lib/constants';
 

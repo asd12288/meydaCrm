@@ -4,7 +4,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
 import SimpleBar from 'simplebar-react';
 import { IconSearch, IconTicket, IconLoader2 } from '@tabler/icons-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/modules/shared';
 import { TicketListItem } from './ticket-list-item';
 import type { SupportTicketWithDetails } from '../types';
 

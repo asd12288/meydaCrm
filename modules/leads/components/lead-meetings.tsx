@@ -11,7 +11,7 @@ import {
   IconAlertCircle,
   IconTrash,
 } from '@tabler/icons-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/modules/shared';
 import { EmptyState, Modal, ConfirmDialog, useToast } from '@/modules/shared';
 import {
   MEETING_STATUS_LABELS,

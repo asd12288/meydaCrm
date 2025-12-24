@@ -13,7 +13,7 @@ import {
   IconFileSpreadsheet,
 } from '@tabler/icons-react';
 import { CardBox, ConfirmDialog, FormErrorAlert, Pagination } from '@/modules/shared';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/modules/shared';
 import { retryImportJob, deleteImportJob, getPaginatedImportJobs, downloadImportFile } from '../lib/actions';
 import type { ImportJobWithStats } from '../types';
 

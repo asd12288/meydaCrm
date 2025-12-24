@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useOptimistic, useCallback } from 'react';
 import { IconNote, IconPlus, IconEdit } from '@tabler/icons-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/modules/shared';
 import { Modal, EmptyState } from '@/modules/shared';
 import { reorderNotes } from '../lib/actions';
 import { NoteCard } from './note-card';

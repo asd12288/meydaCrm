@@ -6,7 +6,7 @@ import {
   IconX,
   IconLoader2,
 } from '@tabler/icons-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/modules/shared';
 import { FileDropzone } from '../ui/file-dropzone';
 import type { UploadedFile } from '../types';
 

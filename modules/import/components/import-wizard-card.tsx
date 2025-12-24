@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { IconX, IconUpload } from '@tabler/icons-react';
 import { CardBox } from '@/modules/shared';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/modules/shared';
 import { ImportWizardV2 } from './import-wizard-v2';
 import type { SalesUser } from '@/modules/leads/types';
 

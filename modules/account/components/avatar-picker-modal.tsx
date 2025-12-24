@@ -3,7 +3,7 @@
 import { useTransition, useState } from 'react';
 import Image from 'next/image';
 import { IconCheck, IconX } from '@tabler/icons-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/modules/shared';
 import { Modal, useToast } from '@/modules/shared';
 import { AVATARS, getAvatarPath } from '@/lib/constants';
 import { updateAvatar } from '../lib/actions';

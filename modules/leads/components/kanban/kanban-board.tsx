@@ -6,7 +6,7 @@ import {
   KanbanBoard as KanbanBoardPrimitive,
   KanbanBoardProvider,
   KanbanBoardExtraMargin,
-} from '@/components/kanban';
+} from './board-primitives';
 import { useToast } from '@/modules/shared';
 import type { LeadForKanban } from '../../types';
 import type { LeadStatus } from '@/db/types';

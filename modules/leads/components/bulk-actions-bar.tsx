@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { IconX, IconTransfer } from '@tabler/icons-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/modules/shared';
 import { useToast } from '@/modules/shared';
 import { bulkAssignLeads } from '../lib/actions';
 import { AssignDropdown } from '../ui/assign-dropdown';

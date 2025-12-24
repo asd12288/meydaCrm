@@ -8,7 +8,7 @@ import {
   IconChevronDown,
   IconCheck,
 } from '@tabler/icons-react';
-import { Button } from '@/components/ui/button';
+import { Button } from './button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem } from './dropdown-menu';
 
 export interface PaginationProps {

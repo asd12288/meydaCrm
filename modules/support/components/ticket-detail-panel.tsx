@@ -2,7 +2,7 @@
 
 import { useOptimistic, useTransition } from 'react';
 import { IconArrowLeft, IconMessageCircle } from '@tabler/icons-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/modules/shared';
 import { FilterDropdown, type FilterOption, useToast } from '@/modules/shared';
 import { TicketConversation } from './ticket-conversation';
 import { TicketReplyInput } from './ticket-reply-input';

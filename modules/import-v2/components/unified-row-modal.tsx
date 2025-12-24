@@ -16,7 +16,7 @@ import {
   IconCheck,
 } from '@tabler/icons-react';
 import { Modal, InlineDropdown } from '@/modules/shared';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/modules/shared';
 import type { LeadFieldKey } from '../../import/types/mapping';
 import type {
   UnifiedRowAction,

@@ -2,7 +2,7 @@
 
 import { IconX } from '@tabler/icons-react';
 import type { ReactNode } from 'react';
-import { Button } from '@/components/ui/button';
+import { Button } from './button';
 
 export interface FormActionsProps {
   /** Loading state - disables buttons */

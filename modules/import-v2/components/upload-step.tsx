@@ -15,7 +15,7 @@ import {
   IconChevronRight,
 } from '@tabler/icons-react';
 import { CardBox, Spinner } from '@/modules/shared';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/modules/shared';
 import { FILE_CONSTRAINTS } from '../config/constants';
 import { InlineDropdown, type InlineDropdownOptionGroup } from '@/modules/shared';
 import type { ColumnMappingV2, ParsedFileV2, ColumnMappingConfigV2 } from '../types';

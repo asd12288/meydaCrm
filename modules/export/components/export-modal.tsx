@@ -18,7 +18,7 @@ import {
   IconClock,
 } from '@tabler/icons-react';
 import { Modal, useToast } from '@/modules/shared';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/modules/shared';
 import {
   createExportJob,
   getExportDownloadUrl,

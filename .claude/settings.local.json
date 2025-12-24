@@ -105,7 +105,8 @@
       "Bash(cmd /c \"del \"\"c:\\Users\\ilanc\\Desktop\\crm\\modules\\import-v2\\components\\inline-dropdown.tsx\"\"\")",
       "Bash(del \"c:\\Users\\ilanc\\Desktop\\crm\\modules\\import-v2\\components\\duplicate-comparison-modal.tsx\")",
       "Bash(xargs grep:*)",
-      "Bash(docker logs:*)"
+      "Bash(docker logs:*)",
+      "Bash(cp:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

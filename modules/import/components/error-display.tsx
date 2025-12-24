@@ -1,7 +1,7 @@
 'use client';
 
 import { IconAlertCircle, IconRefresh, IconTrash, IconFileText } from '@tabler/icons-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/modules/shared';
 
 interface ErrorDisplayProps {
   error: string;

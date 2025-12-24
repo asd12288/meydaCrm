@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useFormStatus } from 'react-dom';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/modules/shared';
 import { PasswordInput, FormErrorAlert } from '@/modules/shared';
 import { login } from '../lib/actions';
 

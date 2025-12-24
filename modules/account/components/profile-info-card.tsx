@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { CardBox, UserAvatar, useToast } from '@/modules/shared';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/modules/shared';
 import { IconEdit, IconCheck, IconX, IconCamera } from '@tabler/icons-react';
 import type { NormalizedProfile } from '@/lib/auth';
 import { getRoleLabel } from '@/lib/constants';

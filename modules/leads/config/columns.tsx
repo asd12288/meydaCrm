@@ -12,7 +12,7 @@ import {
   IconTransfer,
   IconChevronLeft,
 } from '@tabler/icons-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/modules/shared';
 import {
   CopyableText,
   DropdownMenu,

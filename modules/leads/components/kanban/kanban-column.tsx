@@ -7,7 +7,7 @@ import {
   KanbanBoardColumnTitle,
   KanbanBoardColumnList,
   KanbanBoardColumnListItem,
-} from '@/components/kanban';
+} from './board-primitives';
 import type { LeadForKanban } from '../../types';
 import type { LeadStatus } from '@/db/types';
 import { STATUS_COLORS, STATUS_ICON_MAP, BADGE_TO_COLOR } from '../../config/constants';
