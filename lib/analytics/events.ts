@@ -68,6 +68,63 @@ export const analytics = {
     }
   },
 
+  // Import V2 Events
+  importV2FileParsed: (props: {
+    fileType: string;
+    rowCount: number;
+    columnCount: number;
+  }) => {
+    if (isClient) {
+      posthog.capture('import_v2_file_parsed', props);
+    }
+  },
+
+  importV2MappingCompleted: (props: {
+    autoMappedCount: number;
+    manualMappedCount: number;
+    unmappedCount: number;
+  }) => {
+    if (isClient) {
+      posthog.capture('import_v2_mapping_completed', props);
+    }
+  },
+
+  importV2PreviewLoaded: (props: {
+    totalRows: number;
+    validRows: number;
+    invalidRows: number;
+    fileDuplicates: number;
+    dbDuplicates: number;
+  }) => {
+    if (isClient) {
+      posthog.capture('import_v2_preview_loaded', props);
+    }
+  },
+
+  importV2Completed: (props: {
+    totalRows: number;
+    imported: number;
+    updated: number;
+    skipped: number;
+    errors: number;
+    durationMs: number;
+    fileType: string;
+  }) => {
+    if (isClient) {
+      posthog.capture('import_v2_completed', props);
+    }
+  },
+
+  importV2Failed: (props: {
+    error: string;
+    phase: 'parsing' | 'preview' | 'import';
+    fileType?: string;
+  }) => {
+    if (isClient) {
+      posthog.capture('import_v2_failed', props);
+    }
+  },
+
   // Comment Events
   commentAdded: (props: {
     leadId: string;

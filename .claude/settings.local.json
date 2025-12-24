@@ -99,7 +99,8 @@
       "Bash(git stash:*)",
       "Bash(git restore:*)",
       "Bash(del \"c:\\Users\\ilanc\\Desktop\\crm\\test-validation.ts\")",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "Bash(git reset:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

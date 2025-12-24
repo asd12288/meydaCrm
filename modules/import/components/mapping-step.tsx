@@ -1,23 +1,38 @@
 'use client';
 
-import { useMemo } from 'react';
-import { IconRefresh, IconAlertTriangle } from '@tabler/icons-react';
+import { useMemo, useState } from 'react';
+import {
+  IconArrowRight,
+  IconCheck,
+  IconRefresh,
+  IconAlertTriangle,
+  IconInfoCircle,
+  IconChevronDown,
+  IconChevronUp,
+} from '@tabler/icons-react';
 import { Button } from '@/components/ui/button';
 import { Select } from '@/modules/shared';
 import type { ColumnMappingConfig, LeadFieldKey, UploadedFile, RawRow } from '../types';
-import { getAvailableTargetFields, getMappingSummary } from '../lib/auto-mapper';
+import { getAvailableTargetFields, checkRequiredMappings, getMappingSummary } from '../lib/auto-mapper';
 
 interface MappingStepProps {
+  /** Uploaded file info */
   file: UploadedFile;
+  /** Current column mapping configuration */
   mapping: ColumnMappingConfig;
+  /** Sample rows for preview */
   sampleRows: RawRow[];
+  /** Callback when a column mapping is updated */
   onUpdateMapping: (sourceIndex: number, targetField: LeadFieldKey | null) => void;
+  /** Callback to reset all mappings to auto-detected values */
   onResetMapping: () => void;
+  /** Whether the mapping is complete (at least one contact field mapped) */
   isComplete: boolean;
 }
 
 /**
- * Step 2: Column Mapping - Table-based compact layout
+ * Step 2: Column Mapping
+ * Allows users to map file columns to lead fields with sample data preview
  */
 export function MappingStep({
   file,
@@ -27,9 +42,19 @@ export function MappingStep({
   onResetMapping,
   isComplete,
 }: MappingStepProps) {
+  const [expandedColumn, setExpandedColumn] = useState<number | null>(null);
   const targetFields = useMemo(() => getAvailableTargetFields(), []);
-  const summary = useMemo(() => getMappingSummary(mapping.mappings), [mapping]);
 
+  // Check required mappings (for validation badge, even though not directly used in render)
+  useMemo(() => {
+    return checkRequiredMappings(mapping.mappings);
+  }, [mapping]);
+
+  const summary = useMemo(() => {
+    return getMappingSummary(mapping.mappings);
+  }, [mapping]);
+
+  // Get used target fields to prevent duplicate mapping
   const usedTargetFields = useMemo(() => {
     return new Set(
       mapping.mappings
@@ -38,176 +63,177 @@ export function MappingStep({
     );
   }, [mapping]);
 
-  // Get sample values with fill rate
-  const getColumnStats = (sourceIndex: number) => {
-    const values = sampleRows.map((row) => row.values[sourceIndex]?.trim() || '');
-    const filled = values.filter((v) => v.length > 0);
-    const samples = filled.slice(0, 3);
-    const fillRate = sampleRows.length > 0 ? Math.round((filled.length / sampleRows.length) * 100) : 0;
-    return { samples, fillRate };
+  // Get sample value for a column
+  const getSampleValues = (sourceIndex: number): string[] => {
+    return sampleRows.slice(0, 3).map((row) => row.values[sourceIndex] || '-');
   };
-
-  // Truncate sample for display
-  const truncateSample = (value: string, maxLen = 24) => {
-    if (!value) return '';
-    return value.length > maxLen ? value.slice(0, maxLen) + '…' : value;
-  };
-
-  // Split into mapped and unmapped
-  const mappedColumns = mapping.mappings.filter((m) => m.targetField !== null);
-  const unmappedColumns = mapping.mappings.filter((m) => m.targetField === null);
 
   return (
-    <div className="space-y-4">
-      {/* Compact header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <h3 className="text-base font-semibold text-ld">Mapping</h3>
-          <span
-            className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-              isComplete
-                ? 'bg-lightsuccess text-success'
-                : 'bg-lightwarning text-warning'
-            }`}
-          >
-            {summary?.mappedColumns || 0}/{summary?.totalColumns || 0}
-          </span>
+    <div className="space-y-6">
+      {/* Header with status */}
+      <div className="flex items-center justify-between flex-wrap gap-4">
+        <div>
+          <h3 className="text-lg font-semibold text-ld">Associer les colonnes</h3>
+          <p className="text-sm text-darklink mt-1">
+            Associez chaque colonne de votre fichier a un champ lead
+          </p>
         </div>
-        <Button type="button" variant="ghost" size="sm" onClick={onResetMapping}>
-          <IconRefresh size={14} />
-          Reset
-        </Button>
+
+        <div className="flex items-center gap-4">
+          {summary && (
+            <div
+              className={`
+                flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium
+                ${isComplete ? 'bg-lightprimary/30 text-primary' : 'bg-lightwarning/30 text-warning'}
+              `}
+            >
+              {isComplete ? (
+                <IconCheck size={16} />
+              ) : (
+                <IconAlertTriangle size={16} />
+              )}
+              {summary.mappedColumns}/{summary.totalColumns} mappees
+            </div>
+          )}
+
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={onResetMapping}
+          >
+            <IconRefresh size={16} />
+            Auto-detection
+          </Button>
+        </div>
       </div>
 
-      {/* Warning banner - compact */}
+      {/* Warning if no contact field mapped */}
       {!isComplete && (
-        <div className="flex items-center gap-2 px-3 py-2 bg-lightwarning/30 border border-warning/20 rounded text-xs text-warning">
-          <IconAlertTriangle size={14} />
-          <span>Mappez au moins: <strong>email</strong>, <strong>telephone</strong> ou <strong>ID externe</strong></span>
+        <div className="flex items-start gap-3 p-4 bg-lightwarning/20 border border-warning/30 rounded-lg">
+          <IconAlertTriangle className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-medium text-warning">Mapping incomplet</p>
+            <p className="text-sm text-warning/80 mt-1">
+              Mappez au moins un champ de contact:{' '}
+              <strong>email</strong>, <strong>telephone</strong> ou <strong>ID externe</strong>
+            </p>
+          </div>
         </div>
       )}
 
-      {/* Mapping table */}
-      <div className="border border-border rounded-lg overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="bg-muted/50 dark:bg-darkmuted/50 border-b border-border">
-              <th className="text-left px-3 py-2 font-medium text-darklink w-[30%]">Colonne source</th>
-              <th className="text-left px-3 py-2 font-medium text-darklink w-[35%]">Aperçu</th>
-              <th className="text-left px-3 py-2 font-medium text-darklink w-[35%]">Champ cible</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {/* Mapped columns first */}
-            {mappedColumns.map((col) => {
-              const { samples, fillRate } = getColumnStats(col.sourceIndex);
+      {/* Mapping cards */}
+      <div className="space-y-3">
+        {mapping.mappings.map((col) => {
+          const isMapped = col.targetField !== null;
+          const isExpanded = expandedColumn === col.sourceIndex;
+          const samples = getSampleValues(col.sourceIndex);
+          const isAutoMapped = col.confidence > 0.5 && !col.isManual;
 
-              return (
-                <tr key={col.sourceIndex} className="bg-lightsuccess/5 hover:bg-lightsuccess/10 transition-colors">
-                  <td className="px-3 py-2">
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-success shrink-0" />
-                      <span className="font-medium text-ld truncate" title={col.sourceColumn}>
-                        {col.sourceColumn}
+          return (
+            <div
+              key={col.sourceIndex}
+              className={`
+                border rounded-lg overflow-hidden transition-all
+                ${isMapped ? 'border-primary/30 bg-lightprimary/5' : 'border-border'}
+              `}
+            >
+              {/* Main row */}
+              <div className="flex items-center gap-4 p-4">
+                {/* Source column */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className={`font-medium truncate ${isMapped ? 'text-ld' : 'text-darklink'}`}>
+                      {col.sourceColumn}
+                    </span>
+                    {isAutoMapped && (
+                      <span className="text-xs text-primary bg-primary/10 px-1.5 py-0.5 rounded">
+                        Auto
                       </span>
-                    </div>
-                  </td>
-                  <td className="px-3 py-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-darklink truncate" title={samples.join(', ')}>
-                        {samples.length > 0 ? truncateSample(samples[0]) : <em className="text-darklink/50">vide</em>}
-                        {samples.length > 1 && <span className="text-darklink/50">, {truncateSample(samples[1])}</span>}
-                      </span>
-                      {fillRate < 100 && (
-                        <span className="text-[10px] text-darklink/60 shrink-0">{fillRate}%</span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-3 py-2">
-                    <Select
-                      value={col.targetField || ''}
-                      onChange={(e) =>
-                        onUpdateMapping(col.sourceIndex, e.target.value ? (e.target.value as LeadFieldKey) : null)
-                      }
-                      placeholder="Ignorer"
-                      selectSize="sm"
-                      options={targetFields.map((field) => ({
+                    )}
+                  </div>
+                  {/* Sample preview */}
+                  <p className="text-xs text-darklink mt-1 truncate">
+                    Ex: {samples[0] || '-'}
+                  </p>
+                </div>
+
+                {/* Arrow */}
+                <IconArrowRight
+                  className={`w-5 h-5 flex-shrink-0 ${isMapped ? 'text-primary' : 'text-darklink/30'}`}
+                />
+
+                {/* Target field selector */}
+                <div className="w-48">
+                  <Select
+                    value={col.targetField || ''}
+                    onChange={(e) =>
+                      onUpdateMapping(
+                        col.sourceIndex,
+                        e.target.value ? (e.target.value as LeadFieldKey) : null
+                      )
+                    }
+                    placeholder="-- Ignorer --"
+                    variant={isMapped ? 'success' : 'default'}
+                    options={targetFields.map((field) => {
+                      const isUsed = usedTargetFields.has(field.value) && col.targetField !== field.value;
+                      return {
                         value: field.value,
-                        label: field.label,
-                        disabled: usedTargetFields.has(field.value) && col.targetField !== field.value,
-                      }))}
-                    />
-                  </td>
-                </tr>
-              );
-            })}
+                        label: `${field.label}${isUsed ? ' (déjà utilisé)' : ''}`,
+                        disabled: isUsed,
+                      };
+                    })}
+                    className="w-full"
+                  />
+                </div>
 
-            {/* Unmapped columns */}
-            {unmappedColumns.length > 0 && mappedColumns.length > 0 && (
-              <tr>
-                <td colSpan={3} className="px-3 py-1.5 bg-muted/30 dark:bg-darkmuted/30">
-                  <span className="text-xs text-darklink">Colonnes ignorées ({unmappedColumns.length})</span>
-                </td>
-              </tr>
-            )}
-            {unmappedColumns.map((col) => {
-              const { samples, fillRate } = getColumnStats(col.sourceIndex);
+                {/* Expand button */}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="iconSm"
+                  onClick={() => setExpandedColumn(isExpanded ? null : col.sourceIndex)}
+                  title="Voir plus d'exemples"
+                >
+                  {isExpanded ? <IconChevronUp size={18} /> : <IconChevronDown size={18} />}
+                </Button>
+              </div>
 
-              return (
-                <tr key={col.sourceIndex} className="hover:bg-muted/30 transition-colors opacity-70">
-                  <td className="px-3 py-2">
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-darklink/30 shrink-0" />
-                      <span className="text-darklink truncate" title={col.sourceColumn}>
-                        {col.sourceColumn}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-3 py-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-darklink/70 truncate" title={samples.join(', ')}>
-                        {samples.length > 0 ? truncateSample(samples[0]) : <em className="text-darklink/50">vide</em>}
-                      </span>
-                      {fillRate < 100 && (
-                        <span className="text-[10px] text-darklink/50 shrink-0">{fillRate}%</span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-3 py-2">
-                    <Select
-                      value=""
-                      onChange={(e) =>
-                        onUpdateMapping(col.sourceIndex, e.target.value ? (e.target.value as LeadFieldKey) : null)
-                      }
-                      placeholder="Ignorer"
-                      selectSize="sm"
-                      options={targetFields.map((field) => ({
-                        value: field.value,
-                        label: field.label,
-                        disabled: usedTargetFields.has(field.value),
-                      }))}
-                    />
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+              {/* Expanded sample values */}
+              {isExpanded && (
+                <div className="border-t border-border bg-muted/50 dark:bg-darkmuted/50 px-4 py-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <IconInfoCircle size={14} className="text-darklink" />
+                    <span className="text-xs font-medium text-darklink">
+                      Exemples de valeurs ({Math.min(3, sampleRows.length)} premieres lignes)
+                    </span>
+                  </div>
+                  <div className="space-y-1">
+                    {samples.map((value, idx) => (
+                      <div
+                        key={idx}
+                        className="text-sm text-ld bg-white dark:bg-dark px-3 py-1.5 rounded border border-border"
+                      >
+                        {value || <span className="text-darklink italic">vide</span>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
 
-      {/* File summary - compact */}
-      <div className="flex items-center gap-3 text-xs text-darklink">
-        <span className="font-medium text-ld">{file.name}</span>
-        <span>•</span>
-        <span>{file.rowCount.toLocaleString('fr-FR')} lignes</span>
-        <span>•</span>
-        <span>{file.headers.length} colonnes</span>
-        {file.rowCount > 100 && (
-          <>
-            <span>•</span>
-            <span className="text-darklink/60">Aperçu: 100 premières lignes</span>
-          </>
-        )}
+      {/* File info summary */}
+      <div className="flex items-center gap-4 p-4 bg-muted/50 dark:bg-darkmuted/50 rounded-lg text-sm">
+        <div className="flex items-center gap-2 text-darklink">
+          <span className="font-medium text-ld">{file.name}</span>
+          <span>•</span>
+          <span>{file.rowCount.toLocaleString('fr-FR')} lignes</span>
+          <span>•</span>
+          <span>{file.headers.length} colonnes</span>
+        </div>
       </div>
     </div>
   );

@@ -4,8 +4,6 @@ import { useState, useEffect, useRef } from 'react';
 import type { ImportJobProgress } from '../types';
 import { pollImportJobStatus } from '../lib/actions';
 
-const LOG_PREFIX = '[ImportSSE]';
-
 interface UseImportSSEOptions {
   /** Job ID to subscribe to */
   jobId: string | null;
@@ -41,7 +39,6 @@ const POLL_INTERVAL = 2000;
  */
 export function useImportSSE(options: UseImportSSEOptions): UseImportSSEReturn {
   const { jobId, enabled = true, onProgress, onComplete, onError } = options;
-  console.log(LOG_PREFIX, 'useImportSSE init', { jobId, enabled });
 
   const [progress, setProgress] = useState<ImportJobProgress | null>(null);
   const [isConnected, setIsConnected] = useState(false);
@@ -89,7 +86,6 @@ export function useImportSSE(options: UseImportSSEOptions): UseImportSSEReturn {
       if (!state.jobId || !state.enabled) return;
 
       state.isFetching = true;
-      console.log(LOG_PREFIX, 'Polling job status...', state.jobId);
 
       try {
         const result = await pollImportJobStatus(state.jobId);
@@ -98,13 +94,12 @@ export function useImportSSE(options: UseImportSSEOptions): UseImportSSEReturn {
         if (!state.isMounted || state.isStopped) return;
 
         if (!result.success) {
-          console.error(LOG_PREFIX, 'Poll error:', result.error);
+          console.error('[Polling] Error:', result.error);
           setError(result.error || 'Erreur de connexion');
           return;
         }
 
         const data = result.data!;
-        console.log(LOG_PREFIX, 'Poll result:', { status: data.status, importedRows: data.importedRows, totalRows: data.totalRows });
 
         // Transform to ImportJobProgress format
         const progressData: ImportJobProgress = {
@@ -131,23 +126,20 @@ export function useImportSSE(options: UseImportSSEOptions): UseImportSSEReturn {
 
         // Handle terminal states - stop polling
         if (data.status === 'completed') {
-          console.log(LOG_PREFIX, 'Job completed, stopping polling');
           state.isStopped = true;
           stopPolling();
           state.onComplete?.(progressData);
         } else if (data.status === 'failed') {
-          console.log(LOG_PREFIX, 'Job failed, stopping polling');
           state.isStopped = true;
           stopPolling();
           state.onError?.(data.errorMessage || 'Import échoué');
         } else if (data.status === 'cancelled') {
-          console.log(LOG_PREFIX, 'Job cancelled, stopping polling');
           state.isStopped = true;
           stopPolling();
         }
       } catch (err) {
         if (!state.isMounted) return;
-        console.error(LOG_PREFIX, 'Poll exception:', err);
+        console.error('[Polling] Error:', err);
         setError('Erreur de connexion');
       } finally {
         state.isFetching = false;
@@ -156,11 +148,8 @@ export function useImportSSE(options: UseImportSSEOptions): UseImportSSEReturn {
 
     // Don't start polling if conditions aren't met
     if (!jobId || !enabled) {
-      state.isStopped = true; // Stop any in-flight polls from processing
       stopPolling();
       setIsConnected(false);
-      setProgress(null); // Reset progress when disabled
-      setError(null);
       return;
     }
 
@@ -183,12 +172,8 @@ export function useImportSSE(options: UseImportSSEOptions): UseImportSSEReturn {
 
   // Manual reconnect
   const reconnect = () => {
-    console.log(LOG_PREFIX, 'Manual reconnect requested');
     const state = stateRef.current;
-    if (!state.jobId || !state.enabled) {
-      console.log(LOG_PREFIX, 'Reconnect skipped - no jobId or disabled');
-      return;
-    }
+    if (!state.jobId || !state.enabled) return;
 
     // Stop existing polling
     if (state.intervalId) {
@@ -200,7 +185,6 @@ export function useImportSSE(options: UseImportSSEOptions): UseImportSSEReturn {
     state.isFetching = false;
     setIsConnected(true);
     setError(null);
-    console.log(LOG_PREFIX, 'Reconnecting to job:', state.jobId);
 
     // Restart polling
     const doFetch = async () => {

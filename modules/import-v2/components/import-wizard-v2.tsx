@@ -24,6 +24,7 @@ import { useClientParser } from '../hooks';
 import { validateRows } from '../lib/validators/row-validator';
 import { detectFileDuplicates } from '../lib/processors';
 import { startImportV2 } from '../lib/actions';
+import { analytics } from '@/lib/analytics';
 import { UploadStep, UploadStepSkeleton } from './upload-step';
 import { PreviewStep, PreviewStepSkeleton } from './preview-step';
 import { ImportStep, ImportStepSkeleton } from './import-step';
@@ -191,9 +192,20 @@ function WizardContent() {
         if (result) {
           dispatch({ type: 'SET_PARSED_FILE', payload: result.file });
           dispatch({ type: 'SET_MAPPING', payload: result.mapping });
+
+          // Track file parsed
+          analytics.importV2FileParsed({
+            fileType: result.file.type,
+            rowCount: result.file.rowCount,
+            columnCount: result.file.headers.length,
+          });
         }
       } catch (err) {
         dispatch({ type: 'SET_ERROR', payload: err instanceof Error ? err.message : 'Erreur de parsing' });
+        analytics.importV2Failed({
+          error: err instanceof Error ? err.message : 'Erreur de parsing',
+          phase: 'parsing',
+        });
       } finally {
         dispatch({ type: 'SET_PARSING', payload: false });
       }
@@ -245,17 +257,49 @@ function WizardContent() {
         }));
 
       // 4. Build file duplicate rows (non-first occurrences) from groups
-      // Use the already-typed FileDuplicateRowV2[] from duplicateGroups
       const fileDuplicateRows: FileDuplicateRowV2[] = fileDupeResult.duplicateGroups
         .flatMap((group) => group.rows)
         .filter((r) => !r.isFirstOccurrence);
 
-      // For now, skip DB duplicate detection (would require API call)
-      // TODO: Add DB duplicate check via API
-      const dbDuplicateRows: DbDuplicateRowV2[] = [];
+      // 5. Build set of file duplicate row numbers to exclude from DB check
+      const fileDuplicateRowNumbers = new Set(
+        fileDuplicateRows.map((r) => r.rowNumber)
+      );
 
-      // Valid = all valid rows minus file duplicates (non-first occurrences)
-      const validCount = validResults.length - fileDuplicateRows.length;
+      // 6. Get rows to check for DB duplicates (valid, non-file-duplicates)
+      const rowsForDbCheck = validResults.filter(
+        (r) => !fileDuplicateRowNumbers.has(r.rowNumber)
+      );
+
+      // 7. Check for DB duplicates via API
+      let dbDuplicateRows: DbDuplicateRowV2[] = [];
+      if (rowsForDbCheck.length > 0) {
+        try {
+          const response = await fetch('/api/import-v2/check-duplicates', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              validatedRows: rowsForDbCheck,
+              checkFields: ['email', 'phone', 'external_id'],
+            }),
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            if (data.success && data.duplicateRows) {
+              dbDuplicateRows = data.duplicateRows;
+            }
+          } else {
+            console.warn('[ImportWizard] DB duplicate check failed:', await response.text());
+          }
+        } catch (err) {
+          console.warn('[ImportWizard] DB duplicate check error:', err);
+          // Continue without DB duplicates - non-blocking error
+        }
+      }
+
+      // 8. Calculate valid count (excluding file duplicates and DB duplicates)
+      const validCount = validResults.length - fileDuplicateRows.length - dbDuplicateRows.length;
 
       const preview: DetailedPreviewDataV2 = {
         summary: {
@@ -267,8 +311,8 @@ function WizardContent() {
         },
         effectiveCounts: {
           willImport: validCount,
-          willUpdate: 0,
-          willSkip: invalidRows.length + fileDuplicateRows.length,
+          willUpdate: 0, // Will be recalculated based on row actions
+          willSkip: invalidRows.length + fileDuplicateRows.length + dbDuplicateRows.length,
           willError: 0,
         },
         invalidRows,
@@ -276,12 +320,42 @@ function WizardContent() {
         dbDuplicateRows,
       };
 
+      // 9. Set default row actions for DB duplicates to 'skip'
+      for (const row of dbDuplicateRows) {
+        dispatch({ type: 'SET_ROW_ACTION', payload: { rowNumber: row.rowNumber, action: 'skip' } });
+      }
+
       dispatch({ type: 'SET_PREVIEW', payload: preview });
+
+      // Track preview loaded
+      analytics.importV2PreviewLoaded({
+        totalRows: preview.summary.total,
+        validRows: preview.summary.valid,
+        invalidRows: preview.summary.invalid,
+        fileDuplicates: preview.summary.fileDuplicates,
+        dbDuplicates: preview.summary.dbDuplicates,
+      });
+
+      // Track mapping stats
+      const autoMapped = state.mapping.mappings.filter((m) => m.targetField && !m.isManual).length;
+      const manualMapped = state.mapping.mappings.filter((m) => m.targetField && m.isManual).length;
+      const unmapped = state.mapping.mappings.filter((m) => !m.targetField).length;
+      analytics.importV2MappingCompleted({
+        autoMappedCount: autoMapped,
+        manualMappedCount: manualMapped,
+        unmappedCount: unmapped,
+      });
+
       nextStep();
     } catch (err) {
       dispatch({
         type: 'SET_ERROR',
         payload: err instanceof Error ? err.message : 'Erreur lors de la generation de l\'apercu',
+      });
+      analytics.importV2Failed({
+        error: err instanceof Error ? err.message : 'Erreur lors de la generation de l\'apercu',
+        phase: 'preview',
+        fileType: state.parsedFile?.type,
       });
     } finally {
       dispatch({ type: 'SET_CHECKING_DUPLICATES', payload: false });
@@ -347,6 +421,14 @@ function WizardContent() {
       // Convert rowActions Map to array for serialization
       const rowActionsArray = Array.from(state.rowActions.entries());
 
+      // Build DB duplicate info array from preview data
+      const dbDuplicateInfo = state.preview?.dbDuplicateRows.map((row) => ({
+        rowNumber: row.rowNumber,
+        matchedField: row.matchedField,
+        matchedValue: row.matchedValue,
+        existingLeadId: row.existingLead.id,
+      })) || [];
+
       // Call server action
       const result = await startImportV2({
         fileName: state.parsedFile.name,
@@ -357,6 +439,7 @@ function WizardContent() {
         assignment: state.assignment,
         duplicates: state.duplicates,
         rowActions: rowActionsArray,
+        dbDuplicateInfo,
         defaultStatus: state.defaultStatus,
         defaultSource: state.defaultSource || state.parsedFile.name,
       });
@@ -366,18 +449,39 @@ function WizardContent() {
         if (result.importJobId) {
           dispatch({ type: 'SET_IMPORT_JOB_ID', payload: result.importJobId });
         }
+
+        // Track import completed
+        analytics.importV2Completed({
+          totalRows: result.results.totalRows,
+          imported: result.results.importedCount,
+          updated: result.results.updatedCount,
+          skipped: result.results.skippedCount,
+          errors: result.results.errorCount,
+          durationMs: result.results.durationMs,
+          fileType: state.parsedFile.type,
+        });
       } else {
         dispatch({ type: 'SET_ERROR', payload: result.error || 'Erreur lors de l\'import' });
+        analytics.importV2Failed({
+          error: result.error || 'Erreur lors de l\'import',
+          phase: 'import',
+          fileType: state.parsedFile.type,
+        });
       }
     } catch (err) {
       dispatch({
         type: 'SET_ERROR',
         payload: err instanceof Error ? err.message : 'Erreur lors de l\'import',
       });
+      analytics.importV2Failed({
+        error: err instanceof Error ? err.message : 'Erreur lors de l\'import',
+        phase: 'import',
+        fileType: state.parsedFile?.type,
+      });
     } finally {
       dispatch({ type: 'SET_IMPORTING', payload: false });
     }
-  }, [state.parsedFile, state.mapping, state.rowActions, state.assignment, state.duplicates, state.defaultStatus, state.defaultSource, dispatch, nextStep]);
+  }, [state.parsedFile, state.mapping, state.rowActions, state.assignment, state.duplicates, state.defaultStatus, state.defaultSource, state.preview, dispatch, nextStep]);
 
   // ==========================================================================
   // STEP 3 HANDLERS

@@ -15,7 +15,6 @@ import { LEAD_FIELD_LABELS } from '@/lib/constants';
 
 /**
  * Validate a single row of import data
- * Normalizes data BEFORE validation to handle common data issues
  */
 export function validateRow(
   rowNumber: number,
@@ -24,23 +23,8 @@ export function validateRow(
   const errors: FieldValidationError[] = [];
   const warnings: FieldValidationError[] = [];
 
-  // Pre-normalize critical fields before validation
-  // This handles common data issues like p: prefix on phones and missing dots in emails
-  const preNormalizedData = {
-    ...data,
-    phone: data.phone ? normalizePhone(data.phone) : data.phone,
-    email: data.email ? normalizeEmail(data.email) : data.email,
-  };
-
-  // Track if email was auto-fixed
-  let emailWasFixed = false;
-  if (data.email) {
-    const { wasFixed } = tryFixEmailDomain(data.email);
-    emailWasFixed = wasFixed;
-  }
-
-  // First, try to parse with Zod schema (using pre-normalized data)
-  const parsed = importRowDataSchema.safeParse(preNormalizedData);
+  // First, try to parse with Zod schema
+  const parsed = importRowDataSchema.safeParse(data);
 
   if (!parsed.success) {
     // Extract Zod validation errors
@@ -54,7 +38,7 @@ export function validateRow(
     }
   }
 
-  const normalizedData = parsed.success ? parsed.data : (preNormalizedData as ImportRowData);
+  const normalizedData = parsed.success ? parsed.data : (data as ImportRowData);
 
   // Check for at least one contact field
   const hasContactInfo = REQUIRED_CONTACT_FIELDS.some(
@@ -86,7 +70,7 @@ export function validateRow(
     });
   }
 
-  // Validate email format more strictly (on normalized email)
+  // Validate email format more strictly
   if (normalizedData.email) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(normalizedData.email)) {
@@ -95,20 +79,12 @@ export function validateRow(
         message: 'Format email invalide',
         value: normalizedData.email,
       });
-    } else if (emailWasFixed) {
-      // Add warning that email was auto-corrected
-      warnings.push({
-        field: 'email',
-        message: `Email corrigé automatiquement (original: ${data.email})`,
-        value: normalizedData.email,
-      });
     }
   }
 
-  // Validate phone format (on normalized phone)
+  // Validate phone format
   if (normalizedData.phone) {
-    // Phone is already normalized, just check length
-    const cleanPhone = normalizedData.phone.replace(/[^\d+]/g, '');
+    const cleanPhone = normalizedData.phone.replace(/[\s.\-()]/g, '');
     if (cleanPhone.length < 8 || cleanPhone.length > 15) {
       warnings.push({
         field: 'phone',
@@ -267,100 +243,11 @@ export function normalizePhone(phone: string | null | undefined): string | null 
 }
 
 /**
- * Common email domain typos and their corrections
- * Maps broken domain to correct domain
- */
-const EMAIL_DOMAIN_CORRECTIONS: Record<string, string> = {
-  // Gmail
-  'gmailcom': 'gmail.com',
-  'gmailfr': 'gmail.fr',
-  'gmalcom': 'gmail.com',
-  'gmailc': 'gmail.com',
-  // Yahoo
-  'yahoofr': 'yahoo.fr',
-  'yahoocom': 'yahoo.com',
-  'yahoofrance': 'yahoo.fr',
-  // Hotmail/Outlook
-  'hotmailcom': 'hotmail.com',
-  'hotmailfr': 'hotmail.fr',
-  'outlookcom': 'outlook.com',
-  'outlookfr': 'outlook.fr',
-  'livecom': 'live.com',
-  'livefr': 'live.fr',
-  // French providers
-  'lapostenet': 'laposte.net',
-  'orangefr': 'orange.fr',
-  'aboringeesfr': 'sosh.fr',
-  'freefr': 'free.fr',
-  'sfr.fr': 'sfr.fr',
-  'sfrfr': 'sfr.fr',
-  'wanadoofr': 'wanadoo.fr',
-  'numaborinfr': 'numericable.fr',
-  'bouyguescom': 'bouygues.com',
-  // Belgian providers
-  'proximusbe': 'proximus.be',
-  'skynetbe': 'skynet.be',
-  'telenetbe': 'telenet.be',
-  // Generic TLD fixes
-  'comfr': 'com',
-  'frcom': 'fr',
-};
-
-/**
- * Try to fix common email domain typos
- * Returns corrected email or original if no fix found
- */
-export function tryFixEmailDomain(email: string): { email: string; wasFixed: boolean } {
-  if (!email || !email.includes('@')) {
-    return { email, wasFixed: false };
-  }
-
-  const [local, domain] = email.toLowerCase().trim().split('@');
-  if (!domain) {
-    return { email, wasFixed: false };
-  }
-
-  // Check if domain is in our corrections map
-  const correctedDomain = EMAIL_DOMAIN_CORRECTIONS[domain];
-  if (correctedDomain) {
-    return { email: `${local}@${correctedDomain}`, wasFixed: true };
-  }
-
-  // Try to detect missing dot before common TLDs
-  // Pattern: domain without dot before tld (e.g., "gmailcom" not caught above)
-  const tldPatterns = [
-    { pattern: /(.+)(com)$/i, tld: '.com' },
-    { pattern: /(.+)(fr)$/i, tld: '.fr' },
-    { pattern: /(.+)(net)$/i, tld: '.net' },
-    { pattern: /(.+)(org)$/i, tld: '.org' },
-    { pattern: /(.+)(be)$/i, tld: '.be' },
-    { pattern: /(.+)(de)$/i, tld: '.de' },
-    { pattern: /(.+)(eu)$/i, tld: '.eu' },
-    { pattern: /(.+)(io)$/i, tld: '.io' },
-  ];
-
-  // Only try to fix if domain doesn't already have a dot
-  if (!domain.includes('.')) {
-    for (const { pattern, tld } of tldPatterns) {
-      const match = domain.match(pattern);
-      if (match && match[1].length >= 2) {
-        // Ensure there's at least 2 chars before TLD
-        const fixedDomain = match[1] + tld;
-        return { email: `${local}@${fixedDomain}`, wasFixed: true };
-      }
-    }
-  }
-
-  return { email: email.toLowerCase().trim(), wasFixed: false };
-}
-
-/**
- * Normalize email to lowercase and trim, with optional auto-fix for common typos
+ * Normalize email to lowercase and trim
  */
 export function normalizeEmail(email: string | null | undefined): string | null {
   if (!email) return null;
-  const { email: fixed } = tryFixEmailDomain(email);
-  return fixed || null;
+  return email.toLowerCase().trim() || null;
 }
 
 /**

@@ -1,6 +1,6 @@
 /**
  * Commit Worker - Core Logic
- *
+ * 
  * Can be called directly from server actions (local dev)
  * or via API route from QStash (production)
  */
@@ -20,7 +20,6 @@ import {
 import type { AssignmentConfig, DuplicateConfig } from '../types';
 import { notifyImportCompleted, notifyImportFailed } from '@/modules/notifications';
 
-const LOG_PREFIX = '[CommitWorker]';
 const FETCH_BATCH_SIZE = 1000;
 const INSERT_BATCH_SIZE = 500;
 
@@ -146,12 +145,10 @@ export async function handleCommitDirectly(
   errorCount: number;
   processingTimeMs: number;
 }> {
-  console.log(LOG_PREFIX, 'handleCommitDirectly START', { importJobId, assignmentMode: assignment.mode, duplicateStrategy: duplicates.strategy });
   const startTime = Date.now();
   const supabase = createAdminClient();
 
   // Get the import job
-  console.log(LOG_PREFIX, 'Fetching import job...');
   const { data: job, error: jobError } = await supabase
     .from('import_jobs')
     .select('*')
@@ -159,21 +156,17 @@ export async function handleCommitDirectly(
     .single();
 
   if (jobError || !job) {
-    console.error(LOG_PREFIX, 'Job not found:', importJobId, jobError);
     throw new Error(`Job not found: ${importJobId}`);
   }
-  console.log(LOG_PREFIX, 'Job found:', { fileName: job.file_name, status: job.status, validRows: job.valid_rows });
 
   // Allow 'ready', 'queued', or 'importing' (importing is set by parse-worker before calling commit)
   if (!['ready', 'queued', 'importing'].includes(job.status)) {
-    console.error(LOG_PREFIX, 'Job not ready for commit:', job.status);
     throw new Error(`Job is not ready for commit: ${job.status}`);
   }
 
   const actorId = job.created_by;
 
   // Update status to importing
-  console.log(LOG_PREFIX, 'Updating job status to importing');
   await supabase
     .from('import_jobs')
     .update({
@@ -187,31 +180,23 @@ export async function handleCommitDirectly(
 
   try {
     // Build dedupe set
-    console.log(LOG_PREFIX, 'Building dedupe set...');
     const databaseDedupeSet = await buildDedupeSet(supabase, {
       checkFields: duplicates.checkFields as DedupeField[],
       checkDatabase: duplicates.checkDatabase,
       checkWithinFile: false,
     });
-    console.log(LOG_PREFIX, 'Dedupe set built, size:', databaseDedupeSet.size);
 
     const fileDedupeSet = new Set<string>();
-    console.log(LOG_PREFIX, 'Building assignment context...');
     const assignmentContext = await buildAssignmentContext(supabase, assignment);
-    console.log(LOG_PREFIX, 'Assignment context ready');
 
     let importedCount = 0;
     let skippedCount = 0;
     let updatedCount = 0;
     let errorCount = 0;
     let offset = 0;
-    let batchNumber = 0;
 
     // Process valid rows in batches
-    console.log(LOG_PREFIX, 'Starting batch processing loop');
     while (true) {
-      batchNumber++;
-      console.log(LOG_PREFIX, `Fetching batch ${batchNumber}, offset: ${offset}`);
       const { data: batch, error: batchError } = await supabase
         .from('import_rows')
         .select('*')
@@ -221,15 +206,12 @@ export async function handleCommitDirectly(
         .range(offset, offset + FETCH_BATCH_SIZE - 1);
 
       if (batchError) {
-        console.error(LOG_PREFIX, 'Failed to fetch batch:', batchError);
         throw new Error(`Failed to fetch rows: ${batchError.message}`);
       }
 
       if (!batch || batch.length === 0) {
-        console.log(LOG_PREFIX, 'No more rows to process');
         break;
       }
-      console.log(LOG_PREFIX, `Batch ${batchNumber} fetched:`, batch.length, 'rows');
 
       const leadsToInsert: Array<{ data: Record<string, unknown>; rowId: string }> = [];
       const leadsToUpdate: Array<{ leadId: string; data: Record<string, unknown>; rowId: string }> = [];
@@ -319,9 +301,7 @@ export async function handleCommitDirectly(
       }
 
       // Batch insert new leads
-      console.log(LOG_PREFIX, `Batch ${batchNumber} processing:`, { toInsert: leadsToInsert.length, toUpdate: leadsToUpdate.length, skipped: skippedRowIds.length });
       if (leadsToInsert.length > 0) {
-        console.log(LOG_PREFIX, `Inserting ${leadsToInsert.length} new leads...`);
         for (let i = 0; i < leadsToInsert.length; i += INSERT_BATCH_SIZE) {
           const insertBatch = leadsToInsert.slice(i, i + INSERT_BATCH_SIZE);
           const leadsData = insertBatch.map((l) => l.data);
@@ -332,7 +312,6 @@ export async function handleCommitDirectly(
             .select('id');
 
           if (insertError) {
-            console.error(LOG_PREFIX, 'Insert error:', insertError);
             errorCount += insertBatch.length;
             continue;
           }
@@ -437,7 +416,6 @@ export async function handleCommitDirectly(
       }
 
       // Update progress
-      console.log(LOG_PREFIX, `Batch ${batchNumber} complete. Running totals: imported=${importedCount}, updated=${updatedCount}, skipped=${skippedCount}, errors=${errorCount}`);
       await supabase
         .from('import_jobs')
         .update({
@@ -449,13 +427,11 @@ export async function handleCommitDirectly(
       offset += batch.length;
 
       if (batch.length < FETCH_BATCH_SIZE) {
-        console.log(LOG_PREFIX, 'Last batch processed (less than FETCH_BATCH_SIZE)');
         break;
       }
     }
 
     // Mark job as completed
-    console.log(LOG_PREFIX, 'Marking job as completed');
     await supabase
       .from('import_jobs')
       .update({
@@ -470,7 +446,6 @@ export async function handleCommitDirectly(
 
     // Send notification to import creator
     if (actorId) {
-      console.log(LOG_PREFIX, 'Sending completion notification');
       await notifyImportCompleted(
         actorId,
         importJobId,
@@ -479,7 +454,6 @@ export async function handleCommitDirectly(
       );
     }
 
-    console.log(LOG_PREFIX, 'handleCommitDirectly COMPLETE', { importedCount, skippedCount, updatedCount, errorCount, processingTimeMs });
     return {
       success: true,
       importedCount,
@@ -490,10 +464,8 @@ export async function handleCommitDirectly(
     };
 
   } catch (error) {
-    console.error(LOG_PREFIX, 'handleCommitDirectly ERROR:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
-    console.log(LOG_PREFIX, 'Marking job as failed');
     await supabase
       .from('import_jobs')
       .update({
@@ -504,7 +476,6 @@ export async function handleCommitDirectly(
 
     // Send notification to import creator
     if (job?.created_by) {
-      console.log(LOG_PREFIX, 'Sending failure notification');
       await notifyImportFailed(
         job.created_by,
         importJobId,

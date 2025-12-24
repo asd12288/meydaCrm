@@ -3,6 +3,7 @@
  *
  * Handles different assignment modes for imported leads:
  * - none: No assignment
+ * - single: All leads to one user
  * - round_robin: Distribute across multiple users
  * - by_column: Read assignee from file column
  */
@@ -13,10 +14,11 @@ import { SupabaseClient } from '@supabase/supabase-js';
 // TYPES
 // ============================================================================
 
-export type AssignmentMode = 'none' | 'round_robin' | 'by_column';
+export type AssignmentMode = 'none' | 'single' | 'round_robin' | 'by_column';
 
 export interface AssignmentConfig {
   mode: AssignmentMode;
+  singleUserId?: string;
   roundRobinUserIds?: string[];
   assignmentColumn?: string;
 }
@@ -142,6 +144,9 @@ export function getAssignment(
     case 'none':
       return null;
 
+    case 'single':
+      return config.singleUserId || null;
+
     case 'round_robin': {
       const userIds = config.roundRobinUserIds;
       if (!userIds || userIds.length === 0) {
@@ -178,6 +183,12 @@ export function validateAssignmentConfig(config: AssignmentConfig): {
 } {
   switch (config.mode) {
     case 'none':
+      return { isValid: true };
+
+    case 'single':
+      if (!config.singleUserId) {
+        return { isValid: false, error: 'User ID required for single assignment' };
+      }
       return { isValid: true };
 
     case 'round_robin':

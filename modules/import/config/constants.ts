@@ -124,6 +124,7 @@ export type DuplicateStrategy = (typeof DUPLICATE_STRATEGIES)[number]['value'];
 
 export const ASSIGNMENT_MODES = [
   { value: 'none', label: 'Ne pas assigner' },
+  { value: 'single', label: 'Assigner a un commercial' },
   { value: 'round_robin', label: 'Repartir entre commerciaux' },
   { value: 'by_column', label: 'Utiliser une colonne du fichier' },
 ] as const;

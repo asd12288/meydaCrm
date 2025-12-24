@@ -9,8 +9,6 @@
 
 import { Receiver } from '@upstash/qstash';
 
-const LOG_PREFIX = '[QStashVerify]';
-
 // Singleton receiver instance
 let receiver: Receiver | null = null;
 
@@ -48,16 +46,13 @@ function getReceiver(): Receiver {
 export async function verifyQStashSignature<T = unknown>(
   request: Request
 ): Promise<T> {
-  console.log(LOG_PREFIX, 'verifyQStashSignature START');
   const signature = request.headers.get('Upstash-Signature');
 
   if (!signature) {
-    console.error(LOG_PREFIX, 'Missing Upstash-Signature header');
     throw new Error('Missing Upstash-Signature header');
   }
 
   const body = await request.text();
-  console.log(LOG_PREFIX, 'Request body length:', body.length);
 
   const isValid = await getReceiver().verify({
     signature,
@@ -65,11 +60,9 @@ export async function verifyQStashSignature<T = unknown>(
   });
 
   if (!isValid) {
-    console.error(LOG_PREFIX, 'Invalid QStash signature');
     throw new Error('Invalid QStash signature');
   }
 
-  console.log(LOG_PREFIX, 'Signature verified successfully');
   return JSON.parse(body) as T;
 }
 
@@ -92,19 +85,16 @@ export function createQStashHandler<TPayload, TResult = unknown>(
   handler: (payload: TPayload, request: Request) => Promise<TResult>
 ) {
   return async (request: Request): Promise<Response> => {
-    console.log(LOG_PREFIX, 'createQStashHandler START', { url: request.url, method: request.method });
     try {
       // SECURITY: Always verify QStash signature - no bypass allowed
       // For local testing, use ngrok tunnel with real QStash webhooks
       const payload = await verifyQStashSignature<TPayload>(request);
-      console.log(LOG_PREFIX, 'Payload verified, executing handler');
 
       const result = await handler(payload, request);
-      console.log(LOG_PREFIX, 'Handler completed successfully');
 
       return Response.json(result, { status: 200 });
     } catch (error) {
-      console.error(LOG_PREFIX, 'QStash handler error:', error);
+      console.error('QStash handler error:', error);
 
       const message =
         error instanceof Error ? error.message : 'Unknown error';

@@ -41,7 +41,7 @@ const initialState: ImportWizardState = {
   },
   duplicates: {
     strategy: 'skip',
-    checkFields: ['email'],
+    checkFields: ['email', 'external_id'],
     checkDatabase: true,
     checkWithinFile: true,
   },
@@ -80,13 +80,8 @@ const extendedInitialState: ExtendedState = {
 // HOOK
 // =============================================================================
 
-// Debug logging prefix
-const LOG_PREFIX = '[ImportWizard]';
-
 export function useImportWizard() {
   const [state, setState] = useState<ExtendedState>(extendedInitialState);
-
-  console.log(LOG_PREFIX, 'Hook initialized, currentStep:', state.currentStep);
 
   // Current step info
   const currentStepInfo = IMPORT_WIZARD_STEPS[state.currentStep];
@@ -146,35 +141,27 @@ export function useImportWizard() {
   // =============================================================================
 
   const handleFileSelect = useCallback(async (file: File) => {
-    console.log(LOG_PREFIX, 'handleFileSelect START', { fileName: file.name, fileSize: file.size, fileType: file.type });
     setState((prev) => ({ ...prev, error: null, conversionProgress: 0 }));
 
     try {
       // Determine file type
       const ext = file.name.toLowerCase().split('.').pop() as 'csv' | 'xlsx' | 'xls';
-      console.log(LOG_PREFIX, 'File extension detected:', ext);
 
       if (ext === 'csv') {
         // Parse CSV client-side (preview only, full parsing done server-side)
-        console.log(LOG_PREFIX, 'Parsing CSV file...');
         const { content, encoding } = await readFileAsText(file);
-        console.log(LOG_PREFIX, 'CSV file read', { encoding, contentLength: content.length });
-
         const { headers, rows, delimiter } = parseCSVContent(content, {
           hasHeader: true,
           maxRows: 100, // Preview only
         });
-        console.log(LOG_PREFIX, 'CSV parsed', { headers, rowCount: rows.length, delimiter });
 
         // Count total rows
         const totalLines = content.split('\n').filter((l) => l.trim() !== '').length;
         const rowCount = Math.max(0, totalLines - 1);
-        console.log(LOG_PREFIX, 'CSV total row count:', rowCount);
 
         // Auto-map columns
         const sampleData = rows.slice(0, 5).map((r) => r.values);
         const mappings = autoMapColumns(headers, sampleData);
-        console.log(LOG_PREFIX, 'CSV auto-mapped columns', { mappedCount: mappings.filter(m => m.targetField).length, totalColumns: mappings.length });
 
         const uploadedFile: UploadedFile = {
           name: file.name,
@@ -194,7 +181,6 @@ export function useImportWizard() {
           delimiter,
         };
 
-        console.log(LOG_PREFIX, 'CSV processing complete, updating state');
         setState((prev) => ({
           ...prev,
           file: uploadedFile,
@@ -206,33 +192,28 @@ export function useImportWizard() {
           availableSheets: [],
           selectedSheetIndex: 0,
         }));
-        console.log(LOG_PREFIX, 'handleFileSelect COMPLETE (CSV)');
       } else {
         // For Excel files: Convert to CSV client-side using SheetJS
         // This avoids Deno Edge Function compatibility issues with XLSX library
-        console.log(LOG_PREFIX, 'Processing Excel file, starting conversion...');
         setState((prev) => ({ ...prev, conversionProgress: 10 }));
 
+        // Convert Excel file to CSV
+
         // Convert Excel to CSV
-        console.log(LOG_PREFIX, 'Converting Excel to CSV...');
         const { csvFile, headers, rowCount, originalName } = await convertExcelToCSV(file);
-        console.log(LOG_PREFIX, 'Excel converted to CSV', { originalName, headers, rowCount, csvFileSize: csvFile.size });
 
         setState((prev) => ({ ...prev, conversionProgress: 80 }));
 
         // Parse the CSV for preview
-        console.log(LOG_PREFIX, 'Parsing converted CSV for preview...');
         const csvContent = await csvFile.text();
         const { rows, delimiter } = parseCSVContent(csvContent, {
           hasHeader: true,
           maxRows: 100, // Preview only
         });
-        console.log(LOG_PREFIX, 'Converted CSV parsed', { previewRowCount: rows.length, delimiter });
 
         // Auto-map columns
         const sampleData = rows.slice(0, 5).map((r) => r.values);
         const mappings = autoMapColumns(headers, sampleData);
-        console.log(LOG_PREFIX, 'Excel auto-mapped columns', { mappedCount: mappings.filter(m => m.targetField).length, totalColumns: mappings.length });
 
         const uploadedFile: UploadedFile = {
           name: originalName, // Show original Excel filename to user
@@ -252,7 +233,6 @@ export function useImportWizard() {
           delimiter,
         };
 
-        console.log(LOG_PREFIX, 'Excel processing complete, updating state');
         setState((prev) => ({
           ...prev,
           file: uploadedFile,
@@ -264,10 +244,8 @@ export function useImportWizard() {
           availableSheets: [],
           selectedSheetIndex: 0,
         }));
-        console.log(LOG_PREFIX, 'handleFileSelect COMPLETE (Excel)');
       }
     } catch (err) {
-      console.error(LOG_PREFIX, 'handleFileSelect ERROR:', err);
       setState((prev) => ({
         ...prev,
         error: err instanceof Error ? err.message : 'Erreur lors de l\'analyse du fichier',
@@ -289,9 +267,6 @@ export function useImportWizard() {
       conversionProgress: 0,
       availableSheets: [],
       selectedSheetIndex: 0,
-      // CRITICAL FIX: Reset importJobId so a new job is created on next upload
-      // Without this, the wizard reuses the old job and shows stale validation data
-      importJobId: null,
     }));
   }, []);
 
@@ -400,31 +375,22 @@ export function useImportWizard() {
   // =============================================================================
 
   const runValidation = useCallback(async () => {
-    console.log(LOG_PREFIX, 'runValidation START');
-    if (!state.file || !state.mapping) {
-      console.log(LOG_PREFIX, 'runValidation SKIP - no file or mapping');
-      return;
-    }
+    if (!state.file || !state.mapping) return;
 
     setState((prev) => ({ ...prev, error: null }));
 
     try {
       // Apply mapping to all sample rows
-      console.log(LOG_PREFIX, 'Applying column mapping to', state.file.sampleData.length, 'rows');
       const mappedRows = applyColumnMapping(state.file.sampleData, state.mapping.mappings);
 
       // Validate rows
-      console.log(LOG_PREFIX, 'Validating rows...');
       const { results, summary } = validateRows(mappedRows);
-      console.log(LOG_PREFIX, 'Validation results', { totalRows: summary.totalRows, validRows: summary.validRows, invalidRows: summary.invalidRows });
 
       // Find duplicates within file
-      console.log(LOG_PREFIX, 'Checking for duplicates within file, checkFields:', state.duplicates.checkFields);
       const duplicates = findDuplicatesInFile(
         results,
         state.duplicates.checkFields
       );
-      console.log(LOG_PREFIX, 'Found', duplicates.size, 'duplicates within file');
 
       // Update results with duplicate info
       const resultsWithDuplicates: ValidatedRow[] = results.map((row) => {
@@ -446,21 +412,17 @@ export function useImportWizard() {
         };
       });
 
-      const finalSummary = {
-        total: summary.totalRows,
-        valid: summary.validRows - duplicates.size,
-        invalid: summary.invalidRows,
-        duplicates: duplicates.size,
-      };
-      console.log(LOG_PREFIX, 'runValidation COMPLETE', finalSummary);
-
       setState((prev) => ({
         ...prev,
         validatedRows: resultsWithDuplicates,
-        validationSummary: finalSummary,
+        validationSummary: {
+          total: summary.totalRows,
+          valid: summary.validRows - duplicates.size,
+          invalid: summary.invalidRows,
+          duplicates: duplicates.size,
+        },
       }));
     } catch (err) {
-      console.error(LOG_PREFIX, 'runValidation ERROR:', err);
       setState((prev) => ({
         ...prev,
         error: err instanceof Error ? err.message : 'Erreur lors de la validation',
@@ -495,17 +457,14 @@ export function useImportWizard() {
   // =============================================================================
 
   const setProgress = useCallback((progress: ImportProgress | null) => {
-    console.log(LOG_PREFIX, 'setProgress', progress);
     setState((prev) => ({ ...prev, progress }));
   }, []);
 
   const setImportJobId = useCallback((id: string) => {
-    console.log(LOG_PREFIX, 'setImportJobId', id);
     setState((prev) => ({ ...prev, importJobId: id }));
   }, []);
 
   const setError = useCallback((error: string | null) => {
-    console.log(LOG_PREFIX, 'setError', error);
     setState((prev) => ({ ...prev, error }));
   }, []);
 

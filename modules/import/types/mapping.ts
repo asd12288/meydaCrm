@@ -123,6 +123,8 @@ export interface ValidatedRow extends MappedRow {
 export interface AssignmentConfig {
   /** Assignment mode */
   mode: AssignmentMode;
+  /** Selected user ID (for 'single' mode) */
+  singleUserId?: string;
   /** Selected user IDs (for 'round_robin' mode) */
   roundRobinUserIds?: string[];
   /** Column to use for assignment (for 'by_column' mode) */
@@ -246,63 +248,4 @@ export interface ImportWizardState {
   progress: ImportProgress | null;
   /** Error message */
   error: string | null;
-}
-
-// =============================================================================
-// PREVIEW ISSUE TYPES (for detailed validation preview)
-// =============================================================================
-
-/**
- * Issue type for preview rows
- */
-export type PreviewIssueType = 'invalid' | 'file_duplicate' | 'db_duplicate';
-
-/**
- * A row with an issue to display in preview
- */
-export interface PreviewIssueRow {
-  /** Row number in the file (1-based) */
-  rowNumber: number;
-  /** Row data (key fields for display) */
-  data: {
-    email?: string | null;
-    phone?: string | null;
-    first_name?: string | null;
-    last_name?: string | null;
-    company?: string | null;
-  };
-  /** Type of issue */
-  issueType: PreviewIssueType;
-  /** Field that caused the issue (for duplicates or validation) */
-  field?: string;
-  /** Error/issue message */
-  message?: string;
-  /** Matched value (for duplicates) */
-  matchedValue?: string;
-  /** Row number of duplicate (for file duplicates) */
-  matchedRowNumber?: number;
-}
-
-/**
- * Detailed validation summary with issue rows
- */
-export interface DetailedValidationSummary {
-  /** Total rows in file */
-  total: number;
-  /** Valid rows (will be imported) */
-  valid: number;
-  /** Invalid rows (validation errors) */
-  invalid: number;
-  /** File duplicates (within-file) */
-  fileDuplicates: number;
-  /** Database duplicates (existing leads) */
-  dbDuplicates: number;
-  /** Invalid rows details */
-  invalidRows: PreviewIssueRow[];
-  /** File duplicate rows details */
-  fileDuplicateRows: PreviewIssueRow[];
-  /** DB duplicate rows details */
-  dbDuplicateRows: PreviewIssueRow[];
-  /** Job status (to detect already completed jobs) */
-  jobStatus?: string;
 }

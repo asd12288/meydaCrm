@@ -4,17 +4,16 @@
  * Can be called directly from server actions (local dev)
  * or via API route from QStash (production)
  *
- * After parsing completes, sets job status to 'ready' so user can review
- * the preview before deciding to commit.
+ * After parsing completes successfully, automatically triggers the commit worker.
  */
 
 import { createClient } from '@supabase/supabase-js';
 import { streamParseFile } from '../lib/parsers/index';
 import type { ParsedRow } from '../lib/parsers/csv-streamer';
-import type { ColumnMapping, ColumnMappingConfig } from '../types';
+import type { ColumnMapping, ColumnMappingConfig, AssignmentConfig, DuplicateConfig } from '../types';
 import { notifyImportFailed } from '@/modules/notifications';
+import { enqueueCommitJob } from '../lib/queue';
 
-const LOG_PREFIX = '[ParseWorker]';
 const INSERT_BATCH_SIZE = 500;
 
 // Estimated average row size in bytes for chunk estimation
@@ -50,12 +49,10 @@ export async function handleParseDirectly(importJobId: string): Promise<{
   invalidRows: number;
   processingTimeMs: number;
 }> {
-  console.log(LOG_PREFIX, 'handleParseDirectly START', importJobId);
   const startTime = Date.now();
   const supabase = createAdminClient();
 
   // Get the import job
-  console.log(LOG_PREFIX, 'Fetching import job...');
   const { data: job, error: jobError } = await supabase
     .from('import_jobs')
     .select('*')
@@ -63,13 +60,10 @@ export async function handleParseDirectly(importJobId: string): Promise<{
     .single();
 
   if (jobError || !job) {
-    console.error(LOG_PREFIX, 'Job not found:', importJobId, jobError);
     throw new Error(`Job not found: ${importJobId}`);
   }
-  console.log(LOG_PREFIX, 'Job found:', { fileName: job.file_name, fileType: job.file_type, storagePath: job.storage_path });
 
   // Update status to parsing
-  console.log(LOG_PREFIX, 'Updating job status to parsing');
   await supabase
     .from('import_jobs')
     .update({
@@ -81,16 +75,13 @@ export async function handleParseDirectly(importJobId: string): Promise<{
 
   try {
     // Get signed URL for the file
-    console.log(LOG_PREFIX, 'Getting signed URL for:', job.storage_path);
     const { data: urlData, error: urlError } = await supabase.storage
       .from('imports')
       .createSignedUrl(job.storage_path, 3600);
 
     if (urlError || !urlData?.signedUrl) {
-      console.error(LOG_PREFIX, 'Failed to get signed URL:', urlError);
       throw new Error(`Failed to get signed URL: ${urlError?.message}`);
     }
-    console.log(LOG_PREFIX, 'Got signed URL');
 
     // Get file metadata for size estimation
     let estimatedTotalChunks: number | null = null;
@@ -106,7 +97,6 @@ export async function handleParseDirectly(importJobId: string): Promise<{
       const fileSize = fileMetadata.metadata.size as number;
       const estimatedRows = Math.ceil(fileSize / ESTIMATED_AVG_ROW_SIZE_BYTES);
       estimatedTotalChunks = Math.max(1, Math.ceil(estimatedRows / INSERT_BATCH_SIZE));
-      console.log(LOG_PREFIX, 'File metadata:', { fileSize, estimatedRows, estimatedTotalChunks });
 
       await supabase
         .from('import_jobs')
@@ -117,10 +107,8 @@ export async function handleParseDirectly(importJobId: string): Promise<{
     // Get column mappings
     const mappingConfig = job.column_mapping as ColumnMappingConfig | null;
     if (!mappingConfig?.mappings) {
-      console.error(LOG_PREFIX, 'Column mapping not configured');
       throw new Error('Column mapping not configured');
     }
-    console.log(LOG_PREFIX, 'Column mappings loaded:', mappingConfig.mappings.length, 'columns');
 
     // Counters
     let totalRows = 0;
@@ -129,7 +117,6 @@ export async function handleParseDirectly(importJobId: string): Promise<{
     let currentChunk = 0;
 
     // Stream parse the file
-    console.log(LOG_PREFIX, 'Starting stream parse...');
     const stats = await streamParseFile(
       urlData.signedUrl,
       job.file_type as 'csv' | 'xlsx',
@@ -140,7 +127,6 @@ export async function handleParseDirectly(importJobId: string): Promise<{
         sheetName: mappingConfig.sheetName,
 
         onChunk: async (rows: ParsedRow[]) => {
-          console.log(LOG_PREFIX, `Processing chunk ${currentChunk}, ${rows.length} rows`);
           // Prepare rows for insert
           const insertRows = rows.map((row) => ({
             import_job_id: importJobId,
@@ -158,7 +144,6 @@ export async function handleParseDirectly(importJobId: string): Promise<{
             .insert(insertRows);
 
           if (insertError) {
-            console.error(LOG_PREFIX, 'Failed to insert rows:', insertError);
             throw new Error(`Failed to insert rows: ${insertError.message}`);
           }
 
@@ -184,11 +169,9 @@ export async function handleParseDirectly(importJobId: string): Promise<{
             .eq('id', importJobId);
 
           currentChunk++;
-          console.log(LOG_PREFIX, `Chunk ${currentChunk - 1} complete. Total: ${totalRows}, Valid: ${validRows}, Invalid: ${invalidRows}`);
         },
 
         onError: async (error: Error) => {
-          console.error(LOG_PREFIX, 'Parse error callback:', error);
           await supabase
             .from('import_jobs')
             .update({
@@ -199,11 +182,9 @@ export async function handleParseDirectly(importJobId: string): Promise<{
         },
       }
     );
-    console.log(LOG_PREFIX, 'Stream parse complete:', stats);
 
     // Check if there are valid rows to commit
     if (stats.validRows === 0) {
-      console.log(LOG_PREFIX, 'No valid rows, marking job as completed');
       await supabase
         .from('import_jobs')
         .update({
@@ -219,24 +200,33 @@ export async function handleParseDirectly(importJobId: string): Promise<{
         })
         .eq('id', importJobId);
 
-      const processingTimeMs = Date.now() - startTime;
-      console.log(LOG_PREFIX, 'handleParseDirectly COMPLETE (no valid rows)', { processingTimeMs });
       return {
         success: true,
         totalRows: stats.totalRows,
         validRows: 0,
         invalidRows: stats.invalidRows,
-        processingTimeMs,
+        processingTimeMs: Date.now() - startTime,
       };
     }
 
-    // Update job status to 'ready' - waiting for user to review preview and start commit
-    // The commit will be triggered separately when user clicks "Lancer l'import"
-    console.log(LOG_PREFIX, 'Marking job as ready for commit');
+    // Get assignment and duplicate config from job for commit
+    const assignmentConfig = job.assignment_config as AssignmentConfig | null;
+    const duplicateConfig = job.duplicate_config as DuplicateConfig | null;
+
+    // Use default configs if not set
+    const finalAssignment: AssignmentConfig = assignmentConfig || { mode: 'none' };
+    const finalDuplicates: DuplicateConfig = duplicateConfig || {
+      strategy: 'skip',
+      checkFields: ['email'],
+      checkDatabase: true,
+      checkWithinFile: true,
+    };
+
+    // Update job status and trigger commit
     await supabase
       .from('import_jobs')
       .update({
-        status: 'ready',
+        status: 'importing',
         total_rows: stats.totalRows,
         valid_rows: stats.validRows,
         invalid_rows: stats.invalidRows,
@@ -245,18 +235,24 @@ export async function handleParseDirectly(importJobId: string): Promise<{
       })
       .eq('id', importJobId);
 
-    const processingTimeMs = Date.now() - startTime;
-    console.log(LOG_PREFIX, 'handleParseDirectly COMPLETE', { totalRows: stats.totalRows, validRows: stats.validRows, invalidRows: stats.invalidRows, processingTimeMs });
+    // Queue commit job via QStash
+    await enqueueCommitJob({
+      importJobId,
+      assignment: finalAssignment,
+      duplicates: finalDuplicates,
+      defaultStatus: 'new',
+      defaultSource: `Import ${job.file_name}`,
+    });
+
     return {
       success: true,
       totalRows: stats.totalRows,
       validRows: stats.validRows,
       invalidRows: stats.invalidRows,
-      processingTimeMs,
+      processingTimeMs: Date.now() - startTime,
     };
 
   } catch (error) {
-    console.error(LOG_PREFIX, 'handleParseDirectly ERROR:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
     // Get job to find creator
@@ -267,7 +263,6 @@ export async function handleParseDirectly(importJobId: string): Promise<{
       .single();
 
     // Update job status to failed
-    console.log(LOG_PREFIX, 'Marking job as failed');
     await supabase
       .from('import_jobs')
       .update({
@@ -278,7 +273,6 @@ export async function handleParseDirectly(importJobId: string): Promise<{
 
     // Send notification to import creator
     if (job?.created_by) {
-      console.log(LOG_PREFIX, 'Sending failure notification');
       await notifyImportFailed(
         job.created_by,
         importJobId,

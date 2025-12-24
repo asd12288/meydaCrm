@@ -33,17 +33,12 @@ import {
   updateImportJobMapping,
   updateImportJobOptions,
   startImportParsing,
-  startImportCommit,
   cancelImportJob,
-  checkDatabaseDuplicates,
 } from '../lib/actions';
 
 // Types
 import type { SalesUser } from '@/modules/leads/types';
 import type { ImportWizardStep } from '../config/constants';
-import type { DetailedValidationSummary } from '../types';
-
-const LOG_PREFIX = '[ImportWizardV2]';
 
 interface ImportWizardV2Props {
   salesUsers: SalesUser[];
@@ -56,7 +51,6 @@ interface ImportWizardV2Props {
  * Steps: upload -> mapping -> options -> preview -> progress -> results
  */
 export function ImportWizardV2({ salesUsers, onImportComplete }: ImportWizardV2Props) {
-  console.log(LOG_PREFIX, 'Component rendered');
   const wizard = useImportWizard();
 
   // Local state
@@ -65,14 +59,8 @@ export function ImportWizardV2({ salesUsers, onImportComplete }: ImportWizardV2P
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
   const [error, setError] = useState<string | null>(null);
-  // Store final progress for results step (SSE clears progress when disabled)
-  const [finalProgress, setFinalProgress] = useState<import('../types').ImportJobProgress | null>(null);
-  // Detailed validation with DB duplicate check
-  const [detailedValidation, setDetailedValidation] = useState<DetailedValidationSummary | null>(null);
-  const [isCheckingDuplicates, setIsCheckingDuplicates] = useState(false);
 
   // SSE for real-time progress
-  console.log(LOG_PREFIX, 'Setting up SSE', { currentStep, importJobId: wizard.state.importJobId });
   const {
     progress: sseProgress,
     isConnected,
@@ -81,13 +69,7 @@ export function ImportWizardV2({ salesUsers, onImportComplete }: ImportWizardV2P
   } = useImportSSE({
     jobId: currentStep === 'progress' ? wizard.state.importJobId : null,
     enabled: currentStep === 'progress',
-    onProgress: (progress) => {
-      console.log(LOG_PREFIX, 'SSE onProgress', { status: progress.status, importedRows: progress.importedRows });
-    },
-    onComplete: (progress) => {
-      console.log(LOG_PREFIX, 'SSE onComplete', progress);
-      // Save the final progress before transitioning (SSE will clear progress when disabled)
-      setFinalProgress(progress);
+    onComplete: () => {
       setCurrentStep('results');
       setCompletedSteps((prev) => [...prev, 'progress']);
       if (wizard.state.importJobId && onImportComplete) {
@@ -95,7 +77,6 @@ export function ImportWizardV2({ salesUsers, onImportComplete }: ImportWizardV2P
       }
     },
     onError: (err) => {
-      console.error(LOG_PREFIX, 'SSE onError', err);
       setError(err);
     },
   });
@@ -123,24 +104,14 @@ export function ImportWizardV2({ salesUsers, onImportComplete }: ImportWizardV2P
         return state.mapping?.mappings.some((m) => m.targetField !== null);
       case 'options':
         // Validate assignment config
+        if (state.assignment.mode === 'single' && !state.assignment.singleUserId) return false;
         if (state.assignment.mode === 'round_robin') {
           if (!state.assignment.roundRobinUserIds || state.assignment.roundRobinUserIds.length < 2) return false;
         }
         if (state.assignment.mode === 'by_column' && !state.assignment.assignmentColumn) return false;
         return true;
       case 'preview':
-        // Must have processable rows AND job not already completed
-        if (!detailedValidation) return false;
-        if (detailedValidation.jobStatus === 'completed') return false;
-        // Calculate processable rows based on duplicate strategy
-        // - 'skip': only base valid rows
-        // - 'update'/'create': valid rows + db duplicates (they will be processed)
-        const baseValid = detailedValidation.valid;
-        const dbDuplicates = detailedValidation.dbDuplicates;
-        const processableRows = state.duplicates.strategy === 'skip'
-          ? baseValid
-          : baseValid + dbDuplicates;
-        return processableRows > 0;
+        return state.validationSummary.valid > 0;
       default:
         return false;
     }
@@ -148,7 +119,6 @@ export function ImportWizardV2({ salesUsers, onImportComplete }: ImportWizardV2P
 
   // Navigate to step
   const goToStep = (step: ImportWizardStep) => {
-    console.log(LOG_PREFIX, 'goToStep', { from: currentStep, to: step });
     if (completedSteps.includes(step) || step === currentStep) {
       setCurrentStep(step);
     }
@@ -157,7 +127,6 @@ export function ImportWizardV2({ salesUsers, onImportComplete }: ImportWizardV2P
   const goNext = () => {
     const nextIndex = currentStepIndex + 1;
     if (nextIndex < stepOrder.length) {
-      console.log(LOG_PREFIX, 'goNext', { from: currentStep, to: stepOrder[nextIndex] });
       setCompletedSteps((prev) => [...new Set([...prev, currentStep])]);
       setCurrentStep(stepOrder[nextIndex]);
     }
@@ -166,7 +135,6 @@ export function ImportWizardV2({ salesUsers, onImportComplete }: ImportWizardV2P
   const goPrevious = () => {
     const prevIndex = currentStepIndex - 1;
     if (prevIndex >= 0) {
-      console.log(LOG_PREFIX, 'goPrevious', { from: currentStep, to: stepOrder[prevIndex] });
       setCurrentStep(stepOrder[prevIndex]);
     }
   };
@@ -195,29 +163,20 @@ export function ImportWizardV2({ salesUsers, onImportComplete }: ImportWizardV2P
 
   // Handle file selection
   const handleFileSelect = async (file: File) => {
-    console.log(LOG_PREFIX, 'handleFileSelect', { fileName: file.name, fileSize: file.size });
     setError(null);
     await wizard.handleFileSelect(file);
   };
 
   // Handle clear file
   const handleClearFile = () => {
-    console.log(LOG_PREFIX, 'handleClearFile - resetting all import state');
-    wizard.clearFile(); // This now also resets importJobId
+    wizard.clearFile();
     setCurrentStep('upload');
     setCompletedSteps([]);
-    setError(null);
-    setDetailedValidation(null); // Clear stale validation data
-    setFinalProgress(null);
   };
 
   // Handle upload and move to mapping
   const handleUploadComplete = async () => {
-    console.log(LOG_PREFIX, 'handleUploadComplete START', { hasFile: !!fileToUpload, hasState: !!state.file, importJobId: state.importJobId });
-    if (!fileToUpload || !state.file) {
-      console.log(LOG_PREFIX, 'handleUploadComplete SKIP - no file');
-      return;
-    }
+    if (!fileToUpload || !state.file) return;
 
     setIsProcessing(true);
     setError(null);
@@ -225,15 +184,11 @@ export function ImportWizardV2({ salesUsers, onImportComplete }: ImportWizardV2P
     try {
       // Upload file if not already uploaded
       if (!state.importJobId) {
-        console.log(LOG_PREFIX, 'Uploading file to storage...');
         const result = await uploadFileWithProgress(fileToUpload, (progress) => {
-          console.log(LOG_PREFIX, 'Upload progress', progress);
           setUploadProgress(progress);
         });
 
-        console.log(LOG_PREFIX, 'Upload result', result);
         if (!result.success) {
-          console.error(LOG_PREFIX, 'Upload failed:', result.error);
           setError(result.error || 'Erreur lors du telechargement');
           setUploadProgress(null);
           setIsProcessing(false);
@@ -242,14 +197,10 @@ export function ImportWizardV2({ salesUsers, onImportComplete }: ImportWizardV2P
 
         wizard.setImportJobId(result.importJobId!);
         setTimeout(() => setUploadProgress(null), 500);
-      } else {
-        console.log(LOG_PREFIX, 'File already uploaded, importJobId:', state.importJobId);
       }
 
-      console.log(LOG_PREFIX, 'handleUploadComplete SUCCESS, going to next step');
       goNext();
     } catch (err) {
-      console.error(LOG_PREFIX, 'handleUploadComplete ERROR:', err);
       setError(err instanceof Error ? err.message : 'Erreur lors du telechargement');
     } finally {
       setIsProcessing(false);
@@ -258,28 +209,20 @@ export function ImportWizardV2({ salesUsers, onImportComplete }: ImportWizardV2P
 
   // Handle save mapping
   const handleSaveMapping = async () => {
-    console.log(LOG_PREFIX, 'handleSaveMapping START', { importJobId: state.importJobId });
-    if (!state.importJobId || !state.mapping) {
-      console.log(LOG_PREFIX, 'handleSaveMapping SKIP - no importJobId or mapping');
-      return;
-    }
+    if (!state.importJobId || !state.mapping) return;
 
     setIsProcessing(true);
     setError(null);
 
     try {
-      console.log(LOG_PREFIX, 'Saving mapping to database...');
       const result = await updateImportJobMapping(state.importJobId, state.mapping);
-      console.log(LOG_PREFIX, 'Save mapping result:', result);
 
       if (!result.success) {
         throw new Error(result.error || 'Erreur lors de la sauvegarde du mapping');
       }
 
-      console.log(LOG_PREFIX, 'handleSaveMapping SUCCESS');
       goNext();
     } catch (err) {
-      console.error(LOG_PREFIX, 'handleSaveMapping ERROR:', err);
       setError(err instanceof Error ? err.message : 'Erreur lors de la sauvegarde');
     } finally {
       setIsProcessing(false);
@@ -288,142 +231,54 @@ export function ImportWizardV2({ salesUsers, onImportComplete }: ImportWizardV2P
 
   // Handle save options
   const handleSaveOptions = async () => {
-    console.log(LOG_PREFIX, 'handleSaveOptions START', { importJobId: state.importJobId });
-    if (!state.importJobId) {
-      console.log(LOG_PREFIX, 'handleSaveOptions SKIP - no importJobId');
-      return;
-    }
+    if (!state.importJobId) return;
 
     setIsProcessing(true);
     setError(null);
-    setDetailedValidation(null);
 
     try {
-      // Save options to the job
-      console.log(LOG_PREFIX, 'Saving options to database...', { assignment: state.assignment, duplicates: state.duplicates });
       const result = await updateImportJobOptions(state.importJobId, {
         assignmentConfig: state.assignment,
         duplicateConfig: state.duplicates,
       });
-      console.log(LOG_PREFIX, 'Save options result:', result);
 
       if (!result.success) {
         throw new Error(result.error || 'Erreur lors de la sauvegarde des options');
       }
 
-      // Move to preview step first
-      console.log(LOG_PREFIX, 'Moving to preview step');
-      goNext();
-      setIsCheckingDuplicates(true);
-
-      // Check current job status - skip parsing if already ready or completed
-      console.log(LOG_PREFIX, 'Checking current job status...');
-      const { pollImportJobStatus } = await import('../lib/actions');
-      const currentStatus = await pollImportJobStatus(state.importJobId);
-      const jobStatus = currentStatus.data?.status;
-      console.log(LOG_PREFIX, 'Current job status:', jobStatus);
-
-      // Only start parsing if job is not already ready, completed, or importing
-      // (ready = parsed, completed = already imported, importing = commit in progress)
-      const skipParsingStatuses = ['ready', 'completed', 'importing'];
-      if (!skipParsingStatuses.includes(jobStatus || '')) {
-        console.log(LOG_PREFIX, 'Starting parsing via QStash...');
-        const parseResult = await startImportParsing(state.importJobId);
-        console.log(LOG_PREFIX, 'Parse start result:', parseResult);
-        if (!parseResult.success) {
-          throw new Error(parseResult.error || 'Erreur lors du demarrage du parsing');
-        }
-
-        // Poll for parsing to complete
-        // Valid end states: ready (parsed), completed (done), importing (commit started)
-        console.log(LOG_PREFIX, 'Polling for parsing completion...');
-        let attempts = 0;
-        const maxAttempts = 120; // 120 seconds max for large files
-        while (attempts < maxAttempts) {
-          await new Promise((resolve) => setTimeout(resolve, 1000));
-          attempts++;
-
-          const statusResult = await pollImportJobStatus(state.importJobId);
-          const status = statusResult.data?.status;
-          console.log(LOG_PREFIX, `Poll attempt ${attempts}:`, status);
-
-          if (!statusResult.success) {
-            throw new Error(statusResult.error || 'Erreur lors de la verification du statut');
-          }
-
-          // Any of these means parsing is done
-          if (status === 'ready' || status === 'completed' || status === 'importing') {
-            console.log(LOG_PREFIX, 'Parsing complete, status:', status);
-            break;
-          }
-
-          if (status === 'failed') {
-            throw new Error(statusResult.data?.errorMessage || 'Erreur lors du parsing');
-          }
-        }
-
-        if (attempts >= maxAttempts) {
-          throw new Error('Le parsing prend trop de temps');
-        }
-      } else {
-        console.log(LOG_PREFIX, 'Skipping parsing, job already in status:', jobStatus);
-      }
-
-      // Now check database duplicates (always re-check in case options changed)
-      console.log(LOG_PREFIX, 'Checking database duplicates...');
-      const dupeResult = await checkDatabaseDuplicates(state.importJobId);
-      console.log(LOG_PREFIX, 'Duplicate check result:', dupeResult);
-
-      if (!dupeResult.success || !dupeResult.data) {
-        throw new Error(dupeResult.error || 'Erreur lors de la verification des doublons');
-      }
-
-      setDetailedValidation(dupeResult.data);
-
-      // Also update wizard validation summary for canGoNext check
+      // Trigger validation/preview
+      // For now, just move to preview step
+      // In a full implementation, we'd validate rows here
       wizard.setValidationFromServer({
-        totalRows: dupeResult.data.total,
-        validRows: dupeResult.data.valid,
-        invalidRows: dupeResult.data.invalid,
+        totalRows: state.file?.rowCount || 0,
+        validRows: state.file?.rowCount || 0,
+        invalidRows: 0,
       });
-      console.log(LOG_PREFIX, 'handleSaveOptions COMPLETE');
+
+      goNext();
     } catch (err) {
-      console.error(LOG_PREFIX, 'handleSaveOptions ERROR:', err);
       setError(err instanceof Error ? err.message : 'Erreur lors de la sauvegarde');
     } finally {
       setIsProcessing(false);
-      setIsCheckingDuplicates(false);
     }
   };
 
-  // Handle start import (commit phase - parsing already done in preview)
+  // Handle start import
   const handleStartImport = async () => {
-    console.log(LOG_PREFIX, 'handleStartImport START', { importJobId: state.importJobId });
-    if (!state.importJobId) {
-      console.log(LOG_PREFIX, 'handleStartImport SKIP - no importJobId');
-      return;
-    }
+    if (!state.importJobId) return;
 
     setIsProcessing(true);
     setError(null);
 
     try {
-      // Start commit phase (parsing already done in preview step)
-      console.log(LOG_PREFIX, 'Starting commit via QStash...');
-      const result = await startImportCommit(state.importJobId, {
-        assignment: state.assignment,
-        duplicates: state.duplicates,
-      });
-      console.log(LOG_PREFIX, 'Commit start result:', result);
+      const result = await startImportParsing(state.importJobId);
 
       if (!result.success) {
         throw new Error(result.error || 'Erreur lors du demarrage de l\'import');
       }
 
-      console.log(LOG_PREFIX, 'handleStartImport SUCCESS, moving to progress step');
       goNext(); // Move to progress step - SSE will take over
     } catch (err) {
-      console.error(LOG_PREFIX, 'handleStartImport ERROR:', err);
       setError(err instanceof Error ? err.message : 'Erreur lors du demarrage');
       setIsProcessing(false);
     }
@@ -431,19 +286,12 @@ export function ImportWizardV2({ salesUsers, onImportComplete }: ImportWizardV2P
 
   // Handle cancel import
   const handleCancelImport = async () => {
-    console.log(LOG_PREFIX, 'handleCancelImport', { importJobId: state.importJobId });
     if (!state.importJobId) return;
 
     try {
-      console.log(LOG_PREFIX, 'Cancelling import job...');
       await cancelImportJob(state.importJobId);
-      console.log(LOG_PREFIX, 'Import cancelled');
-      // Reset UI to start fresh
-      handleNewImport();
     } catch (err) {
-      console.error(LOG_PREFIX, 'Cancel error:', err);
-      // Even if cancel fails, allow user to start fresh
-      handleNewImport();
+      console.error('Cancel error:', err);
     }
   };
 
@@ -458,11 +306,6 @@ export function ImportWizardV2({ salesUsers, onImportComplete }: ImportWizardV2P
     setCurrentStep('upload');
     setCompletedSteps([]);
     setError(null);
-    setIsProcessing(false);
-    setUploadProgress(null);
-    setFinalProgress(null);
-    setDetailedValidation(null);
-    setIsCheckingDuplicates(false);
   };
 
   // Render step content
@@ -513,10 +356,8 @@ export function ImportWizardV2({ salesUsers, onImportComplete }: ImportWizardV2P
         return (
           <PreviewStep
             file={state.file!}
-            detailedSummary={detailedValidation}
-            isChecking={isCheckingDuplicates}
+            summary={state.validationSummary}
             importJobId={state.importJobId}
-            duplicateStrategy={state.duplicates.strategy}
           />
         );
 
@@ -556,11 +397,10 @@ export function ImportWizardV2({ salesUsers, onImportComplete }: ImportWizardV2P
         );
 
       case 'results':
-        // Use finalProgress (saved when onComplete fired) since SSE clears progress when disabled
-        if (!finalProgress) return null;
+        if (!sseProgress) return null;
         return (
           <ResultsStep
-            progress={finalProgress}
+            progress={sseProgress}
             fileName={state.file?.name || 'import.csv'}
             importJobId={state.importJobId || ''}
             onViewLeads={handleViewLeads}
@@ -678,7 +518,7 @@ export function ImportWizardV2({ salesUsers, onImportComplete }: ImportWizardV2P
       {/* Navigation footer */}
       {currentStep !== 'progress' && currentStep !== 'results' && (
         <div className="flex items-center justify-between pt-4 border-t border-border">
-          <div className="flex items-center gap-2">
+          <div>
             {canGoBack && (
               <Button
                 type="button"
@@ -688,18 +528,6 @@ export function ImportWizardV2({ salesUsers, onImportComplete }: ImportWizardV2P
               >
                 <IconChevronLeft size={18} />
                 Precedent
-              </Button>
-            )}
-            {/* New Import button - shown on all steps except upload */}
-            {currentStep !== 'upload' && (
-              <Button
-                type="button"
-                variant="ghostDanger"
-                onClick={handleNewImport}
-                disabled={isProcessing}
-              >
-                <IconX size={18} />
-                Nouvel import
               </Button>
             )}
           </div>

@@ -10,7 +10,6 @@ import { createClient } from '@supabase/supabase-js';
 import { getCurrentUser } from '@/modules/auth';
 import { handleCommitV2 } from '../workers';
 import type {
-  ParsedRowV2,
   ColumnMappingV2,
   AssignmentConfigV2,
   DuplicateConfigV2,
@@ -18,10 +17,25 @@ import type {
   RowDuplicateAction,
 } from '../types';
 import type { LeadFieldKey } from '@/modules/import/types/mapping';
+import type { DuplicateCheckField } from '../config/constants';
 
 // =============================================================================
 // TYPES
 // =============================================================================
+
+/**
+ * DB duplicate info for a row (passed from client)
+ */
+export interface DbDuplicateInfoV2 {
+  /** Row number */
+  rowNumber: number;
+  /** Field that matched */
+  matchedField: DuplicateCheckField;
+  /** Value that matched */
+  matchedValue: string;
+  /** Existing lead ID */
+  existingLeadId: string;
+}
 
 interface StartImportV2Input {
   /** File name */
@@ -45,6 +59,8 @@ interface StartImportV2Input {
   duplicates: DuplicateConfigV2;
   /** Per-row actions for DB duplicates */
   rowActions: Array<[number, RowDuplicateAction]>;
+  /** DB duplicate info (row number -> duplicate details) */
+  dbDuplicateInfo?: DbDuplicateInfoV2[];
   /** Default status */
   defaultStatus?: string;
   /** Default source */
@@ -183,6 +199,14 @@ export async function startImportV2(
     // 3. Run commit worker directly
     const rowActionsMap = new Map<number, RowDuplicateAction>(input.rowActions);
 
+    // Build DB duplicate info map
+    const dbDuplicateInfoMap = new Map<number, DbDuplicateInfoV2>();
+    if (input.dbDuplicateInfo) {
+      for (const info of input.dbDuplicateInfo) {
+        dbDuplicateInfoMap.set(info.rowNumber, info);
+      }
+    }
+
     const results = await handleCommitV2({
       importJobId,
       assignment: input.assignment,
@@ -190,6 +214,7 @@ export async function startImportV2(
       defaultStatus: input.defaultStatus || 'new',
       defaultSource: input.defaultSource || input.fileName,
       rowActions: rowActionsMap,
+      dbDuplicateInfo: dbDuplicateInfoMap,
     });
 
     console.log(LOG_PREFIX, 'Import completed', {

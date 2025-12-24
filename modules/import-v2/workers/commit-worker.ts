@@ -13,6 +13,7 @@ import type {
   DuplicateConfigV2,
   RowDuplicateAction,
 } from '../types';
+import type { DbDuplicateInfoV2 } from '../lib/actions';
 import type { DuplicateCheckField, RowResultStatus } from '../config/constants';
 import { PROCESSING } from '../config/constants';
 
@@ -55,6 +56,8 @@ export interface CommitOptionsV2 {
   defaultSource?: string;
   /** Per-row actions for DB duplicates (rowNumber -> action) */
   rowActions: Map<number, RowDuplicateAction>;
+  /** DB duplicate info (rowNumber -> duplicate details) */
+  dbDuplicateInfo?: Map<number, DbDuplicateInfoV2>;
   /** Progress callback for real-time updates */
   onProgress?: (progress: CommitProgress) => void;
 }
@@ -305,12 +308,13 @@ export async function handleCommitV2(
 
         // Check if this is a DB duplicate with per-row action
         const rowAction = rowActions.get(rowNumber);
-        const isDbDuplicate = rowAction !== undefined;
+        const dupInfo = options.dbDuplicateInfo?.get(rowNumber);
+        const isDbDuplicate = rowAction !== undefined || dupInfo !== undefined;
 
-        // Get DB duplicate info if available
-        const duplicateField = row.duplicate_field as DuplicateCheckField | null;
-        const duplicateValue = row.duplicate_value as string | null;
-        const existingLeadId = row.existing_lead_id as string | null;
+        // Get DB duplicate info from the passed map
+        const duplicateField = dupInfo?.matchedField || null;
+        const duplicateValue = dupInfo?.matchedValue || null;
+        const existingLeadId = dupInfo?.existingLeadId || null;
 
         // Determine action
         let action: RowDuplicateAction;

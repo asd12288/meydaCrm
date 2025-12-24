@@ -8,8 +8,6 @@
 import { getQStashClient, getAppUrl } from './client';
 import type { AssignmentConfig, DuplicateConfig } from '../../types';
 
-const LOG_PREFIX = '[QStashJobs]';
-
 // ============================================================================
 // JOB TYPES
 // ============================================================================
@@ -82,16 +80,12 @@ function getBypassHeaders(): Record<string, string> {
 export async function enqueueParseJob(
   payload: ParseJobPayload
 ): Promise<string> {
-  console.log(LOG_PREFIX, 'enqueueParseJob START', payload);
   const client = getQStashClient();
   const appUrl = getAppUrl();
   const config = QUEUE_CONFIG.parse;
 
-  const targetUrl = `${appUrl}${config.path}`;
-  console.log(LOG_PREFIX, 'Enqueuing parse job to:', targetUrl);
-
   const result = await client.publishJSON({
-    url: targetUrl,
+    url: `${appUrl}${config.path}`,
     body: payload,
     retries: config.retries,
     headers: {
@@ -101,7 +95,6 @@ export async function enqueueParseJob(
     },
   });
 
-  console.log(LOG_PREFIX, 'Parse job enqueued, messageId:', result.messageId);
   return result.messageId;
 }
 
@@ -119,16 +112,12 @@ export async function enqueueParseJob(
 export async function enqueueCommitJob(
   payload: CommitJobPayload
 ): Promise<string> {
-  console.log(LOG_PREFIX, 'enqueueCommitJob START', { importJobId: payload.importJobId, assignment: payload.assignment.mode });
   const client = getQStashClient();
   const appUrl = getAppUrl();
   const config = QUEUE_CONFIG.commit;
 
-  const targetUrl = `${appUrl}${config.path}`;
-  console.log(LOG_PREFIX, 'Enqueuing commit job to:', targetUrl);
-
   const result = await client.publishJSON({
-    url: targetUrl,
+    url: `${appUrl}${config.path}`,
     body: payload,
     retries: config.retries,
     headers: {
@@ -138,7 +127,6 @@ export async function enqueueCommitJob(
     },
   });
 
-  console.log(LOG_PREFIX, 'Commit job enqueued, messageId:', result.messageId);
   return result.messageId;
 }
 
