@@ -29,7 +29,6 @@ import { PROCESSING } from '../config/constants';
 // CONSTANTS
 // =============================================================================
 
-const LOG_PREFIX = '[CommitWorkerV2]';
 const FETCH_BATCH_SIZE = PROCESSING.COMMIT_BATCH_SIZE * 10; // 1000
 const INSERT_BATCH_SIZE = PROCESSING.COMMIT_BATCH_SIZE; // 100
 
@@ -187,12 +186,6 @@ export async function handleCommitV2(
   options: CommitOptionsV2
 ): Promise<ImportResultsSummaryV2> {
   const startTime = Date.now();
-  console.log(LOG_PREFIX, 'handleCommitV2 START', {
-    importJobId: options.importJobId,
-    assignmentMode: options.assignment.mode,
-    duplicateStrategy: options.duplicates.strategy,
-    rowActionsCount: options.rowActions.size,
-  });
 
   const supabase = createServiceRoleClient();
   const { importJobId, defaultStatus = 'new', rowActions, onProgress } = options;
@@ -204,7 +197,6 @@ export async function handleCommitV2(
   const errorRows: ImportRowResultV2[] = [];
 
   // Get the import job
-  console.log(LOG_PREFIX, 'Fetching import job...');
   const { data: job, error: jobError } = await supabase
     .from('import_jobs')
     .select('*')
@@ -212,7 +204,6 @@ export async function handleCommitV2(
     .single();
 
   if (jobError || !job) {
-    console.error(LOG_PREFIX, 'Job not found:', importJobId, jobError);
     throw new Error(`Job not found: ${importJobId}`);
   }
 
@@ -221,7 +212,6 @@ export async function handleCommitV2(
 
   // Validate job status
   if (!['ready', 'queued', 'importing'].includes(job.status)) {
-    console.error(LOG_PREFIX, 'Job not ready for commit:', job.status);
     throw new Error(`Job is not ready for commit: ${job.status}`);
   }
 
@@ -245,8 +235,6 @@ export async function handleCommitV2(
 
     const totalRows = totalCount || 0;
     const totalBatches = Math.ceil(totalRows / FETCH_BATCH_SIZE);
-
-    console.log(LOG_PREFIX, `Processing ${totalRows} valid rows in ${totalBatches} batches`);
 
     // Build assignment context
     const assignmentContext = await buildAssignmentContext(supabase, options.assignment);
@@ -287,11 +275,8 @@ export async function handleCommitV2(
       }
 
       if (!batch || batch.length === 0) {
-        console.log(LOG_PREFIX, 'No more rows to process');
         break;
       }
-
-      console.log(LOG_PREFIX, `Batch ${batchNumber}: ${batch.length} rows`);
 
       // =================================================================
       // PHASE 1: Categorize all rows by action (no DB calls yet)
@@ -544,7 +529,6 @@ export async function handleCommitV2(
     }
 
     // Mark job as completed
-    console.log(LOG_PREFIX, 'Marking job as completed');
     await supabase
       .from('import_jobs')
       .update({
@@ -585,18 +569,9 @@ export async function handleCommitV2(
       errorRows,
     };
 
-    console.log(LOG_PREFIX, 'handleCommitV2 COMPLETE', {
-      imported: results.importedCount,
-      updated: results.updatedCount,
-      skipped: results.skippedCount,
-      errors: results.errorCount,
-      durationMs,
-    });
-
     return results;
 
   } catch (error) {
-    console.error(LOG_PREFIX, 'handleCommitV2 ERROR:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
     await supabase
