@@ -97,13 +97,6 @@ export async function startImportV2(
       return { success: false, error: 'Acces refuse' };
     }
 
-    console.log(LOG_PREFIX, 'Starting import', {
-      fileName: input.fileName,
-      totalRows: input.totalRows,
-      validRows: input.validatedRows.filter((r) => r.isValid).length,
-      rowActionsCount: input.rowActions.length,
-    });
-
     const supabase = createServiceRoleClient();
 
     // 1. Create import_job
@@ -128,12 +121,10 @@ export async function startImportV2(
       .single();
 
     if (jobError || !job) {
-      console.error(LOG_PREFIX, 'Failed to create job:', jobError);
       return { success: false, error: 'Erreur lors de la creation du job' };
     }
 
     const importJobId = job.id;
-    console.log(LOG_PREFIX, 'Created job:', importJobId);
 
     // 2. Write validated rows to import_rows (only valid, non-file-duplicate)
     const rowsToInsert = input.validatedRows
@@ -157,7 +148,6 @@ export async function startImportV2(
           .insert(batch);
 
         if (insertError) {
-          console.error(LOG_PREFIX, 'Failed to insert rows batch:', insertError);
           // Mark job as failed
           await supabase
             .from('import_jobs')
@@ -167,8 +157,6 @@ export async function startImportV2(
         }
       }
     }
-
-    console.log(LOG_PREFIX, `Inserted ${rowsToInsert.length} valid rows`);
 
     // Update job with valid row count
     await supabase
@@ -191,12 +179,10 @@ export async function startImportV2(
     for (const [rowNumber, action] of input.rowActions) {
       // Validate row number exists
       if (!validRowNumbers.has(rowNumber)) {
-        console.warn(LOG_PREFIX, `Ignoring invalid row number in rowActions: ${rowNumber}`);
         continue;
       }
       // Validate action type
       if (!validActions.has(action)) {
-        console.warn(LOG_PREFIX, `Ignoring invalid action type: ${action} for row ${rowNumber}`);
         continue;
       }
       // 'import' in UI means 'create' for the worker (force create as new lead)
@@ -209,12 +195,10 @@ export async function startImportV2(
       for (const info of input.dbDuplicateInfo) {
         // Validate row number exists
         if (!validRowNumbers.has(info.rowNumber)) {
-          console.warn(LOG_PREFIX, `Ignoring invalid row number in dbDuplicateInfo: ${info.rowNumber}`);
           continue;
         }
         // Validate existingLeadId is UUID-like (basic check)
         if (!info.existingLeadId || typeof info.existingLeadId !== 'string' || info.existingLeadId.length < 32) {
-          console.warn(LOG_PREFIX, `Ignoring invalid existingLeadId for row ${info.rowNumber}`);
           continue;
         }
         dbDuplicateInfoMap.set(info.rowNumber, info);
@@ -231,20 +215,12 @@ export async function startImportV2(
       dbDuplicateInfo: dbDuplicateInfoMap,
     });
 
-    console.log(LOG_PREFIX, 'Import completed', {
-      imported: results.importedCount,
-      updated: results.updatedCount,
-      skipped: results.skippedCount,
-      errors: results.errorCount,
-    });
-
     return {
       success: true,
       importJobId,
       results,
     };
   } catch (error) {
-    console.error(LOG_PREFIX, 'Error:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Erreur inconnue',

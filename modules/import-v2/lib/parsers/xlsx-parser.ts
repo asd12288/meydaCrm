@@ -1,7 +1,8 @@
 /**
  * XLSX Parser for Import V2
  *
- * Client-side Excel parsing using ExcelJS.
+ * Client-side Excel parsing using ExcelJS with EARLY TERMINATION.
+ * Stops extracting rows when maxRows exceeded to prevent memory exhaustion.
  * Handles .xlsx and .xls files with multiple sheets.
  */
 
@@ -11,11 +12,12 @@ import type { ParseOptions, ParseResult } from './index';
 import { createParsedRow } from './index';
 
 // =============================================================================
-// XLSX PARSING
+// XLSX PARSING WITH EARLY TERMINATION
 // =============================================================================
 
 /**
- * Parse an XLSX/XLS file
+ * Parse an XLSX/XLS file with early termination when row limit exceeded
+ * Memory-efficient: stops extracting rows after maxRows is reached
  */
 export async function parseXLSX(
   file: File,
@@ -97,10 +99,20 @@ export async function parseXLSX(
           worksheet = workbook.worksheets[0];
         }
 
-        // Extract rows
+        // EARLY TERMINATION: Calculate how many rows we need to extract
+        // If maxRows is set, we only need maxRows + 1 (for header)
+        const extractLimit = maxRows > 0 ? maxRows + (hasHeaderRow ? 1 : 0) : 0;
+
+        // Extract rows with early termination
         const allRows: string[][] = [];
+        let extractedCount = 0;
 
         worksheet.eachRow({ includeEmpty: false }, (row) => {
+          // EARLY TERMINATION: Stop extracting once we have enough rows
+          if (extractLimit > 0 && extractedCount >= extractLimit) {
+            return; // Skip remaining rows - don't add to memory
+          }
+
           const rowValues = row.values as unknown[];
 
           // Skip empty rows
@@ -111,6 +123,17 @@ export async function parseXLSX(
           // Convert to string array (skip first element which is undefined in ExcelJS)
           const values = rowValues.slice(1).map((v) => getCellStringValue(v));
           allRows.push(values);
+          extractedCount++;
+
+          // Report progress every 100 rows during extraction
+          if (extractedCount % 100 === 0 && maxRows > 0) {
+            onProgress?.({
+              parsedRows: extractedCount,
+              totalRows: maxRows,
+              phase: 'parsing',
+              percentage: 10 + Math.round((extractedCount / maxRows) * 40),
+            });
+          }
         });
 
         if (allRows.length === 0) {
@@ -166,7 +189,7 @@ export async function parseXLSX(
               parsedRows: i,
               totalRows: rowsToProcess,
               phase: 'parsing',
-              percentage: 10 + Math.round((i / rowsToProcess) * 80),
+              percentage: 50 + Math.round((i / rowsToProcess) * 40),
             });
           }
         }
