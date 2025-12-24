@@ -4,7 +4,7 @@
  * Types for managing the 3-step wizard state
  */
 
-import type { WizardStepV2 } from '../config/constants';
+import type { WizardStepV2, UnifiedRowAction, PreviewIssueType } from '../config/constants';
 import type {
   ParsedFileV2,
   ColumnMappingConfigV2,
@@ -12,7 +12,6 @@ import type {
   DuplicateConfigV2,
   ImportProgressV2,
   ImportResultsSummaryV2,
-  RowDuplicateAction,
 } from './index';
 import type { DetailedPreviewDataV2 } from './preview';
 import type { LeadFieldKey } from '../../import/types/mapping';
@@ -61,8 +60,11 @@ export interface ImportWizardStateV2 {
   /** Duplicate handling configuration */
   duplicates: DuplicateConfigV2;
 
-  /** Per-row duplicate action overrides */
-  rowActions: Map<number, RowDuplicateAction>;
+  /** Unified per-row action decisions (all issue types: invalid, file dup, db dup) */
+  rowDecisions: Map<number, UnifiedRowAction>;
+
+  /** Edited row data (for inline editing of ANY issue row) */
+  editedRows: Map<number, Partial<Record<LeadFieldKey, string>>>;
 
   /** Default status for new leads */
   defaultStatus: string;
@@ -125,9 +127,12 @@ export type ImportWizardAction =
   | { type: 'SET_PREVIEW'; payload: DetailedPreviewDataV2 }
   | { type: 'SET_ASSIGNMENT'; payload: Partial<AssignmentConfigV2> }
   | { type: 'SET_DUPLICATES'; payload: Partial<DuplicateConfigV2> }
-  | { type: 'SET_ROW_ACTION'; payload: { rowNumber: number; action: RowDuplicateAction } }
-  | { type: 'SET_ALL_ROW_ACTIONS'; payload: RowDuplicateAction }
-  | { type: 'CLEAR_ROW_ACTIONS' }
+  // Unified row decisions (replaces SET_ROW_ACTION and SET_ERROR_ROW_ACTION)
+  | { type: 'SET_ROW_DECISION'; payload: { rowNumber: number; action: UnifiedRowAction } }
+  | { type: 'SET_ALL_ROW_DECISIONS'; payload: { issueType: PreviewIssueType; action: UnifiedRowAction } }
+  | { type: 'CLEAR_ROW_DECISIONS' }
+  | { type: 'SET_EDITED_ROW_FIELD'; payload: { rowNumber: number; field: LeadFieldKey; value: string } }
+  | { type: 'CLEAR_ROW_EDITS'; payload: number }
   | { type: 'SET_DEFAULT_STATUS'; payload: string }
   | { type: 'SET_DEFAULT_SOURCE'; payload: string }
 
@@ -173,11 +178,12 @@ export const initialWizardState: ImportWizardStateV2 = {
   },
   duplicates: {
     strategy: 'skip',
-    checkFields: ['email', 'phone', 'external_id'],
+    checkFields: ['email'],
     checkDatabase: true,
     checkWithinFile: true,
   },
-  rowActions: new Map(),
+  rowDecisions: new Map(),
+  editedRows: new Map(),
   defaultStatus: 'new',
   defaultSource: '',
 

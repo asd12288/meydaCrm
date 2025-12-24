@@ -121,7 +121,9 @@ export {
   PreviewIssueTableSkeleton,
   PreviewStep,
   PreviewStepSkeleton,
-  DuplicateComparisonModal,
+  UnifiedRowActions,
+  UnifiedRowActionsCompact,
+  UnifiedRowModal,
   type IssueRow,
   // Upload step
   UploadStep,

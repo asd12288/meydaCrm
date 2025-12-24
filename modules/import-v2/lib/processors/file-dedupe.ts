@@ -226,8 +226,6 @@ export function getDuplicateGroupSummary(
 ): string {
   const fieldLabels: Record<DuplicateCheckField, string> = {
     email: 'Email',
-    phone: 'Téléphone',
-    external_id: 'ID externe',
   };
 
   const fieldLabel = fieldLabels[group.matchedField] || group.matchedField;

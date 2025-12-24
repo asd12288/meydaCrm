@@ -77,31 +77,8 @@ describe('detectFileDuplicates', () => {
     expect(result.duplicateGroups[0].count).toBe(2);
   });
 
-  it('should detect phone duplicates', () => {
-    const rows: RowValidationResultV2[] = [
-      createValidRow(1, { phone: '+33612345678' }),
-      createValidRow(2, { phone: '+33698765432' }),
-      createValidRow(3, { phone: '+33612345678' }), // Duplicate
-    ];
-
-    const result = detectFileDuplicates(rows, ['phone']);
-
-    expect(result.duplicateCount).toBe(1);
-    expect(result.duplicateGroups[0].matchedField).toBe('phone');
-  });
-
-  it('should detect external_id duplicates', () => {
-    const rows: RowValidationResultV2[] = [
-      createValidRow(1, { external_id: 'ID001' }),
-      createValidRow(2, { external_id: 'ID002' }),
-      createValidRow(3, { external_id: 'id001' }), // Case-insensitive duplicate
-    ];
-
-    const result = detectFileDuplicates(rows, ['external_id']);
-
-    expect(result.duplicateCount).toBe(1);
-    expect(result.duplicateGroups[0].matchedField).toBe('external_id');
-  });
+  // Note: Phone and external_id duplicate detection removed per user requirement
+  // Only email is used for duplicate detection
 
   it('should handle multiple duplicate groups', () => {
     const rows: RowValidationResultV2[] = [
@@ -146,16 +123,16 @@ describe('detectFileDuplicates', () => {
     expect(result.duplicateGroups[0].rows[2].isFirstOccurrence).toBe(false);
   });
 
-  it('should check multiple fields', () => {
+  it('should detect duplicates with same email', () => {
     const rows: RowValidationResultV2[] = [
       createValidRow(1, { email: 'jean@test.com', phone: '+33612345678' }),
-      createValidRow(2, { email: 'other@test.com', phone: '+33612345678' }), // Same phone
+      createValidRow(2, { email: 'jean@test.com', phone: '+33698765432' }), // Same email, different phone
     ];
 
-    const result = detectFileDuplicates(rows, ['email', 'phone']);
+    const result = detectFileDuplicates(rows, ['email']);
 
     expect(result.duplicateCount).toBe(1);
-    expect(result.duplicateGroups[0].matchedField).toBe('phone');
+    expect(result.duplicateGroups[0].matchedField).toBe('email');
   });
 
   it('should ignore empty fields', () => {

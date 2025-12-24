@@ -12,7 +12,7 @@ import type {
   DbDuplicateRowV2,
   ExistingLeadDataV2,
 } from '../../types/preview';
-import type { DuplicateCheckField, DuplicateStrategyV2 } from '../../config/constants';
+import type { DuplicateCheckField, UnifiedRowAction } from '../../config/constants';
 
 // =============================================================================
 // TYPES
@@ -93,6 +93,12 @@ export async function detectDbDuplicates(
   // Only check valid rows
   const validRows = validatedRows.filter((r) => r.isValid);
 
+  // Build O(1) lookup map for valid rows by row number (fixes N+1 query pattern)
+  const validRowsByNumber = new Map<number, RowValidationResultV2>();
+  for (const row of validRows) {
+    validRowsByNumber.set(row.rowNumber, row);
+  }
+
   // Build lookup maps for each field
   const lookupMaps = new Map<DuplicateCheckField, Map<string, number[]>>();
 
@@ -168,7 +174,7 @@ export async function detectDbDuplicates(
           // Skip if already matched (by a higher-priority field)
           if (rowDuplicateInfo.has(rowNumber)) continue;
 
-          const validation = validRows.find((r) => r.rowNumber === rowNumber);
+          const validation = validRowsByNumber.get(rowNumber);
           if (!validation) continue;
 
           const existingLeadData = mapLeadToExistingData(existingLead);
@@ -331,7 +337,7 @@ export function buildDbDuplicatePreview(
   existingLead: ExistingLeadDataV2,
   matchedField: DuplicateCheckField,
   matchedValue: string,
-  rowAction?: DuplicateStrategyV2
+  rowAction?: UnifiedRowAction
 ): DbDuplicateRowV2 {
   const changedFields = detectChangedFields(validation, existingLead);
 

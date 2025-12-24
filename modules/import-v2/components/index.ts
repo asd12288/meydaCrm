@@ -18,7 +18,9 @@ export {
 
 export { PreviewStep, PreviewStepSkeleton } from './preview-step';
 
-export { DuplicateComparisonModal } from './duplicate-comparison-modal';
+// Unified row action components
+export { UnifiedRowActions, UnifiedRowActionsCompact } from './unified-row-actions';
+export { UnifiedRowModal } from './unified-row-modal';
 
 // Upload step
 export { UploadStep, UploadStepSkeleton } from './upload-step';

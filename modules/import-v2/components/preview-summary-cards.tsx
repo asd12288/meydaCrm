@@ -1,19 +1,12 @@
 /**
- * Preview Summary Cards Component
+ * Preview Summary Stats Component
  *
- * 5 clickable stat cards showing import preview summary:
- * Total | Valid | Invalid | File Dup | DB Dup
+ * Compact inline stats row showing import preview summary
  */
 
 'use client';
 
-import {
-  IconFiles,
-  IconCheck,
-  IconAlertTriangle,
-  IconCopy,
-  IconDatabase,
-} from '@tabler/icons-react';
+import { IconAlertTriangle, IconCopy, IconDatabase } from '@tabler/icons-react';
 import type { PreviewSummaryV2, PreviewTabV2 } from '../types/preview';
 
 // =============================================================================
@@ -31,98 +24,6 @@ interface PreviewSummaryCardsProps {
   interactive?: boolean;
 }
 
-interface SummaryCardConfig {
-  id: PreviewTabV2 | null;
-  label: string;
-  icon: typeof IconFiles;
-  getValue: (summary: PreviewSummaryV2) => number;
-  variant: 'neutral' | 'success' | 'error' | 'warning' | 'info';
-}
-
-// =============================================================================
-// CARD CONFIGURATION
-// =============================================================================
-
-const CARD_CONFIGS: SummaryCardConfig[] = [
-  {
-    id: null,
-    label: 'Total',
-    icon: IconFiles,
-    getValue: (s) => s.total,
-    variant: 'neutral',
-  },
-  {
-    id: null,
-    label: 'Valides',
-    icon: IconCheck,
-    getValue: (s) => s.valid,
-    variant: 'success',
-  },
-  {
-    id: 'invalid',
-    label: 'Invalides',
-    icon: IconAlertTriangle,
-    getValue: (s) => s.invalid,
-    variant: 'error',
-  },
-  {
-    id: 'file_duplicates',
-    label: 'Doublons fichier',
-    icon: IconCopy,
-    getValue: (s) => s.fileDuplicates,
-    variant: 'warning',
-  },
-  {
-    id: 'db_duplicates',
-    label: 'Doublons base',
-    icon: IconDatabase,
-    getValue: (s) => s.dbDuplicates,
-    variant: 'info',
-  },
-];
-
-// =============================================================================
-// VARIANT STYLES
-// =============================================================================
-
-const VARIANT_STYLES = {
-  neutral: {
-    container: 'bg-lightgray dark:bg-dark',
-    icon: 'text-darklink',
-    iconBg: 'bg-white dark:bg-darkborder',
-    border: 'border-border dark:border-darkborder',
-    activeBorder: 'border-darklink',
-  },
-  success: {
-    container: 'bg-lightsuccess/50 dark:bg-success/10',
-    icon: 'text-success',
-    iconBg: 'bg-white dark:bg-success/20',
-    border: 'border-success/20 dark:border-success/30',
-    activeBorder: 'border-success',
-  },
-  error: {
-    container: 'bg-lighterror/50 dark:bg-error/10',
-    icon: 'text-error',
-    iconBg: 'bg-white dark:bg-error/20',
-    border: 'border-error/20 dark:border-error/30',
-    activeBorder: 'border-error',
-  },
-  warning: {
-    container: 'bg-lightwarning/50 dark:bg-warning/10',
-    icon: 'text-warning',
-    iconBg: 'bg-white dark:bg-warning/20',
-    border: 'border-warning/20 dark:border-warning/30',
-    activeBorder: 'border-warning',
-  },
-  info: {
-    container: 'bg-lightprimary/50 dark:bg-primary/10',
-    icon: 'text-primary',
-    iconBg: 'bg-white dark:bg-primary/20',
-    border: 'border-primary/20 dark:border-primary/30',
-    activeBorder: 'border-primary',
-  },
-};
-
 // =============================================================================
 // COMPONENT
 // =============================================================================
@@ -133,61 +34,96 @@ export function PreviewSummaryCards({
   onCardClick,
   interactive = true,
 }: PreviewSummaryCardsProps) {
-  return (
-    <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-      {CARD_CONFIGS.map((config) => {
-        const value = config.getValue(summary);
-        const styles = VARIANT_STYLES[config.variant];
-        const isActive = activeTab === config.id;
-        const isClickable = interactive && config.id !== null && value > 0;
-        const Icon = config.icon;
+  const fmt = (n: number) => n.toLocaleString('fr-FR');
 
-        return (
-          <button
-            key={config.label}
-            type="button"
-            onClick={() => isClickable && onCardClick?.(config.id)}
-            disabled={!isClickable}
-            className={`
-              relative flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all
-              ${styles.container}
-              ${isActive ? styles.activeBorder : styles.border}
-              ${isClickable ? 'cursor-pointer hover:scale-[1.02] hover:shadow-md' : 'cursor-default'}
-              ${isActive ? 'ring-2 ring-offset-1 ring-offset-white dark:ring-offset-dark ring-opacity-50' : ''}
-              ${config.variant === 'neutral' ? '' : isActive ? `ring-${config.variant}` : ''}
-            `}
-          >
-            {/* Icon */}
-            <div
+  // Check if there are any issues to show tabs for
+  const hasIssues = summary.invalid > 0 || summary.fileDuplicates > 0 || summary.dbDuplicates > 0;
+
+  return (
+    <div className="space-y-3">
+      {/* Summary stats row */}
+      <div className="flex items-center gap-4 text-sm">
+        <span className="text-darklink">
+          <span className="font-semibold text-ld">{fmt(summary.total)}</span> lignes
+        </span>
+        <span className="text-darklink">
+          <span className="font-semibold text-success">{fmt(summary.valid)}</span> valides
+        </span>
+        {summary.invalid > 0 && (
+          <span className="text-darklink">
+            <span className="font-semibold text-error">{fmt(summary.invalid)}</span> invalides
+          </span>
+        )}
+        {summary.fileDuplicates > 0 && (
+          <span className="text-darklink">
+            <span className="font-semibold text-warning">{fmt(summary.fileDuplicates)}</span> doublons fichier
+          </span>
+        )}
+        {summary.dbDuplicates > 0 && (
+          <span className="text-darklink">
+            <span className="font-semibold text-warning">{fmt(summary.dbDuplicates)}</span> doublons base
+          </span>
+        )}
+      </div>
+
+      {/* Issue tabs - only show if there are issues */}
+      {hasIssues && interactive && (
+        <div className="flex items-center gap-1 border-b border-border dark:border-darkborder">
+          {summary.invalid > 0 && (
+            <button
+              type="button"
+              onClick={() => onCardClick?.('invalid')}
               className={`
-                w-10 h-10 rounded-full flex items-center justify-center
-                ${styles.iconBg}
+                inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium
+                border-b-2 -mb-px transition-colors
+                ${activeTab === 'invalid'
+                  ? 'border-error text-error'
+                  : 'border-transparent text-darklink hover:text-ld hover:border-border'
+                }
               `}
             >
-              <Icon size={20} className={styles.icon} />
-            </div>
+              <IconAlertTriangle size={14} />
+              Invalides ({fmt(summary.invalid)})
+            </button>
+          )}
 
-            {/* Value */}
-            <span className="text-2xl font-bold text-ld">{value.toLocaleString('fr-FR')}</span>
+          {summary.fileDuplicates > 0 && (
+            <button
+              type="button"
+              onClick={() => onCardClick?.('file_duplicates')}
+              className={`
+                inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium
+                border-b-2 -mb-px transition-colors
+                ${activeTab === 'file_duplicates'
+                  ? 'border-warning text-warning'
+                  : 'border-transparent text-darklink hover:text-ld hover:border-border'
+                }
+              `}
+            >
+              <IconCopy size={14} />
+              Doublons fichier ({fmt(summary.fileDuplicates)})
+            </button>
+          )}
 
-            {/* Label */}
-            <span className="text-xs text-darklink font-medium">{config.label}</span>
-
-            {/* Active indicator */}
-            {isActive && (
-              <div
-                className={`
-                  absolute -bottom-0.5 left-1/2 -translate-x-1/2
-                  w-8 h-1 rounded-full
-                  ${config.variant === 'error' ? 'bg-error' : ''}
-                  ${config.variant === 'warning' ? 'bg-warning' : ''}
-                  ${config.variant === 'info' ? 'bg-primary' : ''}
-                `}
-              />
-            )}
-          </button>
-        );
-      })}
+          {summary.dbDuplicates > 0 && (
+            <button
+              type="button"
+              onClick={() => onCardClick?.('db_duplicates')}
+              className={`
+                inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium
+                border-b-2 -mb-px transition-colors
+                ${activeTab === 'db_duplicates'
+                  ? 'border-warning text-warning'
+                  : 'border-transparent text-darklink hover:text-ld hover:border-border'
+                }
+              `}
+            >
+              <IconDatabase size={14} />
+              Doublons base ({fmt(summary.dbDuplicates)})
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -198,17 +134,19 @@ export function PreviewSummaryCards({
 
 export function PreviewSummaryCardsSkeleton() {
   return (
-    <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-      {CARD_CONFIGS.map((config) => (
-        <div
-          key={config.label}
-          className="flex flex-col items-center gap-2 p-4 rounded-lg border-2 border-border dark:border-darkborder bg-lightgray dark:bg-dark animate-pulse"
-        >
-          <div className="w-10 h-10 rounded-full bg-border dark:bg-darkborder" />
-          <div className="w-12 h-7 rounded bg-border dark:bg-darkborder" />
-          <div className="w-16 h-3 rounded bg-border dark:bg-darkborder" />
-        </div>
-      ))}
+    <div className="space-y-3 animate-pulse">
+      {/* Stats row skeleton */}
+      <div className="flex items-center gap-4">
+        <div className="h-4 w-20 bg-border dark:bg-darkborder rounded" />
+        <div className="h-4 w-16 bg-border dark:bg-darkborder rounded" />
+        <div className="h-4 w-24 bg-border dark:bg-darkborder rounded" />
+      </div>
+      {/* Tabs skeleton */}
+      <div className="flex items-center gap-1 border-b border-border dark:border-darkborder pb-2">
+        <div className="h-5 w-24 bg-border dark:bg-darkborder rounded" />
+        <div className="h-5 w-32 bg-border dark:bg-darkborder rounded" />
+        <div className="h-5 w-28 bg-border dark:bg-darkborder rounded" />
+      </div>
     </div>
   );
 }

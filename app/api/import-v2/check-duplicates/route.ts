@@ -9,6 +9,7 @@ import { createClient } from '@supabase/supabase-js';
 import { getCurrentUser } from '@/modules/auth';
 import { detectDbDuplicates } from '@/modules/import-v2/lib/processors/db-dedupe';
 import type { RowValidationResultV2 } from '@/modules/import-v2/types';
+import { DUPLICATE_CHECK_FIELDS } from '@/modules/import-v2/config/constants';
 import type { DuplicateCheckField } from '@/modules/import-v2/config/constants';
 
 // =============================================================================
@@ -80,6 +81,16 @@ export async function POST(request: NextRequest) {
     if (!body.checkFields || !Array.isArray(body.checkFields)) {
       return NextResponse.json(
         { error: 'checkFields requis' },
+        { status: 400 }
+      );
+    }
+
+    // Validate checkFields against allowed values (security whitelist)
+    const allowedFields = new Set<string>(DUPLICATE_CHECK_FIELDS);
+    const invalidFields = body.checkFields.filter((f) => !allowedFields.has(f));
+    if (invalidFields.length > 0) {
+      return NextResponse.json(
+        { error: `Champs non autorises: ${invalidFields.join(', ')}` },
         { status: 400 }
       );
     }

@@ -1,16 +1,18 @@
 /**
  * Preview Issue Table Component
  *
- * Generic table for displaying rows with issues (invalid, file duplicates, DB duplicates)
+ * Unified table for displaying rows with issues (invalid, file duplicates, DB duplicates)
+ * Uses UnifiedRowActions for consistent action controls
  */
 
 'use client';
 
-import { IconAlertCircle, IconChevronDown, IconChevronUp } from '@tabler/icons-react';
+import { IconChevronDown, IconChevronUp } from '@tabler/icons-react';
 import { useState, useMemo } from 'react';
+import { UnifiedRowActions } from './unified-row-actions';
 import type { InvalidRowV2, FileDuplicateRowV2, DbDuplicateRowV2 } from '../types/preview';
-import type { DuplicateStrategyV2 } from '../config/constants';
-import { Badge } from '@/modules/shared';
+import type { UnifiedRowAction, PreviewIssueType } from '../config/constants';
+import { DEFAULT_ACTION_BY_TYPE } from '../config/constants';
 
 // =============================================================================
 // TYPES
@@ -22,17 +24,19 @@ interface PreviewIssueTableProps<T extends IssueRow> {
   /** Rows to display */
   rows: T[];
   /** Type of issues being displayed */
-  issueType: 'invalid' | 'file_duplicate' | 'db_duplicate';
+  issueType: PreviewIssueType;
   /** Max rows to show initially (for expandable list) */
   maxRows?: number;
   /** Empty state message */
   emptyMessage?: string;
-  /** Callback for action changes (DB duplicates only) */
-  onRowActionChange?: (rowNumber: number, action: DuplicateStrategyV2) => void;
-  /** Callback to open comparison modal (DB duplicates only) */
-  onCompareClick?: (row: DbDuplicateRowV2) => void;
-  /** Current row actions (DB duplicates only) */
-  rowActions?: Map<number, DuplicateStrategyV2>;
+  /** Unified row decisions map */
+  rowDecisions: Map<number, UnifiedRowAction>;
+  /** Edited rows map */
+  editedRows: Map<number, Record<string, string>>;
+  /** Callback when row action changes */
+  onRowActionChange: (rowNumber: number, action: UnifiedRowAction) => void;
+  /** Callback to open view/edit modal */
+  onViewEdit: (row: IssueRow) => void;
 }
 
 // =============================================================================
@@ -56,144 +60,85 @@ const FIELD_LABELS: Record<string, string> = {
   status: 'Statut',
 };
 
-const ACTION_OPTIONS: { value: DuplicateStrategyV2; label: string }[] = [
-  { value: 'skip', label: 'Ignorer' },
-  { value: 'update', label: 'Mettre à jour' },
-  { value: 'create', label: 'Créer nouveau' },
-];
-
 // =============================================================================
 // HELPER COMPONENTS
 // =============================================================================
 
-function RowData({ row }: { row: IssueRow }) {
+interface RowDataProps {
+  row: IssueRow;
+  edits?: Record<string, string>;
+}
+
+function RowData({ row, edits }: RowDataProps) {
   const { displayData } = row;
-  const name = [displayData.firstName, displayData.lastName].filter(Boolean).join(' ');
+
+  // Merge edits into display data (edits take precedence)
+  const firstName = edits?.first_name ?? displayData.firstName;
+  const lastName = edits?.last_name ?? displayData.lastName;
+  const email = edits?.email ?? displayData.email;
+  const phone = edits?.phone ?? displayData.phone;
+
+  const name = [firstName, lastName].filter(Boolean).join(' ');
+  const contact = email || phone;
+  const hasEdits = edits && Object.keys(edits).length > 0;
 
   return (
-    <div className="flex flex-col gap-0.5">
-      {name && <span className="font-medium text-ld">{name}</span>}
-      {displayData.email && (
-        <span className="text-xs text-darklink">{displayData.email}</span>
+    <div className="text-xs">
+      {name && (
+        <div className={`font-medium truncate ${hasEdits ? 'text-warning' : 'text-ld'}`}>
+          {name}
+        </div>
       )}
-      {displayData.phone && (
-        <span className="text-xs text-darklink">{displayData.phone}</span>
-      )}
-      {displayData.company && (
-        <span className="text-xs text-darklink italic">{displayData.company}</span>
+      {contact && (
+        <div className={`truncate ${hasEdits ? 'text-warning' : 'text-darklink'}`}>
+          {contact}
+        </div>
       )}
     </div>
   );
 }
 
-function InvalidRowDetails({ row }: { row: InvalidRowV2 }) {
-  return (
-    <div className="flex flex-col gap-1">
-      {row.errors.map((error, idx) => (
-        <div key={idx} className="flex items-start gap-1.5 text-error text-xs">
-          <IconAlertCircle size={14} className="shrink-0 mt-0.5" />
-          <span>
-            <strong>{FIELD_LABELS[error.field] || error.field}:</strong> {error.message}
-            {error.value && (
-              <span className="text-darklink ml-1">({error.value})</span>
-            )}
-          </span>
-        </div>
-      ))}
-      {row.warnings?.map((warning, idx) => (
-        <div key={`w-${idx}`} className="flex items-start gap-1.5 text-warning text-xs">
-          <IconAlertCircle size={14} className="shrink-0 mt-0.5" />
-          <span>
-            <strong>{FIELD_LABELS[warning.field] || warning.field}:</strong> {warning.message}
-          </span>
-        </div>
-      ))}
-    </div>
-  );
-}
+// Issue-specific info display (compact, no actions)
+function IssueInfo({ row, issueType }: { row: IssueRow; issueType: PreviewIssueType }) {
+  if (issueType === 'invalid') {
+    const invalidRow = row as InvalidRowV2;
+    const firstError = invalidRow.errors[0];
+    const moreCount = invalidRow.errors.length - 1 + (invalidRow.warnings?.length || 0);
 
-function FileDuplicateDetails({ row }: { row: FileDuplicateRowV2 }) {
-  return (
-    <div className="flex items-center gap-2">
-      <Badge variant="warning" size="sm">
-        {FIELD_LABELS[row.matchedField] || row.matchedField}
-      </Badge>
+    return (
+      <span className="text-xs text-error truncate">
+        {FIELD_LABELS[firstError.field] || firstError.field}: {firstError.message}
+        {moreCount > 0 && <span className="text-darklink ml-1">+{moreCount}</span>}
+      </span>
+    );
+  }
+
+  if (issueType === 'file_duplicate') {
+    const fileDupRow = row as FileDuplicateRowV2;
+    return (
       <span className="text-xs text-darklink">
-        {row.isFirstOccurrence ? (
-          'Première occurrence'
-        ) : (
-          <>Doublon de la ligne {row.firstOccurrenceRow}</>
+        <span className="font-medium">{FIELD_LABELS[fileDupRow.matchedField] || fileDupRow.matchedField}</span>
+        {' · '}
+        {fileDupRow.isFirstOccurrence
+          ? 'Première occurrence'
+          : `Doublon ligne ${fileDupRow.firstOccurrenceRow}`}
+      </span>
+    );
+  }
+
+  if (issueType === 'db_duplicate') {
+    const dbDupRow = row as DbDuplicateRowV2;
+    return (
+      <span className="text-xs text-darklink">
+        <span className="font-medium">{FIELD_LABELS[dbDupRow.matchedField] || dbDupRow.matchedField}</span>
+        {dbDupRow.changedFields.length > 0 && (
+          <span className="ml-1">· {dbDupRow.changedFields.length} diff.</span>
         )}
       </span>
-    </div>
-  );
-}
+    );
+  }
 
-interface DbDuplicateDetailsProps {
-  row: DbDuplicateRowV2;
-  currentAction: DuplicateStrategyV2;
-  onActionChange?: (action: DuplicateStrategyV2) => void;
-  onCompareClick?: () => void;
-}
-
-function DbDuplicateDetails({
-  row,
-  currentAction,
-  onActionChange,
-  onCompareClick,
-}: DbDuplicateDetailsProps) {
-  return (
-    <div className="flex flex-col gap-2">
-      {/* Match info */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <Badge variant="info" size="sm">
-          {FIELD_LABELS[row.matchedField] || row.matchedField}
-        </Badge>
-        <span className="text-xs text-darklink">
-          Correspond à: {row.matchedValue}
-        </span>
-      </div>
-
-      {/* Changed fields */}
-      {row.changedFields.length > 0 && (
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="text-xs text-darklink">Champs différents:</span>
-          {row.changedFields.slice(0, 3).map((field) => (
-            <Badge key={field} variant="secondary" size="sm">
-              {FIELD_LABELS[field] || field}
-            </Badge>
-          ))}
-          {row.changedFields.length > 3 && (
-            <span className="text-xs text-darklink">
-              +{row.changedFields.length - 3}
-            </span>
-          )}
-        </div>
-      )}
-
-      {/* Actions */}
-      <div className="flex items-center gap-2 mt-1">
-        <select
-          value={currentAction}
-          onChange={(e) => onActionChange?.(e.target.value as DuplicateStrategyV2)}
-          className="select-md text-xs py-1"
-        >
-          {ACTION_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
-        <button
-          type="button"
-          onClick={onCompareClick}
-          className="text-xs text-primary hover:underline"
-        >
-          Comparer
-        </button>
-      </div>
-    </div>
-  );
+  return null;
 }
 
 // =============================================================================
@@ -205,9 +150,10 @@ export function PreviewIssueTable<T extends IssueRow>({
   issueType,
   maxRows = 10,
   emptyMessage = 'Aucune donnée',
+  rowDecisions,
+  editedRows,
   onRowActionChange,
-  onCompareClick,
-  rowActions,
+  onViewEdit,
 }: PreviewIssueTableProps<T>) {
   const [expanded, setExpanded] = useState(false);
 
@@ -228,82 +174,94 @@ export function PreviewIssueTable<T extends IssueRow>({
     );
   }
 
+  // Get the third column header based on issue type
+  const getThirdColumnHeader = () => {
+    switch (issueType) {
+      case 'invalid':
+        return 'Problème';
+      case 'file_duplicate':
+        return 'Doublon';
+      case 'db_duplicate':
+        return 'Existant';
+      default:
+        return 'Info';
+    }
+  };
+
   return (
     <div>
       <table className="w-full table-auto">
         <thead className="bg-lightgray dark:bg-darkgray">
           <tr>
-            <th className="px-4 py-3 text-left text-xs font-semibold text-darklink uppercase tracking-wider border-b border-ld w-16">
-              Ligne
+            <th className="px-3 py-2 text-left text-xs font-medium text-darklink border-b border-ld w-14">
+              #
             </th>
-            <th className="px-4 py-3 text-left text-xs font-semibold text-darklink uppercase tracking-wider border-b border-ld w-48">
-              Données
+            <th className="px-3 py-2 text-left text-xs font-medium text-darklink border-b border-ld w-40">
+              Contact
             </th>
-            <th className="px-4 py-3 text-left text-xs font-semibold text-darklink uppercase tracking-wider border-b border-ld">
-              {issueType === 'invalid' && 'Erreurs'}
-              {issueType === 'file_duplicate' && 'Doublon'}
-              {issueType === 'db_duplicate' && 'Doublon existant'}
+            <th className="px-3 py-2 text-left text-xs font-medium text-darklink border-b border-ld w-48">
+              {getThirdColumnHeader()}
+            </th>
+            <th className="px-3 py-2 text-right text-xs font-medium text-darklink border-b border-ld">
+              Actions
             </th>
           </tr>
         </thead>
         <tbody className="bg-white dark:bg-dark divide-y divide-border dark:divide-darkborder">
-          {displayRows.map((row) => (
-            <tr
-              key={row.rowNumber}
-              className="hover:bg-lighthover dark:hover:bg-darkgray transition-colors"
-            >
-              <td className="px-4 py-3 text-sm text-ld font-mono">
-                {row.rowNumber}
-              </td>
-              <td className="px-4 py-3 text-sm">
-                <RowData row={row} />
-              </td>
-              <td className="px-4 py-3 text-sm">
-                {issueType === 'invalid' && (
-                  <InvalidRowDetails row={row as InvalidRowV2} />
-                )}
-                {issueType === 'file_duplicate' && (
-                  <FileDuplicateDetails row={row as FileDuplicateRowV2} />
-                )}
-                {issueType === 'db_duplicate' && (
-                  <DbDuplicateDetails
-                    row={row as DbDuplicateRowV2}
-                    currentAction={
-                      rowActions?.get(row.rowNumber) ||
-                      (row as DbDuplicateRowV2).rowAction ||
-                      'skip'
-                    }
-                    onActionChange={(action) =>
-                      onRowActionChange?.(row.rowNumber, action)
-                    }
-                    onCompareClick={() =>
-                      onCompareClick?.(row as DbDuplicateRowV2)
-                    }
-                  />
-                )}
-              </td>
-            </tr>
-          ))}
+          {displayRows.map((row) => {
+            const currentAction = rowDecisions.get(row.rowNumber) || DEFAULT_ACTION_BY_TYPE[issueType];
+            const rowEdits = editedRows.get(row.rowNumber);
+            const hasEdits = rowEdits && Object.keys(rowEdits).length > 0;
+
+            return (
+              <tr
+                key={row.rowNumber}
+                className="hover:bg-lighthover dark:hover:bg-darkgray"
+              >
+                <td className="px-3 py-2 text-xs text-darklink font-mono">
+                  {row.rowNumber}
+                </td>
+                <td className="px-3 py-2">
+                  <RowData row={row} edits={rowEdits} />
+                </td>
+                <td className="px-3 py-2">
+                  <IssueInfo row={row} issueType={issueType} />
+                </td>
+                <td className="px-3 py-2">
+                  <div className="flex justify-end">
+                    <UnifiedRowActions
+                      rowNumber={row.rowNumber}
+                      issueType={issueType}
+                      currentAction={currentAction}
+                      hasEdits={hasEdits}
+                      onActionChange={(action) => onRowActionChange(row.rowNumber, action)}
+                      onViewEdit={() => onViewEdit(row)}
+                    />
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
 
       {/* Show more / less toggle */}
       {hasMore && (
-        <div className="flex justify-center py-3 border-t border-border dark:border-darkborder">
+        <div className="flex justify-center py-2 border-t border-border dark:border-darkborder">
           <button
             type="button"
             onClick={() => setExpanded(!expanded)}
-            className="flex items-center gap-1 text-sm text-primary hover:underline"
+            className="flex items-center gap-1 text-xs text-darklink hover:text-ld"
           >
             {expanded ? (
               <>
-                <IconChevronUp size={16} />
-                Afficher moins
+                <IconChevronUp size={14} />
+                Réduire
               </>
             ) : (
               <>
-                <IconChevronDown size={16} />
-                Afficher {rows.length - maxRows} de plus
+                <IconChevronDown size={14} />
+                +{rows.length - maxRows} autres
               </>
             )}
           </button>
@@ -317,40 +275,40 @@ export function PreviewIssueTable<T extends IssueRow>({
 // SKELETON
 // =============================================================================
 
-export function PreviewIssueTableSkeleton({ rowCount = 5 }: { rowCount?: number }) {
+export function PreviewIssueTableSkeleton({ rowCount = 3 }: { rowCount?: number }) {
   return (
     <div className="animate-pulse">
       <table className="w-full table-auto">
         <thead className="bg-lightgray dark:bg-darkgray">
           <tr>
-            <th className="px-4 py-3 border-b border-ld w-16">
-              <div className="h-3 w-10 bg-border dark:bg-darkborder rounded" />
+            <th className="px-3 py-2 border-b border-ld w-14">
+              <div className="h-3 w-6 bg-border dark:bg-darkborder rounded" />
             </th>
-            <th className="px-4 py-3 border-b border-ld w-48">
+            <th className="px-3 py-2 border-b border-ld w-40">
+              <div className="h-3 w-12 bg-border dark:bg-darkborder rounded" />
+            </th>
+            <th className="px-3 py-2 border-b border-ld w-48">
               <div className="h-3 w-16 bg-border dark:bg-darkborder rounded" />
             </th>
-            <th className="px-4 py-3 border-b border-ld">
-              <div className="h-3 w-20 bg-border dark:bg-darkborder rounded" />
+            <th className="px-3 py-2 border-b border-ld">
+              <div className="h-3 w-20 bg-border dark:bg-darkborder rounded ml-auto" />
             </th>
           </tr>
         </thead>
         <tbody className="bg-white dark:bg-dark divide-y divide-border dark:divide-darkborder">
           {Array.from({ length: rowCount }).map((_, i) => (
             <tr key={i}>
-              <td className="px-4 py-3">
-                <div className="h-4 w-8 bg-border dark:bg-darkborder rounded" />
+              <td className="px-3 py-2">
+                <div className="h-3 w-6 bg-border dark:bg-darkborder rounded" />
               </td>
-              <td className="px-4 py-3">
-                <div className="flex flex-col gap-1">
-                  <div className="h-4 w-24 bg-border dark:bg-darkborder rounded" />
-                  <div className="h-3 w-32 bg-border dark:bg-darkborder rounded" />
-                </div>
+              <td className="px-3 py-2">
+                <div className="h-3 w-20 bg-border dark:bg-darkborder rounded" />
               </td>
-              <td className="px-4 py-3">
-                <div className="flex flex-col gap-1">
-                  <div className="h-3 w-48 bg-border dark:bg-darkborder rounded" />
-                  <div className="h-3 w-36 bg-border dark:bg-darkborder rounded" />
-                </div>
+              <td className="px-3 py-2">
+                <div className="h-3 w-32 bg-border dark:bg-darkborder rounded" />
+              </td>
+              <td className="px-3 py-2">
+                <div className="h-6 w-36 bg-border dark:bg-darkborder rounded ml-auto" />
               </td>
             </tr>
           ))}

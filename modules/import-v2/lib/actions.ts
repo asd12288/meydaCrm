@@ -197,7 +197,12 @@ export async function startImportV2(
       .eq('id', importJobId);
 
     // 3. Run commit worker directly
-    const rowActionsMap = new Map<number, RowDuplicateAction>(input.rowActions);
+    // Map UnifiedRowAction 'import' -> 'create' for commit worker
+    const rowActionsMap = new Map<number, 'skip' | 'update' | 'create'>();
+    for (const [rowNumber, action] of input.rowActions) {
+      // 'import' in UI means 'create' for the worker (force create as new lead)
+      rowActionsMap.set(rowNumber, action === 'import' ? 'create' : action);
+    }
 
     // Build DB duplicate info map
     const dbDuplicateInfoMap = new Map<number, DbDuplicateInfoV2>();

@@ -9,15 +9,15 @@
 import { useCallback, useState, useRef } from 'react';
 import {
   IconUpload,
-  IconFile,
   IconX,
   IconCheck,
   IconAlertCircle,
   IconChevronRight,
 } from '@tabler/icons-react';
-import { CardBox, Badge, Spinner } from '@/modules/shared';
+import { CardBox, Spinner } from '@/modules/shared';
 import { Button } from '@/components/ui/button';
-import { FILE_CONSTRAINTS, PROCESSING } from '../config/constants';
+import { FILE_CONSTRAINTS } from '../config/constants';
+import { InlineDropdown, type InlineDropdownOptionGroup } from '@/modules/shared';
 import type { ColumnMappingV2, ParsedFileV2, ColumnMappingConfigV2 } from '../types';
 import type { LeadFieldKey } from '../../import/types/mapping';
 
@@ -32,6 +32,8 @@ interface UploadStepProps {
   mapping: ColumnMappingConfigV2 | null;
   /** Is currently parsing */
   isParsing: boolean;
+  /** Is currently checking duplicates (transitioning to preview) */
+  isCheckingDuplicates?: boolean;
   /** Parse error message */
   parseError: string | null;
   /** Callback when file is selected */
@@ -50,26 +52,46 @@ interface UploadStepProps {
 // CONSTANTS
 // =============================================================================
 
-const FIELD_OPTIONS: { value: LeadFieldKey | ''; label: string; group: string }[] = [
-  { value: '', label: 'Ignorer', group: '' },
-  // Contact
-  { value: 'email', label: 'Email', group: 'Contact' },
-  { value: 'phone', label: 'Téléphone', group: 'Contact' },
-  { value: 'external_id', label: 'ID externe', group: 'Contact' },
-  // Identity
-  { value: 'first_name', label: 'Prénom', group: 'Identité' },
-  { value: 'last_name', label: 'Nom', group: 'Identité' },
-  { value: 'company', label: 'Société', group: 'Identité' },
-  { value: 'job_title', label: 'Fonction', group: 'Identité' },
-  // Location
-  { value: 'address', label: 'Adresse', group: 'Localisation' },
-  { value: 'city', label: 'Ville', group: 'Localisation' },
-  { value: 'postal_code', label: 'Code postal', group: 'Localisation' },
-  { value: 'country', label: 'Pays', group: 'Localisation' },
-  // Other
-  { value: 'status', label: 'Statut', group: 'Autre' },
-  { value: 'source', label: 'Source', group: 'Autre' },
-  { value: 'notes', label: 'Notes', group: 'Autre' },
+/** Grouped field options for dropdown */
+const FIELD_OPTION_GROUPS: InlineDropdownOptionGroup[] = [
+  {
+    label: '',
+    options: [{ value: '', label: 'Ignorer' }],
+  },
+  {
+    label: 'Contact',
+    options: [
+      { value: 'email', label: 'Email' },
+      { value: 'phone', label: 'Téléphone' },
+      { value: 'external_id', label: 'ID externe' },
+    ],
+  },
+  {
+    label: 'Identité',
+    options: [
+      { value: 'first_name', label: 'Prénom' },
+      { value: 'last_name', label: 'Nom' },
+      { value: 'company', label: 'Société' },
+      { value: 'job_title', label: 'Fonction' },
+    ],
+  },
+  {
+    label: 'Localisation',
+    options: [
+      { value: 'address', label: 'Adresse' },
+      { value: 'city', label: 'Ville' },
+      { value: 'postal_code', label: 'Code postal' },
+      { value: 'country', label: 'Pays' },
+    ],
+  },
+  {
+    label: 'Autre',
+    options: [
+      { value: 'status', label: 'Statut' },
+      { value: 'source', label: 'Source' },
+      { value: 'notes', label: 'Notes' },
+    ],
+  },
 ];
 
 // =============================================================================
@@ -191,26 +213,23 @@ function FileInfo({ file, onClear }: FileInfoProps) {
   const sizeDisplay = sizeKB > 1024 ? `${(sizeKB / 1024).toFixed(1)} MB` : `${sizeKB} KB`;
 
   return (
-    <div className="flex items-center justify-between p-4 bg-lightsuccess/30 dark:bg-success/10 rounded-lg border border-success/30">
+    <div className="flex items-center justify-between p-3 rounded-lg border border-border dark:border-darkborder bg-white dark:bg-dark">
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-lg bg-success/20 flex items-center justify-center">
-          <IconFile size={24} className="text-success" />
-        </div>
-        <div>
-          <p className="font-medium text-ld">{file.name}</p>
-          <p className="text-xs text-darklink">
-            {file.rowCount.toLocaleString('fr-FR')} lignes • {sizeDisplay} •{' '}
-            {file.type.toUpperCase()}
-          </p>
-        </div>
+        <span className="px-2 py-1 text-xs font-medium rounded bg-lightgray dark:bg-darkgray text-darklink">
+          {file.type.toUpperCase()}
+        </span>
+        <span className="text-sm text-ld">{file.name}</span>
+        <span className="text-xs text-darklink">
+          {file.rowCount.toLocaleString('fr-FR')} lignes · {sizeDisplay}
+        </span>
       </div>
       <button
         type="button"
         onClick={onClear}
-        className="p-2 text-darklink hover:text-error transition-colors"
-        title="Supprimer le fichier"
+        className="p-1.5 text-darklink hover:text-error transition-colors"
+        title="Supprimer"
       >
-        <IconX size={20} />
+        <IconX size={18} />
       </button>
     </div>
   );
@@ -226,103 +245,45 @@ interface MappingTableProps {
 }
 
 function MappingTable({ mappings, onMappingChange }: MappingTableProps) {
-  // Group fields by category for the select dropdown
-  const groupedFields = FIELD_OPTIONS.reduce(
-    (acc, field) => {
-      if (!field.group) {
-        acc[''] = acc[''] || [];
-        acc[''].push(field);
-      } else {
-        acc[field.group] = acc[field.group] || [];
-        acc[field.group].push(field);
-      }
-      return acc;
-    },
-    {} as Record<string, typeof FIELD_OPTIONS>
-  );
-
   return (
     <div className="overflow-x-auto">
       <table className="w-full">
         <thead className="bg-lightgray dark:bg-darkgray">
           <tr>
-            <th className="px-4 py-3 text-left text-xs font-semibold text-darklink uppercase tracking-wider border-b border-ld">
-              Colonne du fichier
+            <th className="px-3 py-2 text-left text-xs font-medium text-darklink border-b border-ld">
+              Colonne
             </th>
-            <th className="px-4 py-3 text-left text-xs font-semibold text-darklink uppercase tracking-wider border-b border-ld w-48">
-              Mapper vers
+            <th className="px-3 py-2 text-left text-xs font-medium text-darklink border-b border-ld w-44">
+              Champ cible
             </th>
-            <th className="px-4 py-3 text-left text-xs font-semibold text-darklink uppercase tracking-wider border-b border-ld">
-              Aperçu
-            </th>
-            <th className="px-4 py-3 text-center text-xs font-semibold text-darklink uppercase tracking-wider border-b border-ld w-24">
-              Confiance
+            <th className="px-3 py-2 text-left text-xs font-medium text-darklink border-b border-ld">
+              Exemples
             </th>
           </tr>
         </thead>
         <tbody className="bg-white dark:bg-dark divide-y divide-border dark:divide-darkborder">
           {mappings.map((mapping) => (
             <tr key={mapping.sourceIndex} className="hover:bg-lighthover dark:hover:bg-darkgray">
-              <td className="px-4 py-3 text-sm font-medium text-ld">
+              <td className="px-3 py-2 text-sm text-ld">
                 {mapping.sourceColumn}
               </td>
-              <td className="px-4 py-3">
-                <select
+              <td className="px-3 py-2">
+                <InlineDropdown
+                  groups={FIELD_OPTION_GROUPS}
                   value={mapping.targetField || ''}
-                  onChange={(e) =>
+                  onChange={(v) =>
                     onMappingChange(
                       mapping.sourceIndex,
-                      e.target.value ? (e.target.value as LeadFieldKey) : null
+                      v ? (v as LeadFieldKey) : null
                     )
                   }
-                  className="select-md text-sm w-full"
-                >
-                  {Object.entries(groupedFields).map(([group, fields]) =>
-                    group ? (
-                      <optgroup key={group} label={group}>
-                        {fields.map((f) => (
-                          <option key={f.value} value={f.value}>
-                            {f.label}
-                          </option>
-                        ))}
-                      </optgroup>
-                    ) : (
-                      fields.map((f) => (
-                        <option key={f.value} value={f.value}>
-                          {f.label}
-                        </option>
-                      ))
-                    )
-                  )}
-                </select>
+                  widthClass="w-full"
+                  placeholder="Ignorer"
+                />
               </td>
-              <td className="px-4 py-3 text-sm text-darklink">
-                <div className="flex flex-wrap gap-1">
-                  {mapping.sampleValues.slice(0, 3).map((val, idx) => (
-                    <span
-                      key={idx}
-                      className="px-2 py-0.5 bg-lightgray dark:bg-darkgray rounded text-xs truncate max-w-[120px]"
-                      title={val}
-                    >
-                      {val || <em className="text-darklink/50">vide</em>}
-                    </span>
-                  ))}
-                </div>
-              </td>
-              <td className="px-4 py-3 text-center">
-                {mapping.isManual ? (
-                  <Badge variant="primary" size="sm">
-                    Manuel
-                  </Badge>
-                ) : mapping.targetField ? (
-                  <Badge
-                    variant={mapping.confidence >= 0.8 ? 'success' : 'warning'}
-                    size="sm"
-                  >
-                    {Math.round(mapping.confidence * 100)}%
-                  </Badge>
-                ) : (
-                  <span className="text-xs text-darklink">-</span>
+              <td className="px-3 py-2 text-xs text-darklink truncate max-w-xs">
+                {mapping.sampleValues.slice(0, 3).filter(Boolean).join(', ') || (
+                  <em className="text-darklink/50">vide</em>
                 )}
               </td>
             </tr>
@@ -352,30 +313,20 @@ function MappingSummary({ mappings }: MappingSummaryProps) {
   const hasContactField = hasEmail || hasPhone || hasExternalId;
 
   return (
-    <div className="flex items-center gap-4 p-3 bg-lightgray dark:bg-darkgray rounded-lg">
-      <div className="flex items-center gap-2">
-        <span className="text-sm text-darklink">Colonnes mappées:</span>
-        <Badge variant="primary" size="sm">
-          {mapped.length}
-        </Badge>
-      </div>
-      <div className="flex items-center gap-2">
-        <span className="text-sm text-darklink">Ignorées:</span>
-        <Badge variant="secondary" size="sm">
-          {ignored.length}
-        </Badge>
-      </div>
-      <div className="flex-1" />
+    <div className="flex items-center justify-between text-sm">
+      <span className="text-darklink">
+        {mapped.length} colonnes mappées, {ignored.length} ignorées
+      </span>
       {hasContactField ? (
-        <div className="flex items-center gap-1 text-success text-sm">
-          <IconCheck size={16} />
-          <span>Champ de contact détecté</span>
-        </div>
+        <span className="flex items-center gap-1 text-success">
+          <IconCheck size={14} />
+          Contact détecté
+        </span>
       ) : (
-        <div className="flex items-center gap-1 text-error text-sm">
-          <IconAlertCircle size={16} />
-          <span>Email, téléphone ou ID externe requis</span>
-        </div>
+        <span className="flex items-center gap-1 text-error">
+          <IconAlertCircle size={14} />
+          Email, téléphone ou ID requis
+        </span>
       )}
     </div>
   );
@@ -389,6 +340,7 @@ export function UploadStep({
   parsedFile,
   mapping,
   isParsing,
+  isCheckingDuplicates = false,
   parseError,
   onFileSelect,
   onFileClear,
@@ -396,6 +348,7 @@ export function UploadStep({
   onNext,
   canProceed,
 }: UploadStepProps) {
+  const isProcessing = isParsing || isCheckingDuplicates;
   return (
     <div className="flex flex-col gap-6">
       {/* File Upload / Info */}
@@ -428,7 +381,7 @@ export function UploadStep({
 
           <MappingSummary mappings={mapping.mappings} />
 
-          <div className="mt-4 border border-border dark:border-darkborder rounded-lg overflow-hidden">
+          <div className="mt-4 border border-border dark:border-darkborder rounded-lg overflow-visible">
             <MappingTable mappings={mapping.mappings} onMappingChange={onMappingChange} />
           </div>
         </CardBox>
@@ -438,11 +391,20 @@ export function UploadStep({
       <div className="flex items-center justify-end">
         <Button
           onClick={onNext}
-          disabled={!canProceed || isParsing}
+          disabled={!canProceed || isProcessing}
           className="gap-2"
         >
-          Continuer
-          <IconChevronRight size={18} />
+          {isCheckingDuplicates ? (
+            <>
+              <Spinner size="sm" />
+              Analyse en cours...
+            </>
+          ) : (
+            <>
+              Continuer
+              <IconChevronRight size={18} />
+            </>
+          )}
         </Button>
       </div>
     </div>

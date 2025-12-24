@@ -20,7 +20,7 @@ import {
   type ImportWizardContextValue,
   initialWizardState,
 } from '../types/wizard';
-import type { WizardStepV2 } from '../config/constants';
+import type { WizardStepV2, UnifiedRowAction } from '../config/constants';
 
 // =============================================================================
 // REDUCER
@@ -92,7 +92,8 @@ function wizardReducer(
         mapping: null,
         importJobId: null,
         preview: null,
-        rowActions: new Map(),
+        rowDecisions: new Map(),
+        editedRows: new Map(),
         progress: null,
         results: null,
         error: null,
@@ -110,24 +111,54 @@ function wizardReducer(
     case 'SET_DUPLICATES':
       return { ...state, duplicates: { ...state.duplicates, ...action.payload } };
 
-    case 'SET_ROW_ACTION': {
+    // Unified row decisions (replaces separate row/error actions)
+    case 'SET_ROW_DECISION': {
       const { rowNumber, action: rowAction } = action.payload;
-      const newRowActions = new Map(state.rowActions);
-      newRowActions.set(rowNumber, rowAction);
-      return { ...state, rowActions: newRowActions };
+      const newRowDecisions = new Map(state.rowDecisions);
+      newRowDecisions.set(rowNumber, rowAction);
+      return { ...state, rowDecisions: newRowDecisions };
     }
 
-    case 'SET_ALL_ROW_ACTIONS': {
+    case 'SET_ALL_ROW_DECISIONS': {
       if (!state.preview) return state;
-      const newRowActions = new Map<number, typeof action.payload>();
-      for (const row of state.preview.dbDuplicateRows) {
-        newRowActions.set(row.rowNumber, action.payload);
+      const { issueType, action: rowAction } = action.payload;
+      const newRowDecisions = new Map(state.rowDecisions);
+
+      // Apply action to all rows of the specified issue type
+      if (issueType === 'invalid') {
+        for (const row of state.preview.invalidRows) {
+          newRowDecisions.set(row.rowNumber, rowAction);
+        }
+      } else if (issueType === 'file_duplicate') {
+        for (const row of state.preview.fileDuplicateRows) {
+          newRowDecisions.set(row.rowNumber, rowAction);
+        }
+      } else if (issueType === 'db_duplicate') {
+        for (const row of state.preview.dbDuplicateRows) {
+          newRowDecisions.set(row.rowNumber, rowAction);
+        }
       }
-      return { ...state, rowActions: newRowActions };
+
+      return { ...state, rowDecisions: newRowDecisions };
     }
 
-    case 'CLEAR_ROW_ACTIONS':
-      return { ...state, rowActions: new Map() };
+    case 'CLEAR_ROW_DECISIONS':
+      return { ...state, rowDecisions: new Map() };
+
+    // Edited row data (for inline editing)
+    case 'SET_EDITED_ROW_FIELD': {
+      const { rowNumber, field, value } = action.payload;
+      const newEditedRows = new Map(state.editedRows);
+      const rowEdits = newEditedRows.get(rowNumber) || {};
+      newEditedRows.set(rowNumber, { ...rowEdits, [field]: value });
+      return { ...state, editedRows: newEditedRows };
+    }
+
+    case 'CLEAR_ROW_EDITS': {
+      const newEditedRows = new Map(state.editedRows);
+      newEditedRows.delete(action.payload);
+      return { ...state, editedRows: newEditedRows };
+    }
 
     case 'SET_DEFAULT_STATUS':
       return { ...state, defaultStatus: action.payload };
@@ -172,12 +203,13 @@ function wizardReducer(
     // Reset
     // -------------------------------------------------------------------------
     case 'RESET':
-      return { ...initialWizardState, rowActions: new Map() };
+      return { ...initialWizardState, rowDecisions: new Map(), editedRows: new Map() };
 
     case 'RESET_FOR_NEW_IMPORT':
       return {
         ...initialWizardState,
-        rowActions: new Map(),
+        rowDecisions: new Map(),
+        editedRows: new Map(),
         // Keep assignment preferences
         assignment: state.assignment,
         duplicates: state.duplicates,
@@ -206,7 +238,8 @@ interface ImportWizardProviderProps {
 export function ImportWizardProvider({ children }: ImportWizardProviderProps) {
   const [state, dispatch] = useReducer(wizardReducer, {
     ...initialWizardState,
-    rowActions: new Map(),
+    rowDecisions: new Map(),
+    editedRows: new Map(),
   });
 
   // Convenience methods
@@ -254,10 +287,10 @@ export function ImportWizardProvider({ children }: ImportWizardProviderProps) {
 
     // Need at least one valid row OR one row with action
     const hasValidRows = state.preview.summary.valid > 0;
-    const hasActionableRows = state.rowActions.size > 0;
+    const hasActionableRows = state.rowDecisions.size > 0;
 
     return hasValidRows || hasActionableRows;
-  }, [state.preview, state.rowActions]);
+  }, [state.preview, state.rowDecisions]);
 
   const isTerminalState = useMemo(() => {
     // Import is complete (success or failure)

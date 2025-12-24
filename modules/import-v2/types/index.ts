@@ -139,7 +139,7 @@ export interface SalesUserV2 {
 // DUPLICATE TYPES
 // =============================================================================
 
-import type { DuplicateStrategyV2, DuplicateCheckField } from '../config/constants';
+import type { DuplicateStrategyV2, DuplicateCheckField, UnifiedRowAction } from '../config/constants';
 
 /**
  * Duplicate handling configuration
@@ -157,8 +157,10 @@ export interface DuplicateConfigV2 {
 
 /**
  * Per-row duplicate action override
+ * Uses UnifiedRowAction from UI ('skip' | 'import' | 'update')
+ * Maps to worker internally: 'import' -> 'create'
  */
-export type RowDuplicateAction = DuplicateStrategyV2;
+export type RowDuplicateAction = UnifiedRowAction;
 
 // =============================================================================
 // IMPORT OPTIONS (Combined config for commit)

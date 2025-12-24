@@ -3,24 +3,25 @@
  *
  * Main component for the preview step showing:
  * - Summary cards (Total, Valid, Invalid, File Dup, DB Dup)
- * - Tabbed issue tables
- * - Bulk actions for DB duplicates
+ * - Tabbed issue tables with unified actions
+ * - Bulk actions for all issue types
  */
 
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
-import { IconCheck, IconAlertTriangle, IconRefresh } from '@tabler/icons-react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
+import { IconCheck, IconRefresh, IconX, IconReplace, IconPlus } from '@tabler/icons-react';
 import { CardBox } from '@/modules/shared';
 import { Button } from '@/components/ui/button';
 import { PreviewSummaryCards, PreviewSummaryCardsSkeleton } from './preview-summary-cards';
-import { PreviewIssueTable, PreviewIssueTableSkeleton } from './preview-issue-table';
+import { PreviewIssueTable, PreviewIssueTableSkeleton, type IssueRow } from './preview-issue-table';
 import type {
   DetailedPreviewDataV2,
   PreviewTabV2,
-  DbDuplicateRowV2,
 } from '../types/preview';
-import type { DuplicateStrategyV2 } from '../config/constants';
+import type { UnifiedRowAction, PreviewIssueType } from '../config/constants';
+import { UNIFIED_ROW_ACTION_LABELS, AVAILABLE_ACTIONS_BY_TYPE } from '../config/constants';
+import type { LeadFieldKey } from '../../import/types/mapping';
 
 // =============================================================================
 // TYPES
@@ -31,14 +32,16 @@ interface PreviewStepProps {
   preview: DetailedPreviewDataV2;
   /** Loading state */
   isLoading?: boolean;
-  /** Row actions state (DB duplicates) */
-  rowActions: Map<number, DuplicateStrategyV2>;
+  /** Unified row decisions map */
+  rowDecisions: Map<number, UnifiedRowAction>;
+  /** Edited rows map */
+  editedRows: Map<number, Partial<Record<LeadFieldKey, string>>>;
   /** Callback when row action changes */
-  onRowActionChange: (rowNumber: number, action: DuplicateStrategyV2) => void;
+  onRowActionChange: (rowNumber: number, action: UnifiedRowAction) => void;
   /** Callback for bulk action */
-  onBulkAction: (action: DuplicateStrategyV2) => void;
-  /** Callback to compare DB duplicate */
-  onCompareClick: (row: DbDuplicateRowV2) => void;
+  onBulkAction: (issueType: PreviewIssueType, action: UnifiedRowAction) => void;
+  /** Callback to view/edit a row */
+  onViewEdit: (row: IssueRow, issueType: PreviewIssueType) => void;
   /** Callback to start import */
   onStartImport: () => void;
   /** Callback to go back */
@@ -53,59 +56,71 @@ interface PreviewStepProps {
 // TAB CONFIGURATION
 // =============================================================================
 
-const TABS: { id: PreviewTabV2; label: string }[] = [
-  { id: 'invalid', label: 'Invalides' },
-  { id: 'file_duplicates', label: 'Doublons fichier' },
-  { id: 'db_duplicates', label: 'Doublons base' },
+const TABS: { id: PreviewTabV2; label: string; issueType: PreviewIssueType }[] = [
+  { id: 'invalid', label: 'Invalides', issueType: 'invalid' },
+  { id: 'file_duplicates', label: 'Doublons fichier', issueType: 'file_duplicate' },
+  { id: 'db_duplicates', label: 'Doublons base', issueType: 'db_duplicate' },
 ];
 
+// Map tab id to issue type
+const TAB_TO_ISSUE_TYPE: Record<PreviewTabV2, PreviewIssueType> = {
+  invalid: 'invalid',
+  file_duplicates: 'file_duplicate',
+  db_duplicates: 'db_duplicate',
+};
+
 // =============================================================================
-// BULK ACTION BAR
+// UNIFIED BULK ACTION BAR
 // =============================================================================
 
 interface BulkActionBarProps {
+  issueType: PreviewIssueType;
   count: number;
-  onApplyAll: (action: DuplicateStrategyV2) => void;
+  onApplyAll: (action: UnifiedRowAction) => void;
 }
 
-function BulkActionBar({ count, onApplyAll }: BulkActionBarProps) {
+function BulkActionBar({ issueType, count, onApplyAll }: BulkActionBarProps) {
   if (count === 0) return null;
 
+  const availableActions = AVAILABLE_ACTIONS_BY_TYPE[issueType];
+
+  const btnClass = `
+    inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded
+    border border-border dark:border-darkborder
+    hover:bg-lightgray dark:hover:bg-darkgray transition-colors
+  `;
+
+  const getIcon = (action: UnifiedRowAction) => {
+    switch (action) {
+      case 'skip':
+        return <IconX size={12} />;
+      case 'import':
+        return <IconPlus size={12} />;
+      case 'update':
+        return <IconReplace size={12} />;
+    }
+  };
+
   return (
-    <div className="flex items-center justify-between p-3 bg-lightprimary/30 dark:bg-primary/10 rounded-lg border border-primary/20">
-      <span className="text-sm text-ld">
-        <strong>{count}</strong> doublons existants
-      </span>
-      <div className="flex items-center gap-2">
-        <span className="text-xs text-darklink">Appliquer à tous:</span>
+    <div className="flex items-center gap-2 text-xs text-darklink mb-3">
+      <span className="text-darklink mr-1">Appliquer à tous ({count}):</span>
+      {availableActions.map((action) => (
         <button
+          key={action}
           type="button"
-          onClick={() => onApplyAll('skip')}
-          className="px-3 py-1.5 text-xs font-medium rounded-md bg-white dark:bg-dark border border-border dark:border-darkborder hover:bg-lighthover transition-colors"
+          onClick={() => onApplyAll(action)}
+          className={btnClass}
         >
-          Ignorer
+          {getIcon(action)}
+          {UNIFIED_ROW_ACTION_LABELS[action]}
         </button>
-        <button
-          type="button"
-          onClick={() => onApplyAll('update')}
-          className="px-3 py-1.5 text-xs font-medium rounded-md bg-warning/10 border border-warning/30 text-warning hover:bg-warning/20 transition-colors"
-        >
-          Mettre à jour
-        </button>
-        <button
-          type="button"
-          onClick={() => onApplyAll('create')}
-          className="px-3 py-1.5 text-xs font-medium rounded-md bg-primary/10 border border-primary/30 text-primary hover:bg-primary/20 transition-colors"
-        >
-          Créer nouveau
-        </button>
-      </div>
+      ))}
     </div>
   );
 }
 
 // =============================================================================
-// EFFECTIVE COUNTS SUMMARY
+// EFFECTIVE COUNTS SUMMARY (compact inline)
 // =============================================================================
 
 interface EffectiveCountsSummaryProps {
@@ -122,24 +137,10 @@ function EffectiveCountsSummary({
   willError,
 }: EffectiveCountsSummaryProps) {
   return (
-    <div className="flex items-center gap-4 p-4 bg-lightgray dark:bg-darkgray rounded-lg">
-      <span className="text-sm font-medium text-ld">Résultat estimé:</span>
-      <div className="flex items-center gap-3 text-sm">
-        <span className="text-success">
-          <strong>{willImport}</strong> nouveaux
-        </span>
-        <span className="text-warning">
-          <strong>{willUpdate}</strong> mis à jour
-        </span>
-        <span className="text-darklink">
-          <strong>{willSkip}</strong> ignorés
-        </span>
-        {willError > 0 && (
-          <span className="text-error">
-            <strong>{willError}</strong> erreurs
-          </span>
-        )}
-      </div>
+    <div className="text-sm text-darklink">
+      <span className="text-ld font-medium">Résultat:</span>{' '}
+      {willImport} nouveaux · {willUpdate} mis à jour · {willSkip} ignorés
+      {willError > 0 && <span className="text-error"> · {willError} erreurs</span>}
     </div>
   );
 }
@@ -151,16 +152,32 @@ function EffectiveCountsSummary({
 export function PreviewStep({
   preview,
   isLoading = false,
-  rowActions,
+  rowDecisions,
+  editedRows,
   onRowActionChange,
   onBulkAction,
-  onCompareClick,
+  onViewEdit,
   onStartImport,
   onBack,
   canImport,
   isImporting = false,
 }: PreviewStepProps) {
-  const [activeTab, setActiveTab] = useState<PreviewTabV2 | null>(null);
+  // Determine default tab: first one with data (invalid > file_dup > db_dup)
+  const defaultTab = useMemo((): PreviewTabV2 | null => {
+    if (preview.summary.invalid > 0) return 'invalid';
+    if (preview.summary.fileDuplicates > 0) return 'file_duplicates';
+    if (preview.summary.dbDuplicates > 0) return 'db_duplicates';
+    return null;
+  }, [preview.summary]);
+
+  const [activeTab, setActiveTab] = useState<PreviewTabV2 | null>(defaultTab);
+
+  // Auto-select default tab on mount (when preview loads)
+  useEffect(() => {
+    if (defaultTab && activeTab === null) {
+      setActiveTab(defaultTab);
+    }
+  }, [defaultTab, activeTab]);
 
   // Handle card click to select/deselect tab
   const handleCardClick = useCallback((tab: PreviewTabV2 | null) => {
@@ -186,27 +203,52 @@ export function PreviewStep({
     [preview.summary]
   );
 
+  // Get the current issue type from active tab
+  const currentIssueType = activeTab ? TAB_TO_ISSUE_TYPE[activeTab] : null;
+
+  // Handle view/edit with issue type context
+  const handleViewEdit = useCallback(
+    (row: IssueRow) => {
+      if (currentIssueType) {
+        onViewEdit(row, currentIssueType);
+      }
+    },
+    [currentIssueType, onViewEdit]
+  );
+
+  // Handle bulk action with issue type context
+  const handleBulkAction = useCallback(
+    (action: UnifiedRowAction) => {
+      if (currentIssueType) {
+        onBulkAction(currentIssueType, action);
+      }
+    },
+    [currentIssueType, onBulkAction]
+  );
+
   if (isLoading) {
     return <PreviewStepSkeleton />;
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* Summary Cards */}
+    <div className="flex flex-col gap-4">
+      {/* Summary Stats + Effective Counts */}
       <CardBox>
-        <h3 className="card-title mb-4">Aperçu de l&apos;import</h3>
-        <PreviewSummaryCards
-          summary={preview.summary}
-          activeTab={activeTab}
-          onCardClick={handleCardClick}
-        />
+        <div className="flex flex-col gap-3">
+          <PreviewSummaryCards
+            summary={preview.summary}
+            activeTab={activeTab}
+            onCardClick={handleCardClick}
+          />
+          <EffectiveCountsSummary {...preview.effectiveCounts} />
+        </div>
       </CardBox>
 
       {/* Issue Tables (if any issues exist) */}
-      {hasIssues && (
+      {hasIssues && activeTab && currentIssueType && (
         <CardBox>
           {/* Tab Navigation */}
-          <div className="flex items-center gap-1 border-b border-border dark:border-darkborder mb-4">
+          <div className="flex items-center gap-4 mb-3">
             {TABS.map((tab) => {
               const count = tabCounts[tab.id];
               if (count === 0) return null;
@@ -218,44 +260,34 @@ export function PreviewStep({
                   type="button"
                   onClick={() => setActiveTab(tab.id)}
                   className={`
-                    px-4 py-2.5 text-sm font-medium border-b-2 transition-colors
-                    ${
-                      isActive
-                        ? 'border-primary text-primary'
-                        : 'border-transparent text-darklink hover:text-ld hover:border-border'
-                    }
+                    text-sm transition-colors
+                    ${isActive ? 'font-medium text-ld' : 'text-darklink hover:text-ld'}
                   `}
                 >
-                  {tab.label}
-                  <span
-                    className={`ml-2 px-1.5 py-0.5 text-xs rounded-full ${
-                      isActive
-                        ? 'bg-primary text-white'
-                        : 'bg-lightgray dark:bg-darkgray text-darklink'
-                    }`}
-                  >
-                    {count}
-                  </span>
+                  {tab.label} ({count})
                 </button>
               );
             })}
           </div>
 
-          {/* Bulk Action Bar (for DB duplicates) */}
-          {activeTab === 'db_duplicates' && (
-            <BulkActionBar
-              count={preview.summary.dbDuplicates}
-              onApplyAll={onBulkAction}
-            />
-          )}
+          {/* Bulk Action Bar */}
+          <BulkActionBar
+            issueType={currentIssueType}
+            count={tabCounts[activeTab]}
+            onApplyAll={handleBulkAction}
+          />
 
           {/* Issue Table */}
-          <div className="mt-4">
+          <div className="border border-border dark:border-darkborder rounded-lg overflow-visible">
             {activeTab === 'invalid' && (
               <PreviewIssueTable
                 rows={preview.invalidRows}
                 issueType="invalid"
                 emptyMessage="Aucune ligne invalide"
+                rowDecisions={rowDecisions}
+                editedRows={editedRows}
+                onRowActionChange={onRowActionChange}
+                onViewEdit={handleViewEdit}
               />
             )}
             {activeTab === 'file_duplicates' && (
@@ -263,6 +295,10 @@ export function PreviewStep({
                 rows={preview.fileDuplicateRows}
                 issueType="file_duplicate"
                 emptyMessage="Aucun doublon dans le fichier"
+                rowDecisions={rowDecisions}
+                editedRows={editedRows}
+                onRowActionChange={onRowActionChange}
+                onViewEdit={handleViewEdit}
               />
             )}
             {activeTab === 'db_duplicates' && (
@@ -270,45 +306,36 @@ export function PreviewStep({
                 rows={preview.dbDuplicateRows}
                 issueType="db_duplicate"
                 emptyMessage="Aucun doublon avec la base"
-                rowActions={rowActions}
+                rowDecisions={rowDecisions}
+                editedRows={editedRows}
                 onRowActionChange={onRowActionChange}
-                onCompareClick={onCompareClick}
+                onViewEdit={handleViewEdit}
               />
-            )}
-            {activeTab === null && (
-              <div className="p-8 text-center text-darklink">
-                <IconAlertTriangle size={32} className="mx-auto mb-2 opacity-50" />
-                <p className="text-sm">
-                  Cliquez sur une carte ci-dessus pour voir les détails
-                </p>
-              </div>
             )}
           </div>
         </CardBox>
       )}
 
-      {/* Effective Counts */}
-      <EffectiveCountsSummary {...preview.effectiveCounts} />
-
       {/* Actions */}
-      <div className="flex items-center justify-between">
-        <Button variant="outline" onClick={onBack}>
+      <div className="flex items-center justify-between pt-2">
+        <Button variant="outline" size="sm" onClick={onBack}>
           Retour
         </Button>
         <Button
+          size="sm"
           onClick={onStartImport}
           disabled={!canImport || isImporting}
           className="gap-2"
         >
           {isImporting ? (
             <>
-              <IconRefresh size={18} className="animate-spin" />
-              Importation...
+              <IconRefresh size={16} className="animate-spin" />
+              Import...
             </>
           ) : (
             <>
-              <IconCheck size={18} />
-              Lancer l&apos;import
+              <IconCheck size={16} />
+              Importer
             </>
           )}
         </Button>
@@ -323,24 +350,25 @@ export function PreviewStep({
 
 export function PreviewStepSkeleton() {
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4 animate-pulse">
       <CardBox>
-        <div className="h-5 w-40 bg-border dark:bg-darkborder rounded mb-4" />
-        <PreviewSummaryCardsSkeleton />
-      </CardBox>
-
-      <CardBox>
-        <div className="flex gap-4 mb-4">
-          <div className="h-8 w-24 bg-border dark:bg-darkborder rounded" />
-          <div className="h-8 w-28 bg-border dark:bg-darkborder rounded" />
-          <div className="h-8 w-24 bg-border dark:bg-darkborder rounded" />
+        <div className="flex flex-col gap-3">
+          <PreviewSummaryCardsSkeleton />
+          <div className="h-4 w-48 bg-border dark:bg-darkborder rounded" />
         </div>
-        <PreviewIssueTableSkeleton />
       </CardBox>
 
-      <div className="flex items-center justify-between">
-        <div className="h-10 w-24 bg-border dark:bg-darkborder rounded" />
-        <div className="h-10 w-36 bg-border dark:bg-darkborder rounded" />
+      <CardBox>
+        <div className="flex gap-4 mb-3">
+          <div className="h-4 w-20 bg-border dark:bg-darkborder rounded" />
+          <div className="h-4 w-24 bg-border dark:bg-darkborder rounded" />
+        </div>
+        <PreviewIssueTableSkeleton rowCount={3} />
+      </CardBox>
+
+      <div className="flex items-center justify-between pt-2">
+        <div className="h-8 w-20 bg-border dark:bg-darkborder rounded" />
+        <div className="h-8 w-24 bg-border dark:bg-darkborder rounded" />
       </div>
     </div>
   );

@@ -11,14 +11,10 @@
 
 import { useCallback, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  IconUpload,
-  IconEye,
-  IconFileImport,
-  IconCheck,
-} from '@tabler/icons-react';
+import { IconCheck } from '@tabler/icons-react';
 
-import { WIZARD_STEP_CONFIG } from '../config/constants';
+import { WIZARD_STEP_CONFIG, DEFAULT_ACTION_BY_TYPE } from '../config/constants';
+import type { WizardStepV2, UnifiedRowAction, PreviewIssueType } from '../config/constants';
 import { useImportWizard, ImportWizardProvider } from '../context';
 import { useClientParser } from '../hooks';
 import { validateRows } from '../lib/validators/row-validator';
@@ -26,18 +22,17 @@ import { detectFileDuplicates } from '../lib/processors';
 import { startImportV2 } from '../lib/actions';
 import { analytics } from '@/lib/analytics';
 import { UploadStep, UploadStepSkeleton } from './upload-step';
-import { PreviewStep, PreviewStepSkeleton } from './preview-step';
-import { ImportStep, ImportStepSkeleton } from './import-step';
-import { DuplicateComparisonModal } from './duplicate-comparison-modal';
+import { PreviewStep } from './preview-step';
+import { ImportStep } from './import-step';
+import { UnifiedRowModal } from './unified-row-modal';
+import type { IssueRow } from './preview-issue-table';
 
-import type { WizardStepV2, DuplicateStrategyV2 } from '../config/constants';
 import type { LeadFieldKey } from '../../import/types/mapping';
 import type {
-  DbDuplicateRowV2,
-  ComparisonDataV2,
   DetailedPreviewDataV2,
   InvalidRowV2,
   FileDuplicateRowV2,
+  DbDuplicateRowV2,
 } from '../types/preview';
 
 // =============================================================================
@@ -52,20 +47,6 @@ interface StepperProps {
 function Stepper({ currentStep, completedSteps }: StepperProps) {
   const steps: WizardStepV2[] = ['upload', 'preview', 'import'];
 
-  const getStepIcon = (step: WizardStepV2) => {
-    if (completedSteps.includes(step)) {
-      return <IconCheck size={20} />;
-    }
-    switch (step) {
-      case 'upload':
-        return <IconUpload size={20} />;
-      case 'preview':
-        return <IconEye size={20} />;
-      case 'import':
-        return <IconFileImport size={20} />;
-    }
-  };
-
   const getStepStatus = (step: WizardStepV2) => {
     if (completedSteps.includes(step)) return 'completed';
     if (step === currentStep) return 'current';
@@ -73,46 +54,40 @@ function Stepper({ currentStep, completedSteps }: StepperProps) {
   };
 
   return (
-    <div className="flex items-center justify-center mb-8">
+    <div className="flex items-center justify-center mb-6">
       {steps.map((step, index) => {
         const config = WIZARD_STEP_CONFIG[step];
         const status = getStepStatus(step);
 
         return (
           <div key={step} className="flex items-center">
-            {/* Step circle */}
-            <div className="flex flex-col items-center">
+            {/* Step circle + label */}
+            <div className="flex items-center gap-2">
               <div
                 className={`
-                  w-10 h-10 rounded-full flex items-center justify-center
-                  transition-colors duration-200
-                  ${status === 'completed' ? 'bg-success text-white' : ''}
+                  w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium
+                  ${status === 'completed' ? 'bg-darklink text-white' : ''}
                   ${status === 'current' ? 'bg-primary text-white' : ''}
                   ${status === 'pending' ? 'bg-lightgray dark:bg-darkgray text-darklink' : ''}
                 `}
               >
-                {getStepIcon(step)}
+                {status === 'completed' ? <IconCheck size={14} /> : index + 1}
               </div>
-              <div className="mt-2 text-center">
-                <p
-                  className={`text-sm font-medium ${
-                    status === 'current' ? 'text-primary' : 'text-ld'
-                  }`}
-                >
-                  {config.label}
-                </p>
-                <p className="text-xs text-darklink hidden md:block">
-                  {config.description}
-                </p>
-              </div>
+              <span
+                className={`text-sm ${
+                  status === 'current' ? 'font-medium text-ld' : 'text-darklink'
+                }`}
+              >
+                {config.label}
+              </span>
             </div>
 
             {/* Connector line */}
             {index < steps.length - 1 && (
               <div
                 className={`
-                  w-16 md:w-24 h-0.5 mx-2 mt-[-1.5rem]
-                  ${completedSteps.includes(step) ? 'bg-success' : 'bg-border dark:bg-darkborder'}
+                  w-8 md:w-12 h-px mx-3
+                  ${completedSteps.includes(step) ? 'bg-darklink' : 'bg-border dark:bg-darkborder'}
                 `}
               />
             )}
@@ -121,6 +96,16 @@ function Stepper({ currentStep, completedSteps }: StepperProps) {
       })}
     </div>
   );
+}
+
+// =============================================================================
+// UNIFIED MODAL STATE
+// =============================================================================
+
+interface ModalState {
+  isOpen: boolean;
+  row: IssueRow | null;
+  issueType: PreviewIssueType | null;
 }
 
 // =============================================================================
@@ -139,28 +124,12 @@ function WizardContent() {
     canProceedToImport,
   } = useImportWizard();
 
-  // Comparison modal state
-  const [compareRow, setCompareRow] = useState<DbDuplicateRowV2 | null>(null);
-
-  // Convert DbDuplicateRowV2 to ComparisonDataV2 for modal
-  const comparisonData: ComparisonDataV2 | null = useMemo(() => {
-    if (!compareRow) return null;
-    return {
-      rowNumber: compareRow.rowNumber,
-      fileData: {
-        email: compareRow.displayData.email,
-        phone: compareRow.displayData.phone,
-        firstName: compareRow.displayData.firstName,
-        lastName: compareRow.displayData.lastName,
-        company: compareRow.displayData.company,
-      },
-      existingData: compareRow.existingLead,
-      changedFields: compareRow.changedFields,
-      rowAction: state.rowActions.get(compareRow.rowNumber) || 'skip',
-      matchedField: compareRow.matchedField,
-      matchedValue: compareRow.matchedValue,
-    };
-  }, [compareRow, state.rowActions]);
+  // Unified modal state (replaces separate modals)
+  const [modalState, setModalState] = useState<ModalState>({
+    isOpen: false,
+    row: null,
+    issueType: null,
+  });
 
   // Client-side parser hook
   const { parse, isParsing, error: parseError } = useClientParser();
@@ -235,7 +204,7 @@ function WizardContent() {
 
       // 2. Detect file duplicates among valid rows
       const validResults = validationResults.filter((r) => r.isValid);
-      const fileDupeResult = detectFileDuplicates(validResults, ['email', 'phone', 'external_id']);
+      const fileDupeResult = detectFileDuplicates(validResults, ['email']);
 
       // 3. Build preview data - Invalid rows
       const invalidRows: InvalidRowV2[] = validationResults
@@ -243,6 +212,7 @@ function WizardContent() {
         .map((r) => ({
           rowNumber: r.rowNumber,
           issueType: 'invalid' as const,
+          validationResult: r, // Include full validation result for editing
           displayData: {
             email: r.normalizedData?.email || null,
             phone: r.normalizedData?.phone || null,
@@ -280,7 +250,7 @@ function WizardContent() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               validatedRows: rowsForDbCheck,
-              checkFields: ['email', 'phone', 'external_id'],
+              checkFields: ['email'], // Only email for duplicate detection
             }),
           });
 
@@ -311,7 +281,7 @@ function WizardContent() {
         },
         effectiveCounts: {
           willImport: validCount,
-          willUpdate: 0, // Will be recalculated based on row actions
+          willUpdate: 0, // Will be recalculated based on row decisions
           willSkip: invalidRows.length + fileDuplicateRows.length + dbDuplicateRows.length,
           willError: 0,
         },
@@ -320,9 +290,24 @@ function WizardContent() {
         dbDuplicateRows,
       };
 
-      // 9. Set default row actions for DB duplicates to 'skip'
+      // 9. Set default row decisions for all issue rows (default: skip)
+      for (const row of invalidRows) {
+        dispatch({
+          type: 'SET_ROW_DECISION',
+          payload: { rowNumber: row.rowNumber, action: DEFAULT_ACTION_BY_TYPE['invalid'] },
+        });
+      }
+      for (const row of fileDuplicateRows) {
+        dispatch({
+          type: 'SET_ROW_DECISION',
+          payload: { rowNumber: row.rowNumber, action: DEFAULT_ACTION_BY_TYPE['file_duplicate'] },
+        });
+      }
       for (const row of dbDuplicateRows) {
-        dispatch({ type: 'SET_ROW_ACTION', payload: { rowNumber: row.rowNumber, action: 'skip' } });
+        dispatch({
+          type: 'SET_ROW_DECISION',
+          payload: { rowNumber: row.rowNumber, action: DEFAULT_ACTION_BY_TYPE['db_duplicate'] },
+        });
       }
 
       dispatch({ type: 'SET_PREVIEW', payload: preview });
@@ -363,30 +348,79 @@ function WizardContent() {
   }, [state.parsedFile, state.mapping, dispatch, nextStep]);
 
   // ==========================================================================
-  // STEP 2 HANDLERS
+  // STEP 2 HANDLERS - UNIFIED
   // ==========================================================================
 
+  // Handle single row action change
   const handleRowActionChange = useCallback(
-    (rowNumber: number, action: DuplicateStrategyV2) => {
-      dispatch({ type: 'SET_ROW_ACTION', payload: { rowNumber, action } });
+    (rowNumber: number, action: UnifiedRowAction) => {
+      dispatch({ type: 'SET_ROW_DECISION', payload: { rowNumber, action } });
     },
     [dispatch]
   );
 
+  // Handle bulk action for all rows of a specific issue type
   const handleBulkAction = useCallback(
-    (action: DuplicateStrategyV2) => {
-      dispatch({ type: 'SET_ALL_ROW_ACTIONS', payload: action });
+    (issueType: PreviewIssueType, action: UnifiedRowAction) => {
+      dispatch({ type: 'SET_ALL_ROW_DECISIONS', payload: { issueType, action } });
     },
     [dispatch]
   );
 
-  const handleCompareClick = useCallback((row: DbDuplicateRowV2) => {
-    setCompareRow(row);
+  // Handle opening the unified modal
+  const handleViewEdit = useCallback(
+    (row: IssueRow, issueType: PreviewIssueType) => {
+      setModalState({
+        isOpen: true,
+        row,
+        issueType,
+      });
+    },
+    []
+  );
+
+  // Handle closing the modal
+  const handleCloseModal = useCallback(() => {
+    setModalState({
+      isOpen: false,
+      row: null,
+      issueType: null,
+    });
   }, []);
 
-  const handleCloseCompare = useCallback(() => {
-    setCompareRow(null);
-  }, []);
+  // Handle saving edits from modal
+  const handleSaveEdits = useCallback(
+    (edits: Partial<Record<LeadFieldKey, string>>) => {
+      if (!modalState.row) return;
+
+      // Save each field update to the wizard state
+      for (const [field, value] of Object.entries(edits)) {
+        if (value !== undefined) {
+          dispatch({
+            type: 'SET_EDITED_ROW_FIELD',
+            payload: { rowNumber: modalState.row.rowNumber, field: field as LeadFieldKey, value: value || '' },
+          });
+        }
+      }
+    },
+    [modalState.row, dispatch]
+  );
+
+  // Handle action change from within the modal
+  const handleModalActionChange = useCallback(
+    (action: UnifiedRowAction) => {
+      if (!modalState.row) return;
+      dispatch({
+        type: 'SET_ROW_DECISION',
+        payload: { rowNumber: modalState.row.rowNumber, action },
+      });
+    },
+    [modalState.row, dispatch]
+  );
+
+  // ==========================================================================
+  // CRITICAL: START IMPORT WITH FIXED EDIT MERGING
+  // ==========================================================================
 
   const handleStartImport = useCallback(async () => {
     if (!state.parsedFile || !state.mapping) return;
@@ -399,27 +433,68 @@ function WizardContent() {
       // Re-validate rows to get normalized data for the server
       const validationResults = validateRows(state.parsedFile.rows, state.mapping.mappings);
 
-      // Detect file duplicates to mark which rows to skip
-      const validResults = validationResults.filter((r) => r.isValid);
-      const fileDupeResult = detectFileDuplicates(validResults, ['email', 'phone', 'external_id']);
+      // CRITICAL FIX: Apply user edits to ALL rows (not just invalid)
+      // This ensures edits from file duplicates and DB duplicates are also merged
+      const resultsWithEdits = validationResults.map((r) => {
+        const edits = state.editedRows.get(r.rowNumber);
+        const decision = state.rowDecisions.get(r.rowNumber);
+
+        // If row has edits, merge them into normalized data
+        if (edits && Object.keys(edits).length > 0) {
+          const mergedData = { ...r.normalizedData, ...edits };
+
+          // For invalid rows being imported, mark as valid
+          if (!r.isValid && decision === 'import') {
+            return {
+              ...r,
+              isValid: true,
+              normalizedData: mergedData,
+              errors: [], // Clear errors since user chose to import anyway
+            };
+          }
+
+          return {
+            ...r,
+            normalizedData: mergedData,
+          };
+        }
+
+        // For invalid rows being imported without edits, mark as valid
+        if (!r.isValid && decision === 'import') {
+          return {
+            ...r,
+            isValid: true,
+            errors: [],
+          };
+        }
+
+        return r;
+      });
+
+      // Detect file duplicates to know which rows are duplicates
+      const validResults = resultsWithEdits.filter((r) => r.isValid);
+      const fileDupeResult = detectFileDuplicates(validResults, ['email']);
 
       // Build set of file duplicate row numbers (non-first occurrences)
+      // ONLY include rows where user chose 'skip' (or made no decision, defaulting to skip)
+      // If user chose 'import', exclude from this set so the row gets imported
       const fileDuplicateRowNumbers = new Set(
         fileDupeResult.rows
           .filter((r) => r.isFileDuplicate && !r.isFirstOccurrence)
+          .filter((r) => state.rowDecisions.get(r.validation.rowNumber) !== 'import')
           .map((r) => r.validation.rowNumber)
       );
 
       // Prepare validated rows for the server
-      const validatedRows = validationResults.map((r) => ({
+      const validatedRows = resultsWithEdits.map((r) => ({
         rowNumber: r.rowNumber,
         isValid: r.isValid,
         normalizedData: r.normalizedData,
         isFileDuplicate: fileDuplicateRowNumbers.has(r.rowNumber),
       }));
 
-      // Convert rowActions Map to array for serialization
-      const rowActionsArray = Array.from(state.rowActions.entries());
+      // Convert rowDecisions Map to array for serialization
+      const rowDecisionsArray = Array.from(state.rowDecisions.entries());
 
       // Build DB duplicate info array from preview data
       const dbDuplicateInfo = state.preview?.dbDuplicateRows.map((row) => ({
@@ -429,7 +504,7 @@ function WizardContent() {
         existingLeadId: row.existingLead.id,
       })) || [];
 
-      // Call server action
+      // Call server action with unified row decisions
       const result = await startImportV2({
         fileName: state.parsedFile.name,
         fileType: state.parsedFile.type,
@@ -438,7 +513,7 @@ function WizardContent() {
         mappings: state.mapping.mappings,
         assignment: state.assignment,
         duplicates: state.duplicates,
-        rowActions: rowActionsArray,
+        rowActions: rowDecisionsArray, // Now contains all row decisions
         dbDuplicateInfo,
         defaultStatus: state.defaultStatus,
         defaultSource: state.defaultSource || state.parsedFile.name,
@@ -481,7 +556,7 @@ function WizardContent() {
     } finally {
       dispatch({ type: 'SET_IMPORTING', payload: false });
     }
-  }, [state.parsedFile, state.mapping, state.rowActions, state.assignment, state.duplicates, state.defaultStatus, state.defaultSource, state.preview, dispatch, nextStep]);
+  }, [state.parsedFile, state.mapping, state.rowDecisions, state.editedRows, state.assignment, state.duplicates, state.defaultStatus, state.defaultSource, state.preview, dispatch, nextStep]);
 
   // ==========================================================================
   // STEP 3 HANDLERS
@@ -542,6 +617,20 @@ function WizardContent() {
   }, [dispatch]);
 
   // ==========================================================================
+  // MODAL DATA
+  // ==========================================================================
+
+  const currentRowAction = useMemo(() => {
+    if (!modalState.row || !modalState.issueType) return 'skip' as UnifiedRowAction;
+    return state.rowDecisions.get(modalState.row.rowNumber) || DEFAULT_ACTION_BY_TYPE[modalState.issueType];
+  }, [modalState.row, modalState.issueType, state.rowDecisions]);
+
+  const currentRowEdits = useMemo(() => {
+    if (!modalState.row) return {};
+    return state.editedRows.get(modalState.row.rowNumber) || {};
+  }, [modalState.row, state.editedRows]);
+
+  // ==========================================================================
   // RENDER
   // ==========================================================================
 
@@ -556,6 +645,7 @@ function WizardContent() {
           parsedFile={state.parsedFile}
           mapping={state.mapping}
           isParsing={isParsing || state.isParsing}
+          isCheckingDuplicates={state.isCheckingDuplicates}
           parseError={parseError || state.error}
           onFileSelect={handleFileSelect}
           onFileClear={handleFileClear}
@@ -571,26 +661,32 @@ function WizardContent() {
           <PreviewStep
             preview={state.preview}
             isLoading={state.isCheckingDuplicates}
-            rowActions={state.rowActions}
+            rowDecisions={state.rowDecisions}
+            editedRows={state.editedRows}
             onRowActionChange={handleRowActionChange}
             onBulkAction={handleBulkAction}
-            onCompareClick={handleCompareClick}
+            onViewEdit={handleViewEdit}
             onStartImport={handleStartImport}
             onBack={prevStep}
             canImport={canProceedToImport}
             isImporting={state.isImporting}
           />
 
-          {/* Comparison Modal */}
-          <DuplicateComparisonModal
-            isOpen={!!compareRow}
-            onClose={handleCloseCompare}
-            data={comparisonData}
-            onActionSelect={(rowNumber: number, action: DuplicateStrategyV2) => {
-              handleRowActionChange(rowNumber, action);
-              handleCloseCompare();
-            }}
-          />
+          {/* Unified Modal */}
+          {modalState.row && modalState.issueType && state.mapping && (
+            <UnifiedRowModal
+              isOpen={modalState.isOpen}
+              onClose={handleCloseModal}
+              issueType={modalState.issueType}
+              rowNumber={modalState.row.rowNumber}
+              row={modalState.row}
+              currentAction={currentRowAction}
+              currentEdits={currentRowEdits}
+              mappings={state.mapping.mappings}
+              onActionChange={handleModalActionChange}
+              onSave={handleSaveEdits}
+            />
+          )}
         </>
       )}
 
@@ -631,18 +727,15 @@ export function ImportWizardV2Skeleton() {
   return (
     <div className="max-w-5xl mx-auto">
       {/* Stepper skeleton */}
-      <div className="flex items-center justify-center mb-8 animate-pulse">
+      <div className="flex items-center justify-center mb-6 animate-pulse">
         {[1, 2, 3].map((i) => (
           <div key={i} className="flex items-center">
-            <div className="flex flex-col items-center">
-              <div className="w-10 h-10 rounded-full bg-border dark:bg-darkborder" />
-              <div className="mt-2 space-y-1">
-                <div className="h-4 w-16 bg-border dark:bg-darkborder rounded" />
-                <div className="h-3 w-24 bg-border dark:bg-darkborder rounded hidden md:block" />
-              </div>
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-full bg-border dark:bg-darkborder" />
+              <div className="h-4 w-16 bg-border dark:bg-darkborder rounded" />
             </div>
             {i < 3 && (
-              <div className="w-16 md:w-24 h-0.5 mx-2 mt-[-1.5rem] bg-border dark:bg-darkborder" />
+              <div className="w-8 md:w-12 h-px mx-3 bg-border dark:bg-darkborder" />
             )}
           </div>
         ))}

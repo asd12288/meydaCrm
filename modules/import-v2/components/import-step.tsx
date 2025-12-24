@@ -10,13 +10,14 @@ import { useState } from 'react';
 import {
   IconCheck,
   IconX,
-  IconRefresh,
-  IconAlertCircle,
   IconDownload,
-  IconUsers,
-  IconFileImport,
+  IconRefresh,
+  IconBan,
+  IconAlertTriangle,
+  IconChevronDown,
+  IconChevronUp,
 } from '@tabler/icons-react';
-import { CardBox, Badge, Spinner } from '@/modules/shared';
+import { CardBox, Spinner } from '@/modules/shared';
 import { Button } from '@/components/ui/button';
 import { PROGRESS_PHASE_LABELS } from '../config/constants';
 import type { ImportProgressV2, ImportResultsSummaryV2 } from '../types';
@@ -60,80 +61,53 @@ function ProgressView({ progress, onCancel }: ProgressViewProps) {
 
   return (
     <CardBox>
-      <div className="flex flex-col items-center py-8">
-        {/* Circular Progress */}
-        <div className="relative w-32 h-32 mb-6">
-          <svg className="w-32 h-32 transform -rotate-90" viewBox="0 0 120 120">
-            {/* Background circle */}
+      <div className="flex flex-col items-center py-6">
+        {/* Circular Progress - smaller */}
+        <div className="relative w-20 h-20 mb-4">
+          <svg className="w-20 h-20 transform -rotate-90" viewBox="0 0 80 80">
             <circle
-              cx="60"
-              cy="60"
-              r="52"
+              cx="40"
+              cy="40"
+              r="34"
               fill="none"
               stroke="currentColor"
-              strokeWidth="8"
+              strokeWidth="6"
               className="text-lightgray dark:text-darkgray"
             />
-            {/* Progress circle */}
             <circle
-              cx="60"
-              cy="60"
-              r="52"
+              cx="40"
+              cy="40"
+              r="34"
               fill="none"
               stroke="currentColor"
-              strokeWidth="8"
-              strokeDasharray={`${percentage * 3.27} 327`}
+              strokeWidth="6"
+              strokeDasharray={`${percentage * 2.14} 214`}
               strokeLinecap="round"
               className="text-primary transition-all duration-500"
             />
           </svg>
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-3xl font-bold text-ld">{percentage}%</span>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="text-lg font-bold text-ld">{percentage}%</span>
           </div>
         </div>
 
-        {/* Phase Label */}
-        <p className="text-lg font-medium text-ld mb-2">
+        {/* Phase + Progress */}
+        <p className="text-sm text-ld mb-1">
           {PROGRESS_PHASE_LABELS[progress.phase]}
         </p>
-
-        {/* Progress Details */}
-        <p className="text-sm text-darklink mb-6">
-          {progress.processedRows.toLocaleString('fr-FR')} /{' '}
-          {progress.totalRows.toLocaleString('fr-FR')} lignes
+        <p className="text-xs text-darklink mb-4">
+          {progress.processedRows.toLocaleString('fr-FR')} / {progress.totalRows.toLocaleString('fr-FR')}
         </p>
 
-        {/* Live Counters */}
-        <div className="grid grid-cols-4 gap-4 mb-6">
-          <div className="text-center">
-            <span className="text-2xl font-bold text-success">
-              {progress.counters.imported}
-            </span>
-            <p className="text-xs text-darklink mt-1">Importés</p>
-          </div>
-          <div className="text-center">
-            <span className="text-2xl font-bold text-warning">
-              {progress.counters.updated}
-            </span>
-            <p className="text-xs text-darklink mt-1">Mis à jour</p>
-          </div>
-          <div className="text-center">
-            <span className="text-2xl font-bold text-darklink">
-              {progress.counters.skipped}
-            </span>
-            <p className="text-xs text-darklink mt-1">Ignorés</p>
-          </div>
-          <div className="text-center">
-            <span className="text-2xl font-bold text-error">
-              {progress.counters.errors}
-            </span>
-            <p className="text-xs text-darklink mt-1">Erreurs</p>
-          </div>
-        </div>
+        {/* Inline Counters */}
+        <p className="text-xs text-darklink mb-4">
+          {progress.counters.imported} importés · {progress.counters.updated} màj · {progress.counters.skipped} ignorés
+          {progress.counters.errors > 0 && <span className="text-error"> · {progress.counters.errors} erreurs</span>}
+        </p>
 
         {/* Cancel Button */}
         {onCancel && (
-          <Button variant="outline" onClick={onCancel}>
+          <Button variant="outline" size="sm" onClick={onCancel}>
             Annuler
           </Button>
         )}
@@ -162,68 +136,40 @@ function ResultsView({
   const durationSeconds = Math.round(results.durationMs / 1000);
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* Success Header */}
+    <div className="flex flex-col gap-4">
+      {/* Simple Success Header + Inline Summary */}
       <CardBox>
-        <div className="flex items-center gap-4 mb-6">
-          <div className="w-12 h-12 rounded-full bg-lightsuccess dark:bg-success/20 flex items-center justify-center">
-            <IconCheck size={28} className="text-success" />
-          </div>
-          <div>
-            <h2 className="text-xl font-semibold text-ld">Import terminé avec succès</h2>
-            <p className="text-sm text-darklink">
-              Durée: {durationSeconds} seconde{durationSeconds !== 1 ? 's' : ''}
-            </p>
-          </div>
+        <div className="flex items-center gap-2 mb-2">
+          <IconCheck size={18} className="text-success" />
+          <span className="font-medium text-ld">Import terminé</span>
+          <span className="text-xs text-darklink">({durationSeconds}s)</span>
         </div>
-
-        {/* Summary Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="p-4 bg-lightsuccess/30 dark:bg-success/10 rounded-lg text-center">
-            <span className="text-3xl font-bold text-success">
-              {results.importedCount}
-            </span>
-            <p className="text-sm text-darklink mt-1">Importés</p>
-          </div>
-          <div className="p-4 bg-lightwarning/30 dark:bg-warning/10 rounded-lg text-center">
-            <span className="text-3xl font-bold text-warning">
-              {results.updatedCount}
-            </span>
-            <p className="text-sm text-darklink mt-1">Mis à jour</p>
-          </div>
-          <div className="p-4 bg-lightgray dark:bg-darkgray rounded-lg text-center">
-            <span className="text-3xl font-bold text-darklink">
-              {results.skippedCount}
-            </span>
-            <p className="text-sm text-darklink mt-1">Ignorés</p>
-          </div>
-          <div className="p-4 bg-lighterror/30 dark:bg-error/10 rounded-lg text-center">
-            <span className="text-3xl font-bold text-error">
-              {results.errorCount}
-            </span>
-            <p className="text-sm text-darklink mt-1">Erreurs</p>
-          </div>
-        </div>
+        <p className="text-sm text-darklink">
+          <strong className="text-ld">{results.importedCount}</strong> importés
+          {results.updatedCount > 0 && <> · <strong className="text-ld">{results.updatedCount}</strong> mis à jour</>}
+          {results.skippedCount > 0 && <> · {results.skippedCount} ignorés</>}
+          {results.errorCount > 0 && <> · <span className="text-error">{results.errorCount} erreurs</span></>}
+        </p>
       </CardBox>
 
-      {/* Detailed Results - Expandable Sections */}
+      {/* Expandable Sections - imported open by default */}
       {results.importedRows.length > 0 && (
         <ResultSection
-          title="Leads importés"
+          title="Importés"
           count={results.importedCount}
-          variant="success"
-          icon={<IconCheck size={18} />}
           rows={results.importedRows}
+          defaultExpanded={true}
+          variant="success"
         />
       )}
 
       {results.updatedRows.length > 0 && (
         <ResultSection
-          title="Leads mis à jour"
+          title="Mis à jour"
           count={results.updatedCount}
-          variant="warning"
-          icon={<IconRefresh size={18} />}
           rows={results.updatedRows}
+          defaultExpanded={false}
+          variant="warning"
         />
       )}
 
@@ -231,9 +177,9 @@ function ResultsView({
         <ResultSection
           title="Ignorés"
           count={results.skippedCount}
-          variant="secondary"
-          icon={<IconX size={18} />}
           rows={results.skippedRows}
+          defaultExpanded={false}
+          variant="muted"
         />
       )}
 
@@ -241,27 +187,27 @@ function ResultsView({
         <ResultSection
           title="Erreurs"
           count={results.errorCount}
-          variant="error"
-          icon={<IconAlertCircle size={18} />}
           rows={results.errorRows}
+          defaultExpanded={true}
+          variant="error"
         />
       )}
 
       {/* Actions */}
-      <div className="flex items-center justify-between">
-        {onDownloadReport && (
-          <Button variant="outline" onClick={onDownloadReport} className="gap-2">
-            <IconDownload size={18} />
-            Télécharger le rapport
+      <div className="flex items-center justify-between pt-2">
+        {onDownloadReport ? (
+          <Button variant="outline" size="sm" onClick={onDownloadReport} className="gap-2">
+            <IconDownload size={16} />
+            Rapport
           </Button>
+        ) : (
+          <div />
         )}
-        <div className="flex items-center gap-3">
-          <Button variant="outline" onClick={onNewImport} className="gap-2">
-            <IconFileImport size={18} />
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={onNewImport}>
             Nouvel import
           </Button>
-          <Button onClick={onViewLeads} className="gap-2">
-            <IconUsers size={18} />
+          <Button size="sm" onClick={onViewLeads}>
             Voir les leads
           </Button>
         </div>
@@ -271,75 +217,101 @@ function ResultsView({
 }
 
 // =============================================================================
-// RESULT SECTION (Expandable)
+// RESULT SECTION (Expandable - simplified)
 // =============================================================================
 
 interface ResultSectionProps {
   title: string;
   count: number;
-  variant: 'success' | 'warning' | 'error' | 'secondary';
-  icon: React.ReactNode;
   rows: ImportResultsSummaryV2['importedRows'];
+  defaultExpanded?: boolean;
+  variant?: 'success' | 'warning' | 'error' | 'muted';
 }
 
-function ResultSection({ title, count, variant, icon, rows }: ResultSectionProps) {
-  // Auto-expand errors and skipped by default
-  const defaultExpanded = variant === 'error' || variant === 'secondary';
+function ResultSection({ title, count, rows, defaultExpanded = false, variant = 'muted' }: ResultSectionProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
-  const displayRows = rows.slice(0, 50); // Show max 50 rows
-  const hasMore = rows.length > 50;
+  const displayRows = rows.slice(0, 30); // Show max 30 rows
+  const hasMore = rows.length > 30;
 
-  const variantClasses = {
-    success: 'border-success/30 bg-lightsuccess/20 dark:bg-success/5',
-    warning: 'border-warning/30 bg-lightwarning/20 dark:bg-warning/5',
-    error: 'border-error/30 bg-lighterror/20 dark:bg-error/5',
-    secondary: 'border-border dark:border-darkborder bg-lightgray/50 dark:bg-darkgray/50',
+  // Icon based on variant
+  const icons = {
+    success: <IconCheck size={14} className="text-success" />,
+    warning: <IconRefresh size={14} className="text-warning" />,
+    error: <IconAlertTriangle size={14} className="text-error" />,
+    muted: <IconBan size={14} className="text-darklink" />,
+  };
+
+  // Text color based on variant
+  const textColors = {
+    success: 'text-success',
+    warning: 'text-warning',
+    error: 'text-error',
+    muted: 'text-darklink',
   };
 
   return (
-    <CardBox className={variantClasses[variant]}>
+    <CardBox>
       <button
         type="button"
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full flex items-center justify-between"
+        className="w-full flex items-center justify-between text-sm"
       >
-        <div className="flex items-center gap-2">
-          {icon}
-          <span className="font-medium text-ld">{title}</span>
-          <Badge variant={variant} size="sm">
-            {count}
-          </Badge>
-        </div>
-        <span className="text-sm text-primary">
-          {isExpanded ? 'Masquer' : 'Afficher'}
+        <span className={`inline-flex items-center gap-2 font-medium ${textColors[variant]}`}>
+          {icons[variant]}
+          {title}
+          <span className="text-xs font-normal text-darklink">({count})</span>
+        </span>
+        <span className="inline-flex items-center gap-1 text-xs text-darklink hover:text-ld">
+          {isExpanded ? (
+            <>
+              <IconChevronUp size={14} />
+              Masquer
+            </>
+          ) : (
+            <>
+              <IconChevronDown size={14} />
+              Afficher
+            </>
+          )}
         </span>
       </button>
 
       {isExpanded && (
-        <div className="mt-4 space-y-2">
-          {displayRows.map((row) => (
-            <div
-              key={row.rowNumber}
-              className="flex items-center gap-3 p-2 bg-white/50 dark:bg-dark/50 rounded text-sm"
-            >
-              <span className="text-darklink font-mono w-12">L.{row.rowNumber}</span>
-              <span className="text-ld flex-1">
-                {[row.displayData.firstName, row.displayData.lastName]
-                  .filter(Boolean)
-                  .join(' ') || row.displayData.email || row.displayData.phone || '-'}
-              </span>
-              {row.displayData.email && (
-                <span className="text-xs text-darklink">{row.displayData.email}</span>
-              )}
-              {row.reason && (
-                <span className="text-xs text-error">{row.reason}</span>
-              )}
-            </div>
-          ))}
+        <div className="mt-3 space-y-1">
+          {displayRows.map((row) => {
+            const fullName = [row.displayData.firstName, row.displayData.lastName]
+              .filter(Boolean)
+              .join(' ');
+            const email = row.displayData.email;
+            const phone = row.displayData.phone;
+            // Display: Name (or email/phone if no name)
+            const primaryDisplay = fullName || email || phone || '-';
+            // Secondary: email if we have a name, otherwise phone
+            const secondaryDisplay = fullName ? (email || phone) : (email ? phone : null);
+
+            return (
+              <div
+                key={row.rowNumber}
+                className="flex items-center gap-2 text-xs py-1.5 border-b border-border dark:border-darkborder last:border-0"
+              >
+                <span className="text-darklink font-mono w-8">{row.rowNumber}</span>
+                <span className="text-ld truncate min-w-24 max-w-40">{primaryDisplay}</span>
+                {secondaryDisplay && (
+                  <span className="text-darklink truncate min-w-32 max-w-48">{secondaryDisplay}</span>
+                )}
+                <span className="flex-1" />
+                {row.reason && (
+                  <span className={`truncate max-w-48 ${variant === 'error' ? 'text-error' : 'text-darklink'}`}>
+                    {row.reason}
+                  </span>
+                )}
+              </div>
+            );
+          })}
           {hasMore && (
-            <p className="text-xs text-darklink text-center py-2">
-              +{rows.length - 50} lignes supplémentaires...
+            <p className="text-xs text-darklink text-center pt-2">
+              +{rows.length - 30} autres
             </p>
           )}
         </div>
@@ -349,7 +321,7 @@ function ResultSection({ title, count, variant, icon, rows }: ResultSectionProps
 }
 
 // =============================================================================
-// ERROR VIEW
+// ERROR VIEW (simplified)
 // =============================================================================
 
 interface ErrorViewProps {
@@ -360,14 +332,11 @@ interface ErrorViewProps {
 function ErrorView({ error, onNewImport }: ErrorViewProps) {
   return (
     <CardBox>
-      <div className="flex flex-col items-center py-8">
-        <div className="w-16 h-16 rounded-full bg-lighterror dark:bg-error/20 flex items-center justify-center mb-4">
-          <IconX size={32} className="text-error" />
-        </div>
-        <h2 className="text-xl font-semibold text-ld mb-2">Échec de l&apos;import</h2>
-        <p className="text-sm text-error mb-6 text-center max-w-md">{error}</p>
-        <Button onClick={onNewImport} className="gap-2">
-          <IconFileImport size={18} />
+      <div className="flex flex-col items-center py-6">
+        <IconX size={24} className="text-error mb-2" />
+        <p className="text-sm font-medium text-ld mb-1">Échec de l&apos;import</p>
+        <p className="text-xs text-error mb-4 text-center max-w-sm">{error}</p>
+        <Button size="sm" onClick={onNewImport}>
           Réessayer
         </Button>
       </div>
@@ -429,10 +398,10 @@ export function ImportStep({
 export function ImportStepSkeleton() {
   return (
     <CardBox>
-      <div className="flex flex-col items-center py-8 animate-pulse">
-        <div className="w-32 h-32 rounded-full bg-border dark:bg-darkborder mb-6" />
-        <div className="h-5 w-48 bg-border dark:bg-darkborder rounded mb-2" />
-        <div className="h-4 w-32 bg-border dark:bg-darkborder rounded" />
+      <div className="flex flex-col items-center py-6 animate-pulse">
+        <div className="w-20 h-20 rounded-full bg-border dark:bg-darkborder mb-4" />
+        <div className="h-4 w-32 bg-border dark:bg-darkborder rounded mb-2" />
+        <div className="h-3 w-24 bg-border dark:bg-darkborder rounded" />
       </div>
     </CardBox>
   );

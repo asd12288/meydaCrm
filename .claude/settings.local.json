@@ -100,7 +100,10 @@
       "Bash(git restore:*)",
       "Bash(del \"c:\\Users\\ilanc\\Desktop\\crm\\test-validation.ts\")",
       "Bash(mkdir:*)",
-      "Bash(git reset:*)"
+      "Bash(git reset:*)",
+      "Bash(del \"c:\\Users\\ilanc\\Desktop\\crm\\modules\\import-v2\\components\\inline-dropdown.tsx\")",
+      "Bash(cmd /c \"del \"\"c:\\Users\\ilanc\\Desktop\\crm\\modules\\import-v2\\components\\inline-dropdown.tsx\"\"\")",
+      "Bash(del \"c:\\Users\\ilanc\\Desktop\\crm\\modules\\import-v2\\components\\duplicate-comparison-modal.tsx\")"
     ]
   },
   "enableAllProjectMcpServers": true,

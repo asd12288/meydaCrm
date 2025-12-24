@@ -11,8 +11,15 @@ import type {
   ImportRowResultV2,
   AssignmentConfigV2,
   DuplicateConfigV2,
-  RowDuplicateAction,
 } from '../types';
+
+/**
+ * Internal commit worker action type
+ * 'skip' = don't import
+ * 'update' = update existing lead
+ * 'create' = create new lead (even if duplicate)
+ */
+type CommitRowAction = 'skip' | 'update' | 'create';
 import type { DbDuplicateInfoV2 } from '../lib/actions';
 import type { DuplicateCheckField, RowResultStatus } from '../config/constants';
 import { PROCESSING } from '../config/constants';
@@ -55,7 +62,7 @@ export interface CommitOptionsV2 {
   defaultStatus?: string;
   defaultSource?: string;
   /** Per-row actions for DB duplicates (rowNumber -> action) */
-  rowActions: Map<number, RowDuplicateAction>;
+  rowActions: Map<number, CommitRowAction>;
   /** DB duplicate info (rowNumber -> duplicate details) */
   dbDuplicateInfo?: Map<number, DbDuplicateInfoV2>;
   /** Progress callback for real-time updates */
@@ -317,10 +324,11 @@ export async function handleCommitV2(
         const existingLeadId = dupInfo?.existingLeadId || null;
 
         // Determine action
-        let action: RowDuplicateAction;
+        let action: CommitRowAction;
         if (isDbDuplicate && rowAction) {
           action = rowAction;
         } else if (isDbDuplicate) {
+          // DuplicateStrategyV2 already uses 'skip' | 'update' | 'create'
           action = options.duplicates.strategy;
         } else {
           action = 'create'; // New rows are always created

@@ -5,8 +5,11 @@
  */
 
 import type { LeadFieldKey } from '../../import/types/mapping';
-import type { DuplicateCheckField, DuplicateStrategyV2 } from '../config/constants';
+import type { DuplicateCheckField, UnifiedRowAction } from '../config/constants';
 import type { RowValidationResultV2 } from './validation';
+
+// Note: ErrorRowAction has been replaced by UnifiedRowAction from constants.ts
+// The unified system uses 'skip' | 'import' | 'update' for all issue types
 
 // =============================================================================
 // PREVIEW ROW TYPES
@@ -39,6 +42,8 @@ export interface PreviewRowBaseV2 {
  */
 export interface InvalidRowV2 extends PreviewRowBaseV2 {
   issueType: 'invalid';
+  /** Validation result for this row (contains full normalizedData) */
+  validationResult?: RowValidationResultV2;
   /** Validation errors by field */
   errors: Array<{
     field: LeadFieldKey;
@@ -100,7 +105,7 @@ export interface DbDuplicateRowV2 extends PreviewRowBaseV2 {
   /** Fields that are different between file and existing */
   changedFields: LeadFieldKey[];
   /** Per-row action override (if set) */
-  rowAction?: DuplicateStrategyV2;
+  rowAction?: UnifiedRowAction;
 }
 
 /**
@@ -261,7 +266,7 @@ export interface ComparisonDataV2 {
   changedFields: LeadFieldKey[];
 
   /** Current row action */
-  rowAction: DuplicateStrategyV2;
+  rowAction: UnifiedRowAction;
 
   /** Field that caused the duplicate match */
   matchedField: DuplicateCheckField;

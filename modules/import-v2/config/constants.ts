@@ -90,13 +90,12 @@ export const ASSIGNMENT_MODE_DESCRIPTIONS: Record<AssignmentModeV2, string> = {
 // DUPLICATE CHECK FIELDS
 // =============================================================================
 
-export const DUPLICATE_CHECK_FIELDS = ['email', 'phone', 'external_id'] as const;
+// Only email is used for duplicate detection (per user requirement)
+export const DUPLICATE_CHECK_FIELDS = ['email'] as const;
 export type DuplicateCheckField = typeof DUPLICATE_CHECK_FIELDS[number];
 
 export const DUPLICATE_FIELD_LABELS: Record<DuplicateCheckField, string> = {
   email: 'Email',
-  phone: 'Telephone',
-  external_id: 'ID externe',
 };
 
 // =============================================================================
@@ -205,4 +204,73 @@ export const PROGRESS_PHASE_LABELS: Record<ProgressPhase, string> = {
   finalizing: 'Finalisation...',
   completed: 'Termine',
   failed: 'Echec',
+};
+
+// =============================================================================
+// UNIFIED ROW ACTIONS (for all issue types in preview)
+// =============================================================================
+
+/**
+ * Unified action type for all preview issue rows
+ * - 'skip': Don't import this row
+ * - 'import': Force import as new lead
+ * - 'update': Update existing lead (DB duplicates only)
+ */
+export const UNIFIED_ROW_ACTIONS = {
+  SKIP: 'skip',
+  IMPORT: 'import',
+  UPDATE: 'update',
+} as const;
+
+export type UnifiedRowAction = typeof UNIFIED_ROW_ACTIONS[keyof typeof UNIFIED_ROW_ACTIONS];
+
+export const UNIFIED_ROW_ACTION_LABELS: Record<UnifiedRowAction, string> = {
+  skip: 'Ignorer',
+  import: 'Importer',
+  update: 'Mettre a jour',
+};
+
+export const UNIFIED_ROW_ACTION_ICONS: Record<UnifiedRowAction, string> = {
+  skip: 'IconX',
+  import: 'IconPlus',
+  update: 'IconReplace',
+};
+
+// =============================================================================
+// ISSUE TYPES
+// =============================================================================
+
+export const PREVIEW_ISSUE_TYPES = {
+  INVALID: 'invalid',
+  FILE_DUPLICATE: 'file_duplicate',
+  DB_DUPLICATE: 'db_duplicate',
+} as const;
+
+export type PreviewIssueType = typeof PREVIEW_ISSUE_TYPES[keyof typeof PREVIEW_ISSUE_TYPES];
+
+export const PREVIEW_ISSUE_LABELS: Record<PreviewIssueType, string> = {
+  invalid: 'Invalides',
+  file_duplicate: 'Doublons fichier',
+  db_duplicate: 'Doublons base',
+};
+
+/**
+ * Available actions per issue type
+ * - Invalid: skip or import (force import despite errors)
+ * - File duplicate: skip or import (allow creating duplicate)
+ * - DB duplicate: skip, import (create new), or update (merge)
+ */
+export const AVAILABLE_ACTIONS_BY_TYPE: Record<PreviewIssueType, UnifiedRowAction[]> = {
+  invalid: ['skip', 'import'],
+  file_duplicate: ['skip', 'import'],
+  db_duplicate: ['skip', 'import', 'update'],
+};
+
+/**
+ * Default action per issue type
+ */
+export const DEFAULT_ACTION_BY_TYPE: Record<PreviewIssueType, UnifiedRowAction> = {
+  invalid: 'skip',
+  file_duplicate: 'skip',
+  db_duplicate: 'skip',
 };
