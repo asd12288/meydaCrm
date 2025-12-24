@@ -9,7 +9,7 @@
 
 'use client';
 
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { IconCheck, IconRefresh, IconX, IconReplace, IconPlus, IconAlertTriangle } from '@tabler/icons-react';
 import { CardBox } from '@/modules/shared';
 import { Button } from '@/components/ui/button';
@@ -190,14 +190,8 @@ export function PreviewStep({
     return null;
   }, [preview.summary]);
 
-  const [activeTab, setActiveTab] = useState<PreviewTabV2 | null>(defaultTab);
-
-  // Auto-select default tab on mount (when preview loads)
-  useEffect(() => {
-    if (defaultTab && activeTab === null) {
-      setActiveTab(defaultTab);
-    }
-  }, [defaultTab, activeTab]);
+  // Initialize activeTab with defaultTab value (avoids useEffect setState issue)
+  const [activeTab, setActiveTab] = useState<PreviewTabV2 | null>(() => defaultTab);
 
   // Handle card click to select/deselect tab
   const handleCardClick = useCallback((tab: PreviewTabV2 | null) => {

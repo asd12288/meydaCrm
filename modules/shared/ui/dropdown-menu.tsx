@@ -117,7 +117,7 @@ export function DropdownMenu({
         setMenuPosition((prev) => prev ? { ...prev, top: newTop } : null);
       }
     }
-  }, [isOpen, portal, menuPosition?.flipped, tight]);
+  }, [isOpen, portal, menuPosition?.flipped, menuPosition?.top, tight]);
 
   const menuContent = (
     <div

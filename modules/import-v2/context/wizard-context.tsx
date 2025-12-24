@@ -20,7 +20,7 @@ import {
   type ImportWizardContextValue,
   initialWizardState,
 } from '../types/wizard';
-import type { WizardStepV2, UnifiedRowAction } from '../config/constants';
+import type { WizardStepV2 } from '../config/constants';
 
 // =============================================================================
 // REDUCER

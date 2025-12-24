@@ -30,7 +30,6 @@ import { PROCESSING } from '../config/constants';
 // =============================================================================
 
 const FETCH_BATCH_SIZE = PROCESSING.COMMIT_BATCH_SIZE * 10; // 1000
-const INSERT_BATCH_SIZE = PROCESSING.COMMIT_BATCH_SIZE; // 100
 
 const STATUS_LABELS: Record<string, string> = {
   new: 'Nouveau',

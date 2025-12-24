@@ -56,23 +56,6 @@ export interface RowWithDbDuplicateInfo {
 
 const BATCH_SIZE = 100; // Rows per query batch
 
-// Fields to compare for change detection
-const COMPARABLE_FIELDS: LeadFieldKey[] = [
-  'first_name',
-  'last_name',
-  'email',
-  'phone',
-  'company',
-  'job_title',
-  'address',
-  'city',
-  'postal_code',
-  'country',
-  'source',
-  'notes',
-  'external_id',
-];
-
 // =============================================================================
 // MAIN FUNCTIONS
 // =============================================================================

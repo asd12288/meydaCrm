@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render } from '@testing-library/react';
+import { screen, fireEvent } from '@testing-library/dom';
 import { LeadActivityTabs } from '../components/lead-activity-tabs';
 import { LeadHistory } from '../components/lead-history';
 import {

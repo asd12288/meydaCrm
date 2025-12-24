@@ -67,14 +67,6 @@ export const navigationItems: NavItem[] = [
   {
     id: 'import',
     title: 'Import',
-    href: '/import',
-    icon: IconUpload,
-    adminOnly: true,
-    group: 'admin',
-  },
-  {
-    id: 'import-v2',
-    title: 'Import V2',
     href: '/import-v2',
     icon: IconUpload,
     adminOnly: true,

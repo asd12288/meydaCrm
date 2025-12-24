@@ -188,7 +188,7 @@ export const importRowSchema = z.object({
 // MAIN VALIDATION FUNCTION
 // =============================================================================
 
-const REQUIRED_CONTACT_FIELDS: LeadFieldKey[] = ['email', 'phone'];
+const REQUIRED_CONTACT_FIELDS: LeadFieldKey[] = ['email', 'phone', 'external_id'];
 
 /**
  * Apply column mappings to a parsed row
@@ -281,7 +281,7 @@ export function validateRow(
   if (!hasContactInfo) {
     errors.push({
       field: 'email', // Use email as the representative field
-      message: 'Au moins un champ de contact requis (email ou telephone)',
+      message: 'Au moins un champ de contact requis (email, telephone ou external_id)',
     });
   }
 

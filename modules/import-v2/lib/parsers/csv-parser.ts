@@ -70,7 +70,6 @@ export async function parseCSV(
     let rowIndex = 0;
     let isFirstRow = true;
     let headersParsed = false;
-    let wasAborted = false;
     let parseError: string | null = null;
 
     // Use PapaParse streaming mode for memory efficiency
@@ -121,7 +120,6 @@ export async function parseCSV(
 
         // EARLY TERMINATION: Stop when limit reached
         if (maxRows > 0 && rows.length >= maxRows) {
-          wasAborted = true;
           parser.abort(); // Stops reading file immediately
           return;
         }

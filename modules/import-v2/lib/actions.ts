@@ -84,8 +84,6 @@ interface StartImportV2Result {
 export async function startImportV2(
   input: StartImportV2Input
 ): Promise<StartImportV2Result> {
-  const LOG_PREFIX = '[startImportV2]';
-
   try {
     // Check auth
     const user = await getCurrentUser();

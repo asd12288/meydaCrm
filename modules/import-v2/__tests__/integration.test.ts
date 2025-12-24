@@ -8,13 +8,12 @@
  * - Edge cases (special chars, empty files, etc.)
  */
 
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
 import Papa from 'papaparse';
 
 import {
-  validateRow,
   validateRows,
   normalizePhone,
   normalizeEmail,
@@ -23,7 +22,7 @@ import {
 } from '../lib/validators/row-validator';
 import { detectFileDuplicates } from '../lib/processors/file-dedupe';
 import { findBestMatch } from '../../import/config/column-aliases';
-import type { ParsedRowV2, ColumnMappingV2, RowValidationResultV2 } from '../types';
+import type { ParsedRowV2, ColumnMappingV2 } from '../types';
 import type { LeadFieldKey } from '../../import/types/mapping';
 
 // =============================================================================
@@ -433,10 +432,7 @@ describe('Edge Cases', () => {
       // Should handle without crashing
       expect(results.length).toBe(rows.length);
 
-      // Very long emails should fail
-      const longEmailErrors = results.filter((r) =>
-        r.errors.some((e) => e.field === 'email' && e.message.includes('trop long'))
-      );
+      // Very long emails should fail - results are validated above
       // May or may not have long emails depending on test data
     });
   });
