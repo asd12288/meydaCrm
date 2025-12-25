@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { CACHE_KEYS, CACHE_TTL } from '../redis';
 
 /**
@@ -178,8 +178,7 @@ describe('Cache Logic', () => {
         'dashboard:sales:user-2',
       ];
 
-      // Pattern matching
-      const pattern = 'dashboard:*';
+      // Pattern matching (prefix-based)
       dashboardKeys.forEach((key) => {
         if (key.startsWith('dashboard:')) {
           keysToDelete.push(key);

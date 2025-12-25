@@ -35,7 +35,7 @@ describe('Export Constants', () => {
 
   describe('EXPORT_STATUS_LABELS', () => {
     it('has labels for all status values', () => {
-      const expectedStatuses = ['pending', 'processing', 'completed', 'failed'];
+      const expectedStatuses: Array<keyof typeof EXPORT_STATUS_LABELS> = ['pending', 'processing', 'completed', 'failed'];
 
       expectedStatuses.forEach((status) => {
         expect(EXPORT_STATUS_LABELS[status]).toBeDefined();
@@ -164,7 +164,8 @@ describe('Export Job Logic', () => {
       const expiresAt: Date | null = null;
 
       // If no expiration, assume not expired
-      const isExpired = expiresAt ? expiresAt < new Date() : false;
+      const checkExpired = (date: Date | null): boolean => date ? date < new Date() : false;
+      const isExpired = checkExpired(expiresAt);
 
       expect(isExpired).toBe(false);
     });

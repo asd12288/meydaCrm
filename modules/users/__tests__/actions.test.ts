@@ -198,10 +198,10 @@ describe('User Schemas', () => {
 describe('Business Logic Rules', () => {
   describe('Self-Modification Rules', () => {
     it('admin cannot change their own role', () => {
-      const currentUserId = 'admin-123';
-      const targetUserId = 'admin-123';
-      const currentRole = 'admin';
-      const newRole = 'sales';
+      const currentUserId: string = 'admin-123';
+      const targetUserId: string = 'admin-123';
+      const currentRole: string = 'admin';
+      const newRole: string = 'sales';
 
       const isSelfRoleChange = currentUserId === targetUserId && currentRole !== newRole;
       expect(isSelfRoleChange).toBe(true);
@@ -209,10 +209,10 @@ describe('Business Logic Rules', () => {
     });
 
     it('admin can change other users role', () => {
-      const currentUserId = 'admin-123';
-      const targetUserId = 'user-456';
-      const currentRole = 'admin';
-      const newRole = 'sales';
+      const currentUserId: string = 'admin-123';
+      const targetUserId: string = 'user-456';
+      const currentRole: string = 'admin';
+      const newRole: string = 'sales';
 
       const isSelfRoleChange = currentUserId === targetUserId && currentRole !== newRole;
       expect(isSelfRoleChange).toBe(false);
@@ -220,8 +220,8 @@ describe('Business Logic Rules', () => {
     });
 
     it('admin cannot delete themselves', () => {
-      const currentUserId = 'admin-123';
-      const targetUserId = 'admin-123';
+      const currentUserId: string = 'admin-123';
+      const targetUserId: string = 'admin-123';
 
       const isSelfDeletion = currentUserId === targetUserId;
       expect(isSelfDeletion).toBe(true);

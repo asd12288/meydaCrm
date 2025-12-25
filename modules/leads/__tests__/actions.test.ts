@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { leadUpdateSchema, commentSchema, UNASSIGNED_FILTER_VALUE } from '../types';
 
 /**
@@ -199,16 +199,16 @@ describe('Business Logic Rules', () => {
 
   describe('Lead Transfer Rules', () => {
     it('cannot transfer to yourself', () => {
-      const currentUserId = 'user-123';
-      const targetUserId = 'user-123';
+      const currentUserId: string = 'user-123';
+      const targetUserId: string = 'user-123';
 
       expect(currentUserId === targetUserId).toBe(true);
       // This should be rejected by the server action
     });
 
     it('can transfer to different user', () => {
-      const currentUserId = 'user-123';
-      const targetUserId = 'user-456';
+      const currentUserId: string = 'user-123';
+      const targetUserId: string = 'user-456';
 
       expect(currentUserId === targetUserId).toBe(false);
       // This should be allowed
@@ -217,8 +217,8 @@ describe('Business Logic Rules', () => {
 
   describe('Comment Deletion Rules', () => {
     it('author can delete own comment', () => {
-      const commentAuthorId = 'user-123';
-      const currentUserId = 'user-123';
+      const commentAuthorId: string = 'user-123';
+      const currentUserId: string = 'user-123';
       const isAdmin = false;
 
       const canDelete = commentAuthorId === currentUserId || isAdmin;
@@ -226,8 +226,8 @@ describe('Business Logic Rules', () => {
     });
 
     it('admin can delete any comment', () => {
-      const commentAuthorId = 'user-123';
-      const currentUserId = 'user-456';
+      const commentAuthorId: string = 'user-123';
+      const currentUserId: string = 'user-456';
       const isAdmin = true;
 
       const canDelete = commentAuthorId === currentUserId || isAdmin;
@@ -235,8 +235,8 @@ describe('Business Logic Rules', () => {
     });
 
     it('non-author non-admin cannot delete comment', () => {
-      const commentAuthorId = 'user-123';
-      const currentUserId = 'user-456';
+      const commentAuthorId: string = 'user-123';
+      const currentUserId: string = 'user-456';
       const isAdmin = false;
 
       const canDelete = commentAuthorId === currentUserId || isAdmin;

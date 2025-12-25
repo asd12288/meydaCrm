@@ -215,16 +215,14 @@ describe('Account Stats Logic', () => {
 
     it('handles missing activity dates', () => {
       const commentDate: Date | null = null;
-      const historyDate = new Date('2024-12-25T11:00:00Z');
+      const historyDate: Date | null = new Date('2024-12-25T11:00:00Z');
 
-      let lastActivity: Date | null = null;
-      if (commentDate && historyDate) {
-        lastActivity = commentDate > historyDate ? commentDate : historyDate;
-      } else if (commentDate) {
-        lastActivity = commentDate;
-      } else if (historyDate) {
-        lastActivity = historyDate;
-      }
+      const getLatestDate = (a: Date | null, b: Date | null): Date | null => {
+        if (a && b) return a > b ? a : b;
+        return a || b;
+      };
+
+      const lastActivity = getLatestDate(commentDate, historyDate);
 
       expect(lastActivity?.toISOString()).toBe('2024-12-25T11:00:00.000Z');
     });
