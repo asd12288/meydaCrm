@@ -252,12 +252,12 @@ describe('Row Validation', () => {
   });
 
   describe('Contact Field Requirement', () => {
-    it('should fail rows with no contact info', () => {
+    it('should fail rows with no contact info (email or phone required)', () => {
       const { headers, rows } = loadTestCSV('04_missing_contact_fields.csv');
       const mappings = createMappingsFromHeaders(headers);
       const results = validateRows(rows, mappings);
 
-      // Rows 1-2 have no email, phone, or external_id
+      // Rows 1-2 have no email or phone - should be invalid
       const row1 = results.find((r) => r.rowNumber === 2);
       const row2 = results.find((r) => r.rowNumber === 3);
 
@@ -272,9 +272,10 @@ describe('Row Validation', () => {
       const row4 = results.find((r) => r.rowNumber === 5);
       expect(row4?.isValid).toBe(true);
 
-      // Row 5 has external_id - should be valid
+      // Row 5 has only external_id (no email/phone) - should be invalid
+      // external_id is not a contact field, only email or phone count
       const row5 = results.find((r) => r.rowNumber === 6);
-      expect(row5?.isValid).toBe(true);
+      expect(row5?.isValid).toBe(false);
     });
   });
 

@@ -2,6 +2,7 @@
 
 import { FallbackProps } from 'react-error-boundary';
 import { IconAlertTriangle, IconRefresh } from '@tabler/icons-react';
+import { Button } from './button';
 
 /**
  * Compact error fallback for dashboard sections/cards
@@ -18,13 +19,15 @@ export function SectionErrorFallback({ resetErrorBoundary }: FallbackProps) {
         <span className="text-sm">Erreur de chargement</span>
       </div>
 
-      <button
+      <Button
+        variant="outline"
+        size="sm"
         onClick={resetErrorBoundary}
-        className="flex items-center gap-1 px-2.5 py-1 text-xs rounded bg-lightgray dark:bg-dark text-darklink hover:text-ld transition-colors border border-border"
+        className="text-darklink hover:text-ld"
       >
         <IconRefresh size={14} />
-        <span>Réessayer</span>
-      </button>
+        Réessayer
+      </Button>
     </div>
   );
 }

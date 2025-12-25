@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { CardBox } from '@/modules/shared';
+import { DISPLAY_LIMITS } from '@/lib/constants';
 import { IconAlertTriangle } from '@tabler/icons-react';
 import type { TeamPerformanceItem } from '../types';
 
@@ -28,7 +29,7 @@ export function SalesDistributionChart({
     items.push({ name: 'Non assignés', count: unassignedLeads, isUnassigned: true });
   }
   
-  teamData.slice(0, 8).forEach((member) => {
+  teamData.slice(0, DISPLAY_LIMITS.TOP_TEAM_MEMBERS).forEach((member) => {
     items.push({ name: member.userName, count: member.totalLeads, isUnassigned: false });
   });
 

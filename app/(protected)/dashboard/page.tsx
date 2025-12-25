@@ -4,6 +4,7 @@ import {
   SalesDashboardStreaming,
 } from '@/modules/dashboard';
 import { redirect } from 'next/navigation';
+import { ROLES } from '@/lib/constants';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -29,7 +30,7 @@ export default async function DashboardPage() {
   // Get user info (normalized to camelCase by getCurrentUser)
   const userName = user.profile?.displayName || 'Utilisateur';
   const userAvatar = user.profile?.avatar || null;
-  const isAdmin = user.profile?.role === 'admin';
+  const isAdmin = user.profile?.role === ROLES.ADMIN;
 
   // Render streaming dashboard based on role
   // Each section inside will fetch its own data via Suspense

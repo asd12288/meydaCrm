@@ -10,6 +10,7 @@ import {
   BADGE_TO_COLOR,
 } from '../config/constants';
 import { updateLeadStatus } from '../lib/actions';
+import { analytics } from '@/lib/analytics';
 import type { LeadStatus } from '@/db/types';
 
 interface LeadStatusBadgeProps {
@@ -45,9 +46,17 @@ export function LeadStatusBadge({
   const handleStatusChange = (newStatus: LeadStatus) => {
     if (newStatus === optimisticStatus) return;
 
+    const previousStatus = optimisticStatus;
     startTransition(async () => {
       setOptimisticStatus(newStatus);
-      await updateLeadStatus(leadId, newStatus);
+      const result = await updateLeadStatus(leadId, newStatus);
+      if (result.success) {
+        analytics.leadStatusChanged({
+          leadId,
+          from: previousStatus,
+          to: newStatus,
+        });
+      }
     });
   };
 

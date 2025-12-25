@@ -31,6 +31,7 @@ import {
   TooltipTrigger,
 } from '@/modules/shared/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { TIMING, TEXTAREA_ROWS } from '@/lib/constants';
 
 /*
 Accessibility
@@ -779,7 +780,7 @@ export function KanbanBoardCard({
         setIsDragging(false);
         setJustDropped(true);
         // Remove drop animation class after animation completes
-        setTimeout(() => setJustDropped(false), 250);
+        setTimeout(() => setJustDropped(false), TIMING.KANBAN_DROP_ANIMATION);
       }}
       ref={ref}
       {...props}
@@ -866,7 +867,7 @@ export function KanbanBoardCardTextarea({
         className,
       )}
       onChange={handleChange}
-      rows={1}
+      rows={TEXTAREA_ROWS.SINGLE_LINE}
       value={value}
       ref={internalReference}
       {...props}

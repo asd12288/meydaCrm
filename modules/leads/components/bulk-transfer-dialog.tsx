@@ -2,8 +2,10 @@
 
 import { useState, useTransition } from 'react';
 import { IconTransfer } from '@tabler/icons-react';
-import { Modal, useToast, FormActions, UserAvatar } from '@/modules/shared';
+import { Modal, useToast, FormActions, UserAvatar, Button } from '@/modules/shared';
 import { bulkTransferLeads } from '../lib/actions';
+import { analytics } from '@/lib/analytics';
+import { ROLES } from '@/lib/constants';
 import type { SalesUser } from '../types';
 
 interface BulkTransferDialogProps {
@@ -29,7 +31,7 @@ export function BulkTransferDialog({
 
   // Filter out current user and non-sales users
   const transferableUsers = salesUsers.filter(
-    (u) => u.id !== currentUserId && u.role === 'sales'
+    (u) => u.id !== currentUserId && u.role === ROLES.SALES
   );
 
   const handleTransfer = () => {
@@ -41,6 +43,11 @@ export function BulkTransferDialog({
       if (result.error) {
         toast.error(result.error);
       } else {
+        analytics.bulkLeadsTransferred({
+          leadCount: result.count || selectedIds.length,
+          fromUserId: currentUserId,
+          toUserId: selectedUserId,
+        });
         toast.success(
           `${result.count} lead${result.count !== 1 ? 's' : ''} transféré${result.count !== 1 ? 's' : ''}`
         );
@@ -72,14 +79,14 @@ export function BulkTransferDialog({
           ) : (
             <div className="space-y-2 max-h-64 overflow-y-auto">
               {transferableUsers.map((user) => (
-                <button
+                <Button
                   key={user.id}
-                  type="button"
+                  variant="outline"
                   onClick={() => setSelectedUserId(user.id)}
-                  className={`w-full flex items-center gap-3 p-3 rounded-lg border transition-colors ${
+                  className={`w-full justify-start gap-3 p-3 h-auto ${
                     selectedUserId === user.id
                       ? 'border-primary bg-primary/5'
-                      : 'border-border hover:border-primary/50 hover:bg-lightgray dark:hover:bg-darkmuted'
+                      : ''
                   }`}
                 >
                   <UserAvatar name={user.display_name} avatar={user.avatar} size="sm" />
@@ -87,7 +94,7 @@ export function BulkTransferDialog({
                   {selectedUserId === user.id && (
                     <span className="ml-auto text-primary text-xs font-medium">Sélectionné</span>
                   )}
-                </button>
+                </Button>
               ))}
             </div>
           )}

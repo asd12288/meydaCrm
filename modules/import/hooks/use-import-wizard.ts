@@ -20,6 +20,7 @@ import {
   readFileAsText,
   convertExcelToCSV,
 } from '../lib/parsers';
+import { DISPLAY_LIMITS } from '@/lib/constants';
 
 // =============================================================================
 // INITIAL STATE
@@ -160,7 +161,7 @@ export function useImportWizard() {
         const rowCount = Math.max(0, totalLines - 1);
 
         // Auto-map columns
-        const sampleData = rows.slice(0, 5).map((r) => r.values);
+        const sampleData = rows.slice(0, DISPLAY_LIMITS.SAMPLE_ROWS_PREVIEW).map((r) => r.values);
         const mappings = autoMapColumns(headers, sampleData);
 
         const uploadedFile: UploadedFile = {
@@ -212,7 +213,7 @@ export function useImportWizard() {
         });
 
         // Auto-map columns
-        const sampleData = rows.slice(0, 5).map((r) => r.values);
+        const sampleData = rows.slice(0, DISPLAY_LIMITS.SAMPLE_ROWS_PREVIEW).map((r) => r.values);
         const mappings = autoMapColumns(headers, sampleData);
 
         const uploadedFile: UploadedFile = {
@@ -286,7 +287,7 @@ export function useImportWizard() {
         if (!prev.file) return prev;
 
         // Auto-map columns based on headers
-        const sampleValues = data.sampleData.slice(0, 5).map((r) => r.values);
+        const sampleValues = data.sampleData.slice(0, DISPLAY_LIMITS.SAMPLE_ROWS_PREVIEW).map((r) => r.values);
         const mappings = autoMapColumns(data.headers, sampleValues);
 
         return {

@@ -3,7 +3,7 @@
 import dynamic from 'next/dynamic';
 import { CardBox } from '@/modules/shared';
 import { LEAD_STATUS_LABELS } from '@/db/types';
-import { getStatusChartColor } from '@/lib/constants';
+import { getStatusChartColor, DISPLAY_LIMITS } from '@/lib/constants';
 
 const Chart = dynamic(() => import('react-apexcharts'), { ssr: false });
 
@@ -13,10 +13,10 @@ interface LeadsStatusChartProps {
 }
 
 export function LeadsStatusChart({ leadsByStatus, totalLeads }: LeadsStatusChartProps) {
-  // Sort statuses by count and get top 6
+  // Sort statuses by count and get top ones
   const sortedStatuses = Object.entries(leadsByStatus)
     .sort(([, a], [, b]) => b - a)
-    .slice(0, 6);
+    .slice(0, DISPLAY_LIMITS.STATUS_DISTRIBUTION);
 
   // Prepare chart data
   const chartSeries = sortedStatuses.map(([, count]) => count);

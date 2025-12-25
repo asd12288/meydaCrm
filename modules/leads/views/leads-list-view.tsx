@@ -1,5 +1,6 @@
 import { CardBox, PageHeader, ErrorBoundary, ErrorFallback } from '@/modules/shared';
 import { getCurrentUser } from '@/modules/auth';
+import { ROLES } from '@/lib/constants';
 import { getLeads, getSalesUsers, getUnassignedNewLeadsCount, getLeadsForKanban } from '../lib/actions';
 import { leadFiltersSchema } from '../types';
 import { LeadFilters } from '../ui/lead-filters';
@@ -16,7 +17,7 @@ interface LeadsListViewProps {
 
 export async function LeadsListView({ searchParams }: LeadsListViewProps) {
   const user = await getCurrentUser();
-  const isAdmin = user?.profile?.role === 'admin';
+  const isAdmin = user?.profile?.role === ROLES.ADMIN;
 
   // Await and parse search params
   const params = await searchParams;

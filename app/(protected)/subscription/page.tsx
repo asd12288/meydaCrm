@@ -3,7 +3,7 @@ import { requireAdmin } from '@/modules/auth';
 import { SubscriptionView } from '@/modules/subscription/views/subscription-view';
 import { getSubscription, getPaymentHistory } from '@/modules/subscription/lib/actions';
 import { checkSubscriptionStatus } from '@/lib/subscription';
-import { Spinner } from '@/modules/shared';
+import { LoadingState } from '@/modules/shared';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -22,7 +22,7 @@ export default async function SubscriptionPage() {
   ]);
 
   return (
-    <Suspense fallback={<div className="flex justify-center py-12"><Spinner size="lg" /></div>}>
+    <Suspense fallback={<LoadingState />}>
       <SubscriptionView
         subscription={subscription}
         payments={payments}

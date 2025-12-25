@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { ROLES } from '@/lib/constants';
 import type { ImportJobProgress } from '@/modules/import/types';
 
 /**
@@ -36,7 +37,7 @@ export async function GET(
     .eq('id', user.id)
     .single();
 
-  if (profile?.role !== 'admin') {
+  if (profile?.role !== ROLES.ADMIN) {
     return new Response('Acces non autorise', { status: 403 });
   }
 

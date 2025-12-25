@@ -2,6 +2,7 @@
 
 import { CardBox, SectionHeader } from '@/modules/shared';
 import { LEAD_STATUS_LABELS } from '@/db/types';
+import { DISPLAY_LIMITS } from '@/lib/constants';
 import { IconUsers, IconClock } from '@tabler/icons-react';
 import type { AccountStats } from '../types';
 
@@ -27,7 +28,7 @@ export function MyLeadsStatsCard({ stats, isAdmin }: MyLeadsStatsCardProps) {
   // Get top statuses sorted by count
   const sortedStatuses = Object.entries(leads.byStatus)
     .sort(([, a], [, b]) => b - a)
-    .slice(0, 6);
+    .slice(0, DISPLAY_LIMITS.LEADS_STATS_CARD);
 
   return (
     <CardBox>

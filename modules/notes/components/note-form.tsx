@@ -7,13 +7,14 @@ import {
   FormField,
   FormTextarea,
   FormErrorAlert,
-  FormSuccessAlert,
   FormActions,
   useFormState,
+  useToast,
 } from '@/modules/shared';
 import { noteFormSchema, type NoteFormInput, type NoteWithLead } from '../types';
 import { createNote, updateNote } from '../lib/actions';
 import { NoteColorPicker } from './note-color-picker';
+import { TEXTAREA_ROWS } from '@/lib/constants';
 import { NoteLeadPicker } from './note-lead-picker';
 
 interface NoteFormProps {
@@ -30,10 +31,9 @@ export function NoteForm({ note, onSuccess, onCancel }: NoteFormProps) {
     startTransition,
     error,
     setError,
-    success,
-    handleFormSuccess,
     resetAll,
   } = useFormState();
+  const { toast } = useToast();
 
   const {
     register,
@@ -60,7 +60,8 @@ export function NoteForm({ note, onSuccess, onCancel }: NoteFormProps) {
       if (result.error) {
         setError(result.error);
       } else {
-        handleFormSuccess({ onSuccess, onSuccessDelay: 500 });
+        toast.success(isEditing ? 'Note modifiée' : 'Note créée');
+        onSuccess();
       }
     });
   };
@@ -79,7 +80,7 @@ export function NoteForm({ note, onSuccess, onCancel }: NoteFormProps) {
       <FormTextarea
         label="Contenu"
         placeholder="Contenu de la note..."
-        rows={6}
+        rows={TEXTAREA_ROWS.NOTE_CONTENT}
         error={errors.content?.message}
         {...register('content')}
       />
@@ -111,12 +112,8 @@ export function NoteForm({ note, onSuccess, onCancel }: NoteFormProps) {
         )}
       />
 
-      {/* Alerts */}
+      {/* Error alert */}
       <FormErrorAlert error={error} />
-      <FormSuccessAlert
-        show={success}
-        message={isEditing ? 'Note modifiée' : 'Note créée'}
-      />
 
       {/* Actions */}
       <FormActions

@@ -3,8 +3,8 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
 import SimpleBar from 'simplebar-react';
-import { IconSearch, IconTicket, IconLoader2 } from '@tabler/icons-react';
-import { Button } from '@/modules/shared';
+import { IconSearch, IconTicket } from '@tabler/icons-react';
+import { Button, InlineSpinner } from '@/modules/shared';
 import { TicketListItem } from './ticket-list-item';
 import type { SupportTicketWithDetails } from '../types';
 
@@ -123,10 +123,7 @@ export function TicketListPanel({
             {hasMore && (
               <div className="py-4 flex justify-center border-t border-ld">
                 {isLoadingMore ? (
-                  <div className="flex items-center gap-2 text-sm text-darklink">
-                    <IconLoader2 size={16} className="animate-spin text-primary" />
-                    <span>Chargement des tickets...</span>
-                  </div>
+                  <InlineSpinner>Chargement des tickets...</InlineSpinner>
                 ) : (
                   <Button
                     variant="link"

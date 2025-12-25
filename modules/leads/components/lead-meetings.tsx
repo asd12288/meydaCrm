@@ -20,6 +20,7 @@ import {
 } from '@/modules/meetings';
 import { updateMeetingStatus, deleteMeeting } from '@/modules/meetings/lib/actions';
 import type { MeetingWithDetails, MeetingStatus } from '@/modules/meetings/types';
+import { TOAST } from '@/lib/constants';
 
 interface LeadMeetingsProps {
   leadId: string;
@@ -59,7 +60,7 @@ export function LeadMeetings({ leadId, meetings }: LeadMeetingsProps) {
     if (result.error) {
       toast.error(result.error);
     } else {
-      toast.success('Rendez-vous supprimé');
+      toast.success(TOAST.MEETING_DELETED);
     }
   };
 
@@ -135,7 +136,7 @@ export function LeadMeetings({ leadId, meetings }: LeadMeetingsProps) {
           leadId={leadId}
           onSuccess={() => {
             setShowForm(false);
-            toast.success('Rendez-vous créé');
+            toast.success(TOAST.MEETING_CREATED);
           }}
           onCancel={() => setShowForm(false)}
         />
@@ -153,7 +154,7 @@ export function LeadMeetings({ leadId, meetings }: LeadMeetingsProps) {
             meeting={editingMeeting}
             onSuccess={() => {
               setEditingMeeting(null);
-              toast.success('Rendez-vous modifié');
+              toast.success(TOAST.MEETING_UPDATED);
             }}
             onCancel={() => setEditingMeeting(null)}
           />
@@ -218,7 +219,7 @@ function MeetingCard({
       if (result.error) {
         toast.error(result.error);
       } else {
-        toast.success('Statut mis à jour');
+        toast.success(TOAST.STATUS_UPDATED);
       }
     });
   };

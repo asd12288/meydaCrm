@@ -13,7 +13,7 @@ import {
 } from '@/modules/shared';
 import { editUserSchema, USER_FIELD_LABELS } from '../types';
 import type { EditUserInput, UserProfile } from '../types';
-import { USER_ROLE_OPTIONS } from '@/lib/constants';
+import { USER_ROLE_OPTIONS, TIMING } from '@/lib/constants';
 import { updateUser } from '../lib/actions';
 
 interface EditUserFormProps {
@@ -49,7 +49,7 @@ export function EditUserForm({ user, isSelf = false, onSuccess, onCancel }: Edit
       if (result.error) {
         setError(result.error);
       } else {
-        handleFormSuccess({ onSuccess, onSuccessDelay: 1000 });
+        handleFormSuccess({ onSuccess, onSuccessDelay: TIMING.SUCCESS_DELAY_DEFAULT });
       }
     });
   };

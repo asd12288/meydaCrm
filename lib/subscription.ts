@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import type { Subscription, SubscriptionStatus } from '@/db/types';
 import { createNotificationForUsers } from '@/modules/notifications';
 import { shouldNotifyAdmins } from '@/lib/subscription-helpers';
+import { ROLES } from '@/lib/constants';
 
 const EXPIRY_WARNING_DAYS = 7;
 const GRACE_PERIOD_DAYS = 7;
@@ -54,7 +55,7 @@ export async function checkSubscriptionStatus(): Promise<SubscriptionCheckResult
     .single();
 
   // Sales users always have access (subscription is an admin concern)
-  if (profile?.role !== 'admin') {
+  if (profile?.role !== ROLES.ADMIN) {
     return {
       isActive: true,
       daysRemaining: null,
@@ -127,7 +128,7 @@ export async function checkSubscriptionStatus(): Promise<SubscriptionCheckResult
     const { data: admins } = await supabase
       .from('profiles')
       .select('id')
-      .eq('role', 'admin');
+      .eq('role', ROLES.ADMIN);
 
     if (admins && admins.length > 0) {
       const adminIds = admins.map((a) => a.id);
@@ -235,7 +236,7 @@ export async function checkSubscriptionStatus(): Promise<SubscriptionCheckResult
     const { data: admins } = await supabase
       .from('profiles')
       .select('id')
-      .eq('role', 'admin');
+      .eq('role', ROLES.ADMIN);
 
     if (admins && admins.length > 0) {
       const adminIds = admins.map((a) => a.id);
@@ -281,7 +282,7 @@ export async function checkSubscriptionStatus(): Promise<SubscriptionCheckResult
     const { data: admins } = await supabase
       .from('profiles')
       .select('id')
-      .eq('role', 'admin');
+      .eq('role', ROLES.ADMIN);
 
     if (admins && admins.length > 0) {
       const adminIds = admins.map((a) => a.id);

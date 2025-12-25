@@ -13,6 +13,7 @@ import {
   DropdownMenuDivider,
 } from '@/modules/shared';
 import { NotificationBell } from '@/modules/notifications';
+import { ROLES, getRoleLabel } from '@/lib/constants';
 
 interface HeaderProps {
   displayName: string;
@@ -21,12 +22,8 @@ interface HeaderProps {
 }
 
 export function Header({ displayName, role, avatar }: HeaderProps) {
-  const isAdmin = role === 'admin';
-  const roleLabel = role === 'admin'
-    ? 'Administrateur'
-    : role === 'developer'
-      ? 'Développeur'
-      : 'Commercial';
+  const isAdmin = role === ROLES.ADMIN;
+  const roleLabel = getRoleLabel(role);
 
   return (
     <header className="sticky top-0 z-30 h-16 bg-white/95 dark:bg-darkgray/95 backdrop-blur-sm border-b border-border shadow-sm">

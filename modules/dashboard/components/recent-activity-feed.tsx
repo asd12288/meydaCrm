@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { CardBox } from '@/modules/shared';
+import { DISPLAY_LIMITS } from '@/lib/constants';
 import Link from 'next/link';
 import {
   IconMessage,
@@ -57,7 +58,7 @@ export function RecentActivityFeed({ activities }: RecentActivityFeedProps) {
         </div>
       ) : (
         <div className="space-y-3">
-          {activities.slice(0, 6).map((activity) => {
+          {activities.slice(0, DISPLAY_LIMITS.RECENT_ACTIVITIES).map((activity) => {
             const config = getActionConfig(activity.action);
             return (
               <Link

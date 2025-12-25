@@ -14,6 +14,7 @@ import { Button } from '@/modules/shared';
 import { Select } from '@/modules/shared';
 import type { ColumnMappingConfig, LeadFieldKey, UploadedFile, RawRow } from '../types';
 import { getAvailableTargetFields, checkRequiredMappings, getMappingSummary } from '../lib/auto-mapper';
+import { DISPLAY_LIMITS } from '@/lib/constants';
 
 interface MappingStepProps {
   /** Uploaded file info */
@@ -65,7 +66,7 @@ export function MappingStep({
 
   // Get sample value for a column
   const getSampleValues = (sourceIndex: number): string[] => {
-    return sampleRows.slice(0, 3).map((row) => row.values[sourceIndex] || '-');
+    return sampleRows.slice(0, DISPLAY_LIMITS.MAPPING_SAMPLE_VALUES).map((row) => row.values[sourceIndex] || '-');
   };
 
   return (

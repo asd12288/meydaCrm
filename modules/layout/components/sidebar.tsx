@@ -8,6 +8,7 @@ import { navigationItems, navGroups } from "../config/navigation";
 import { Logo } from "@/modules/shared";
 import { useSidebar } from "../context/sidebar-context";
 import type { UserRole } from "@/db/types";
+import { ROLES } from "@/lib/constants";
 
 interface SidebarProps {
   userRole: UserRole;
@@ -16,8 +17,8 @@ interface SidebarProps {
 export function Sidebar({ userRole }: SidebarProps) {
   const pathname = usePathname();
   const { isCollapsed, toggleSidebar } = useSidebar();
-  const isAdmin = userRole === "admin";
-  const isDeveloper = userRole === "developer";
+  const isAdmin = userRole === ROLES.ADMIN;
+  const isDeveloper = userRole === ROLES.DEVELOPER;
 
   // Filter items based on role
   const visibleItems = navigationItems.filter((item) => {

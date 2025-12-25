@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { IconSend, IconMessageCircle } from '@tabler/icons-react';
-import { useToast, Spinner } from '@/modules/shared';
+import { useToast, InlineSpinner } from '@/modules/shared';
 import {
   Popover,
   PopoverContent,
@@ -12,6 +12,7 @@ import { Button } from '@/modules/shared';
 import { Textarea } from '@/modules/shared';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/modules/shared';
 import { addComment } from '../../lib/actions';
+import { TOAST } from '@/lib/constants';
 
 interface QuickCommentPopoverProps {
   leadId: string;
@@ -40,7 +41,7 @@ export function QuickCommentPopover({
       if (result.error) {
         toast.error(result.error);
       } else {
-        toast.success('Commentaire ajouté');
+        toast.success(TOAST.COMMENT_ADDED);
       }
     });
   };
@@ -124,10 +125,7 @@ export function QuickCommentPopover({
               className="gap-1.5"
             >
               {isPending ? (
-                <>
-                  <Spinner size="sm" />
-                  Envoi...
-                </>
+                <InlineSpinner>Envoi...</InlineSpinner>
               ) : (
                 <>
                   <IconSend size={14} />

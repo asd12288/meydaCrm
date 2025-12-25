@@ -45,8 +45,9 @@ describe('LeadActivityTabs', () => {
       />
     );
 
-    // Click history tab using fireEvent
-    const historyTab = screen.getByText('Historique').closest('button')!;
+    // Click history tab using getAllByText to handle multiple matches
+    const historyElements = screen.getAllByText('Historique');
+    const historyTab = historyElements[0].closest('button')!;
     fireEvent.click(historyTab);
 
     expect(screen.getByText('History Content')).toBeInTheDocument();
@@ -64,8 +65,9 @@ describe('LeadActivityTabs', () => {
       />
     );
 
-    // Click meetings tab
-    const meetingsTab = screen.getByText('Rendez-vous').closest('button')!;
+    // Click meetings tab using getAllByText to handle multiple matches
+    const meetingsElements = screen.getAllByText('Rendez-vous');
+    const meetingsTab = meetingsElements[0].closest('button')!;
     fireEvent.click(meetingsTab);
 
     expect(screen.getByText('Meetings Content')).toBeInTheDocument();

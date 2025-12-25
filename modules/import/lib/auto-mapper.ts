@@ -4,7 +4,7 @@ import {
   findBestMatch,
   normalizeHeader,
 } from '../config/column-aliases';
-import { LEAD_FIELD_LABELS } from '@/lib/constants';
+import { LEAD_FIELD_LABELS, DISPLAY_LIMITS } from '@/lib/constants';
 import { AUTO_MAP_CONFIDENCE_THRESHOLD } from '../config/constants';
 
 // =============================================================================
@@ -80,7 +80,7 @@ export function autoMapColumn(header: string): AutoMapResult {
   return {
     field: result.confidence >= AUTO_MAP_CONFIDENCE_THRESHOLD ? result.field : null,
     confidence: result.confidence,
-    alternatives: alternatives.slice(0, 3), // Top 3 alternatives
+    alternatives: alternatives.slice(0, DISPLAY_LIMITS.MAPPING_ALTERNATIVES), // Top alternatives
   };
 }
 
@@ -136,7 +136,7 @@ export function autoMapColumns(
     for (let row = 0; row < Math.min(5, sampleData.length); row++) {
       const value = sampleData[row]?.[index];
       if (value && value.trim()) {
-        sampleValues.push(value.trim().slice(0, 50)); // Limit sample length
+        sampleValues.push(value.trim().slice(0, DISPLAY_LIMITS.VALUE_SAMPLE_LENGTH)); // Limit sample length
       }
     }
 

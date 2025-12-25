@@ -21,6 +21,7 @@ import {
   MEETING_DURATION_OPTIONS,
   MEETING_FIELD_LABELS,
 } from '../config/constants';
+import { TIMING, TEXTAREA_ROWS } from '@/lib/constants';
 
 interface MeetingFormProps {
   leadId: string;
@@ -153,7 +154,7 @@ export function MeetingForm({
       if (result.error) {
         setError(result.error);
       } else {
-        handleFormSuccess({ onSuccess, onSuccessDelay: 500 });
+        handleFormSuccess({ onSuccess, onSuccessDelay: TIMING.SUCCESS_DELAY_QUICK });
       }
     });
   };
@@ -206,7 +207,7 @@ export function MeetingForm({
       <FormTextarea
         label={MEETING_FIELD_LABELS.description}
         placeholder="Notes sur le rendez-vous..."
-        rows={3}
+        rows={TEXTAREA_ROWS.MEETING_NOTES}
         error={errors.description?.message}
         {...register('description')}
       />

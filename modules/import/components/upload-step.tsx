@@ -4,9 +4,8 @@ import {
   IconFileSpreadsheet,
   IconFile,
   IconX,
-  IconLoader2,
 } from '@tabler/icons-react';
-import { Button } from '@/modules/shared';
+import { Button, Spinner } from '@/modules/shared';
 import { FileDropzone } from '../ui/file-dropzone';
 import type { UploadedFile } from '../types';
 
@@ -35,7 +34,7 @@ export function UploadStep({
       {showFileProcessing && (
         <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
           <div className="flex items-start gap-3">
-            <IconLoader2 className="w-5 h-5 text-primary animate-spin flex-shrink-0 mt-0.5" />
+            <Spinner size="md" className="flex-shrink-0 mt-0.5" />
             <div className="flex-1">
               <p className="font-medium text-ld text-sm mb-1">
                 {conversionProgress > 0 && conversionProgress < 100

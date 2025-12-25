@@ -11,8 +11,10 @@ import {
   FormActions,
   Checkbox,
   useToast,
+  useFormState,
 } from '@/modules/shared';
-import { useTransition, useState, useEffect } from 'react';
+import { TOAST, TEXTAREA_ROWS } from '@/lib/constants';
+import { useEffect } from 'react';
 import { z } from 'zod';
 import { updateBanner, type SystemBanner } from '../lib/banner-actions';
 
@@ -50,8 +52,7 @@ export function EditBannerModal({
   onSuccess,
   banner,
 }: EditBannerModalProps) {
-  const [isPending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
+  const { isPending, startTransition, error, setError, resetError } = useFormState();
   const { toast } = useToast();
 
   const {
@@ -84,7 +85,7 @@ export function EditBannerModal({
 
   const onSubmit = (data: EditBannerFormData) => {
     if (!banner) return;
-    setError(null);
+    resetError();
 
     startTransition(async () => {
       const result = await updateBanner({
@@ -96,14 +97,14 @@ export function EditBannerModal({
         setError(result.error);
       } else {
         onClose();
-        toast.success('Annonce mise à jour');
+        toast.success(TOAST.BANNER_UPDATED);
         onSuccess?.();
       }
     });
   };
 
   const handleClose = () => {
-    setError(null);
+    resetError();
     onClose();
   };
 
@@ -120,7 +121,7 @@ export function EditBannerModal({
           label="Message"
           error={errors.message?.message}
           placeholder="Contenu de l'annonce..."
-          rows={4}
+          rows={TEXTAREA_ROWS.BANNER_CONTENT}
           {...register('message')}
         />
 

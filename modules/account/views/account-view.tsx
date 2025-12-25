@@ -1,6 +1,7 @@
 import { PageHeader, ErrorBoundary, SectionErrorFallback } from '@/modules/shared';
 import { requireAuth } from '@/modules/auth/lib/actions';
 import { getAccountStats } from '../lib/actions';
+import { ROLES } from '@/lib/constants';
 import {
   ProfileInfoCard,
   PasswordChangeCard,
@@ -25,7 +26,7 @@ export async function AccountView() {
     );
   }
 
-  const isAdmin = user.profile.role === 'admin';
+  const isAdmin = user.profile.role === ROLES.ADMIN;
 
   return (
     <div>

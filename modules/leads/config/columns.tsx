@@ -24,6 +24,7 @@ import { LeadStatusBadge } from '../ui/lead-status-badge';
 import { SortableHeader } from '../ui/sortable-header';
 import { TransferLeadSubmenu } from '../ui/transfer-lead-submenu';
 import { COLUMN_LABELS } from './constants';
+import { ROLES } from '@/lib/constants';
 import type { LeadWithAssignee, SalesUser } from '../types';
 
 const columnHelper = createColumnHelper<LeadWithAssignee>();
@@ -62,7 +63,7 @@ function RowActionsDropdown({
   const [showTransferSubmenu, setShowTransferSubmenu] = useState(false);
 
   // Check if transfer option should be shown (non-admin with valid data)
-  const otherSalesUsers = salesUsers?.filter((u) => u.id !== currentUserId && u.role === 'sales') || [];
+  const otherSalesUsers = salesUsers?.filter((u) => u.id !== currentUserId && u.role === ROLES.SALES) || [];
   const canTransfer = !isAdmin && !!currentUserId && salesUsers && otherSalesUsers.length > 0;
 
   // Reset submenu state when dropdown closes (via click outside)
@@ -90,14 +91,15 @@ function RowActionsDropdown({
         {showTransferSubmenu ? (
           <>
             {/* Back button + Transfer header */}
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => setShowTransferSubmenu(false)}
-              className="w-full flex items-center gap-2 px-4 py-2 text-xs font-medium text-darklink uppercase tracking-wide border-b border-ld hover:bg-lightgray dark:hover:bg-darkmuted"
+              className="w-full justify-start rounded-none px-4 py-2 text-xs font-medium text-darklink uppercase tracking-wide border-b border-ld"
             >
               <IconChevronLeft size={14} />
               Transférer à
-            </button>
+            </Button>
             <TransferLeadSubmenu
               leadId={leadId}
               currentUserId={currentUserId!}
@@ -134,17 +136,17 @@ function RowActionsDropdown({
               <>
                 <DropdownMenuDivider />
                 {/* Custom button without data-menu-item to prevent dropdown close */}
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
                   onClick={(e) => {
                     e.stopPropagation();
                     setShowTransferSubmenu(true);
                   }}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-ld hover:bg-lightgray dark:hover:bg-darkmuted transition-all duration-150 cursor-pointer"
+                  className="w-full justify-start rounded-none px-4 py-2.5 text-sm"
                 >
                   <span className="text-darklink"><IconTransfer size={16} /></span>
                   Transférer le lead
-                </button>
+                </Button>
               </>
             )}
 

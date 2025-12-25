@@ -11,13 +11,13 @@
 import { useState, useEffect, useTransition } from 'react';
 import {
   IconDownload,
-  IconLoader2,
   IconCheck,
   IconX,
   IconFileSpreadsheet,
   IconClock,
 } from '@tabler/icons-react';
-import { Modal, useToast } from '@/modules/shared';
+import { Modal, useToast, Spinner, LoadingState, InlineSpinner } from '@/modules/shared';
+import { TOAST } from '@/lib/constants';
 import { Button } from '@/modules/shared';
 import {
   createExportJob,
@@ -27,6 +27,7 @@ import {
 } from '../lib/actions';
 import { useExportStatus } from '../hooks/use-export-status';
 import { EXPORT_LIMITS, EXPORT_STATUS_LABELS } from '../config/constants';
+import { analytics } from '@/lib/analytics';
 import type { ExportFilters, ExportJob } from '../types';
 
 interface ExportModalProps {
@@ -80,6 +81,10 @@ export function ExportModal({ isOpen, onClose, filters }: ExportModalProps) {
         return;
       }
 
+      // Track export started
+      const hasFilters = !!(filters.search || filters.status || filters.assignedTo);
+      analytics.exportStarted({ limit: selectedLimit, hasFilters });
+
       // Switch to progress view
       if (result.exportJobId) {
         setActiveJobId(result.exportJobId);
@@ -100,9 +105,15 @@ export function ExportModal({ isOpen, onClose, filters }: ExportModalProps) {
     }
 
     if (url) {
+      // Track download
+      analytics.exportDownloaded({
+        rowCount: job?.total_rows || 0,
+        fileSizeBytes: job?.file_size_bytes || undefined,
+      });
+
       // Open download in new tab
       window.open(url, '_blank');
-      toast.success('Téléchargement lancé');
+      toast.success(TOAST.DOWNLOAD_STARTED);
       onClose();
     }
   };
@@ -123,8 +134,15 @@ export function ExportModal({ isOpen, onClose, filters }: ExportModalProps) {
     }
 
     if (url) {
+      // Find the job to get row count
+      const downloadedJob = recentExports.find((j) => j.id === jobId);
+      analytics.exportDownloaded({
+        rowCount: downloadedJob?.total_rows || 0,
+        fileSizeBytes: downloadedJob?.file_size_bytes || undefined,
+      });
+
       window.open(url, '_blank');
-      toast.success('Téléchargement lancé');
+      toast.success(TOAST.DOWNLOAD_STARTED);
     }
   };
 
@@ -161,10 +179,7 @@ export function ExportModal({ isOpen, onClose, filters }: ExportModalProps) {
         // =====================================================================
         // LOADING CHECK
         // =====================================================================
-        <div className="py-8 flex flex-col items-center justify-center">
-          <IconLoader2 size={32} className="text-primary animate-spin" />
-          <p className="text-sm text-darklink mt-3">Vérification...</p>
-        </div>
+        <LoadingState message="Vérification..." className="py-8" />
       ) : !isProgressPhase ? (
         // =====================================================================
         // CONFIG PHASE
@@ -228,7 +243,7 @@ export function ExportModal({ isOpen, onClose, filters }: ExportModalProps) {
                       disabled={downloadingId === exportJob.id}
                     >
                       {downloadingId === exportJob.id ? (
-                        <IconLoader2 size={16} className="animate-spin" />
+                        <Spinner size="sm" />
                       ) : (
                         <IconDownload size={16} />
                       )}
@@ -246,10 +261,7 @@ export function ExportModal({ isOpen, onClose, filters }: ExportModalProps) {
             </Button>
             <Button type="button" variant="primary" onClick={handleExport} disabled={isPending}>
               {isPending ? (
-                <>
-                  <IconLoader2 size={16} className="animate-spin" />
-                  Création...
-                </>
+                <InlineSpinner>Création...</InlineSpinner>
               ) : (
                 <>
                   <IconDownload size={16} />
@@ -281,7 +293,7 @@ export function ExportModal({ isOpen, onClose, filters }: ExportModalProps) {
               ) : isFailed ? (
                 <IconX size={32} className="text-error" />
               ) : (
-                <IconLoader2 size={32} className="text-primary animate-spin" />
+                <Spinner size="lg" />
               )}
             </div>
 
@@ -350,10 +362,7 @@ export function ExportModal({ isOpen, onClose, filters }: ExportModalProps) {
                   disabled={isDownloading}
                 >
                   {isDownloading ? (
-                    <>
-                      <IconLoader2 size={16} className="animate-spin" />
-                      Téléchargement...
-                    </>
+                    <InlineSpinner>Téléchargement...</InlineSpinner>
                   ) : (
                     <>
                       <IconDownload size={16} />

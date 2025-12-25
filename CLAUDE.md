@@ -1083,6 +1083,11 @@ import { ROLES, ROLE_LABELS, ROLE_OPTIONS, getRoleLabel } from '@/lib/constants'
 import { LEAD_FIELD_LABELS, getLeadFieldLabel } from '@/lib/constants';
 import { LEAD_STATUSES, LEAD_STATUS_COLORS, getStatusColor } from '@/lib/constants';
 import { HISTORY_EVENT_LABELS, getHistoryEventLabel } from '@/lib/constants';
+import { TOAST } from '@/lib/constants';
+import { ICON_SIZE } from '@/lib/constants';
+import { TEXTAREA_ROWS } from '@/lib/constants';
+import { DISPLAY_LIMITS } from '@/lib/constants';
+import { TIMING } from '@/lib/constants';
 ```
 
 | File | Contents |
@@ -1091,6 +1096,80 @@ import { HISTORY_EVENT_LABELS, getHistoryEventLabel } from '@/lib/constants';
 | `lead-fields.ts` | `LEAD_FIELD_LABELS` (all field display names) |
 | `lead-statuses.ts` | `LEAD_STATUSES`, `LEAD_STATUS_COLORS`, `LEAD_STATUS_OPTIONS` |
 | `history.ts` | `HISTORY_EVENT_TYPES`, `HISTORY_EVENT_LABELS` |
+| `toast-messages.ts` | `TOAST` (all French toast messages) |
+| `icon-sizes.ts` | `ICON_SIZE` (XS=14, SM=16, MD=18, LG=20, XL=24, XXL=32) |
+| `form-dimensions.ts` | `TEXTAREA_ROWS` (SINGLE_LINE, COMMENT, MEETING_NOTES, etc.) |
+| `display-limits.ts` | `DISPLAY_LIMITS` (dashboard widgets, import previews, slicing) |
+| `timing.ts` | `TIMING` (form delays, animation durations, debounce values) |
+
+#### Toast Messages (`TOAST`)
+
+```typescript
+// Success messages
+TOAST.LEAD_DELETED           // 'Lead supprimé'
+TOAST.LEAD_TRANSFERRED       // 'Lead transféré avec succès'
+TOAST.COMMENT_ADDED          // 'Commentaire ajouté'
+TOAST.MEETING_CREATED        // 'Rendez-vous créé'
+TOAST.USER_DELETED           // 'Utilisateur supprimé'
+TOAST.BANNER_CREATED         // 'Annonce créée avec succès'
+
+// Pluralization helpers
+TOAST.LEADS_ASSIGNED(5)      // '5 leads assignés'
+TOAST.LEADS_PARTIAL_ASSIGNED(3, 5) // '3/5 leads assignés'
+
+// Error messages
+TOAST.GENERIC_ERROR          // 'Une erreur est survenue'
+TOAST.ERROR_DELETE           // 'Erreur lors de la suppression'
+TOAST.PAYMENT_ERROR          // 'Une erreur est survenue. Veuillez réessayer.'
+```
+
+#### Textarea Rows (`TEXTAREA_ROWS`)
+
+```typescript
+TEXTAREA_ROWS.SINGLE_LINE    // 1 - ticket reply, kanban quick comment
+TEXTAREA_ROWS.COMMENT        // 2 - lead comments
+TEXTAREA_ROWS.MEETING_NOTES  // 3 - meeting form notes
+TEXTAREA_ROWS.LEAD_NOTES     // 4 - lead edit form notes
+TEXTAREA_ROWS.BANNER_CONTENT // 4 - banner messages
+TEXTAREA_ROWS.NOTE_CONTENT   // 6 - sticky notes
+TEXTAREA_ROWS.SUPPORT_TICKET // 6 - support ticket description
+```
+
+#### Display Limits (`DISPLAY_LIMITS`)
+
+```typescript
+// Dashboard widgets
+DISPLAY_LIMITS.LEADS_STATS_CARD      // 6
+DISPLAY_LIMITS.TOP_PERFORMERS        // 5
+DISPLAY_LIMITS.RECENT_ACTIVITIES     // 6
+
+// Import/mapping
+DISPLAY_LIMITS.SAMPLE_ROWS_PREVIEW   // 5
+DISPLAY_LIMITS.MAPPING_SAMPLE_VALUES // 3
+DISPLAY_LIMITS.IMPORT_ROWS_PREVIEW   // 30
+
+// Field display
+DISPLAY_LIMITS.CHANGED_FIELDS        // 5
+DISPLAY_LIMITS.VALUE_SAMPLE_LENGTH   // 50
+```
+
+#### Timing Constants (`TIMING`)
+
+```typescript
+// Form success delays (milliseconds)
+TIMING.SUCCESS_DELAY_DEFAULT   // 1000 - standard form success
+TIMING.SUCCESS_DELAY_PASSWORD  // 1500 - password changes
+TIMING.SUCCESS_DELAY_QUICK     // 500  - quick actions (meetings)
+
+// Animation delays
+TIMING.UPLOAD_PROGRESS_CLEAR   // 500  - clear upload progress
+TIMING.KANBAN_DROP_ANIMATION   // 250  - kanban card drop
+TIMING.COLUMN_PULSE_ANIMATION  // 300  - column count change pulse
+TIMING.FOCUS_DELAY             // 0    - input focus delay
+
+// Debounce
+TIMING.SEARCH_DEBOUNCE         // 300  - search input debounce
+```
 
 ### Lead History Helpers (`modules/leads/lib/history-helpers.ts`)
 

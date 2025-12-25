@@ -79,9 +79,9 @@ export function SubscriptionView({
         <div className="bg-lightwarning dark:bg-warning/10 border border-warning/20 rounded-lg p-4 flex items-start gap-3">
           <IconX size={20} className="text-warning shrink-0 mt-0.5" />
           <div>
-            <p className="font-medium text-warning">Paiement annule</p>
+            <p className="font-medium text-warning">Paiement annulé</p>
             <p className="text-sm text-warning/80 mt-1">
-              Le paiement a ete annule. Vous pouvez reessayer a tout moment.
+              Le paiement a été annulé. Vous pouvez réessayer à tout moment.
             </p>
           </div>
         </div>

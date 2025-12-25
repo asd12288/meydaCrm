@@ -16,6 +16,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
+import { ROLES } from '@/lib/constants';
 
 // Vercel function configuration
 export const maxDuration = 60; // 1 minute max
@@ -89,7 +90,7 @@ export async function POST(request: NextRequest) {
       .eq('id', user.id)
       .single();
 
-    if (profile?.role !== 'admin') {
+    if (profile?.role !== ROLES.ADMIN) {
       return NextResponse.json(
         { error: 'Acces non autorise' },
         { status: 403 }

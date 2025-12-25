@@ -11,6 +11,7 @@ import {
   useFormState,
 } from '@/modules/shared';
 import { resetPasswordSchema, USER_FIELD_LABELS } from '../types';
+import { TIMING } from '@/lib/constants';
 import type { ResetPasswordInput } from '../types';
 import { resetPassword } from '../lib/actions';
 
@@ -53,7 +54,7 @@ export function ResetPasswordForm({
         setError(result.error);
       } else {
         reset();
-        handleFormSuccess({ onSuccess, onSuccessDelay: 1500 });
+        handleFormSuccess({ onSuccess, onSuccessDelay: TIMING.SUCCESS_DELAY_PASSWORD });
       }
     });
   };

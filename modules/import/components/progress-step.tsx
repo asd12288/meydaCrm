@@ -3,8 +3,8 @@
 import {
   IconCheck,
   IconX,
-  IconLoader2,
 } from '@tabler/icons-react';
+import { Spinner } from '@/modules/shared';
 import type { ImportProgress } from '../types';
 
 interface ProgressStepProps {
@@ -138,7 +138,7 @@ export function ProgressStep({ progress, fileName }: ProgressStepProps) {
     <div className="py-12 space-y-8">
       {/* Centered spinner with phase label */}
       <div className="flex flex-col items-center gap-4">
-        <IconLoader2 className="w-10 h-10 text-primary animate-spin" />
+        <Spinner size="xl" type="bars" />
         <div className="text-center">
           <h3 className="text-lg font-medium text-ld">
             {getPhaseLabel()}

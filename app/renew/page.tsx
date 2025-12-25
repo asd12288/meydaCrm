@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getProfile } from '@/lib/auth';
 import { checkSubscriptionStatus } from '@/lib/subscription';
 import { RenewView } from '@/modules/subscription/views/renew-view';
+import { ROLES } from '@/lib/constants';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -24,7 +25,7 @@ export default async function RenewPage() {
 
   // Check if user is admin
   const profile = await getProfile(supabase, user.id);
-  if (profile?.role !== 'admin') {
+  if (profile?.role !== ROLES.ADMIN) {
     redirect('/dashboard');
   }
 

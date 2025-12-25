@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import posthog from 'posthog-js';
+import { analytics } from './events';
 
 interface PostHogIdentifyProps {
   userId: string;
@@ -20,6 +21,12 @@ export function PostHogIdentify({ userId, displayName, role }: PostHogIdentifyPr
         name: displayName,
         role: role,
       });
+
+      // Track login only once per session
+      if (!sessionStorage.getItem('login_tracked')) {
+        analytics.loginSuccess({ role });
+        sessionStorage.setItem('login_tracked', '1');
+      }
     }
   }, [userId, displayName, role]);
 

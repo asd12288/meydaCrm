@@ -11,6 +11,7 @@ import {
 import type { LeadForKanban } from '../../types';
 import type { LeadStatus } from '@/db/types';
 import { STATUS_COLORS, STATUS_ICON_MAP, BADGE_TO_COLOR } from '../../config/constants';
+import { TIMING } from '@/lib/constants';
 import { KanbanCard } from './kanban-card';
 
 interface KanbanColumnProps {
@@ -38,7 +39,7 @@ export function KanbanColumn({
       });
       prevCountRef.current = leads.length;
       // Remove pulse animation after it completes
-      const timer = setTimeout(() => setShouldPulse(false), 300);
+      const timer = setTimeout(() => setShouldPulse(false), TIMING.COLUMN_PULSE_ANIMATION);
       return () => clearTimeout(timer);
     }
   }, [leads.length]);

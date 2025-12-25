@@ -9,6 +9,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { enqueueExportJob } from './queue';
 import { EXPORT_BUCKET_NAME } from '../config/constants';
+import { ROLES } from '@/lib/constants';
 import type {
   ExportFilters,
   ExportJob,
@@ -43,7 +44,7 @@ export async function createExportJob(
       .eq('id', user.id)
       .single();
 
-    if (profile?.role !== 'admin') {
+    if (profile?.role !== ROLES.ADMIN) {
       return { success: false, error: 'Accès non autorisé' };
     }
 

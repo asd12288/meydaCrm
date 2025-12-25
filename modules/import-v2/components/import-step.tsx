@@ -17,7 +17,7 @@ import {
   IconChevronDown,
   IconChevronUp,
 } from '@tabler/icons-react';
-import { CardBox, Spinner } from '@/modules/shared';
+import { CardBox, LoadingState } from '@/modules/shared';
 import { Button } from '@/modules/shared';
 import { PROGRESS_PHASE_LABELS } from '../config/constants';
 import type { ImportProgressV2, ImportResultsSummaryV2 } from '../types';
@@ -383,10 +383,7 @@ export function ImportStep({
   // Loading state (waiting for progress)
   return (
     <CardBox>
-      <div className="flex flex-col items-center py-8">
-        <Spinner size="lg" />
-        <p className="text-sm text-darklink mt-4">Préparation de l&apos;import...</p>
-      </div>
+      <LoadingState message="Préparation de l'import..." className="py-8" />
     </CardBox>
   );
 }

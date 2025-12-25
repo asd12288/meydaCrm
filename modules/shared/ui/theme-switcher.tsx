@@ -2,6 +2,7 @@
 
 import { IconMoon, IconSun } from '@tabler/icons-react';
 import { useTheme } from '@/lib/theme';
+import { Button } from './button';
 
 interface ThemeSwitcherProps {
   className?: string;
@@ -11,10 +12,11 @@ export function ThemeSwitcher({ className = '' }: ThemeSwitcherProps) {
   const { isDark, toggleTheme } = useTheme();
 
   return (
-    <button
-      type="button"
+    <Button
+      variant="circleHover"
+      size="circle"
       onClick={toggleTheme}
-      className={`btn-circle-hover ${className}`}
+      className={className}
       aria-label={isDark ? 'Passer en mode clair' : 'Passer en mode sombre'}
       title={isDark ? 'Mode clair' : 'Mode sombre'}
     >
@@ -23,6 +25,6 @@ export function ThemeSwitcher({ className = '' }: ThemeSwitcherProps) {
       ) : (
         <IconMoon size={20} />
       )}
-    </button>
+    </Button>
   );
 }

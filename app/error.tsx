@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useEffect } from 'react';
 import Link from 'next/link';
 import posthog from 'posthog-js';
+import { Button } from '@/modules/shared';
 
 interface ErrorProps {
   error: Error & { digest?: string };
@@ -42,18 +43,12 @@ export default function Error({ error, reset }: ErrorProps) {
           Désolé, une erreur inattendue s&apos;est produite. Veuillez réessayer.
         </p>
         <div className="flex gap-4 justify-center">
-          <button
-            onClick={reset}
-            className="btn-primary-action"
-          >
+          <Button variant="primary" onClick={reset}>
             Réessayer
-          </button>
-          <Link
-            href="/dashboard"
-            className="btn-secondary-action"
-          >
-            Retour au tableau de bord
-          </Link>
+          </Button>
+          <Button variant="secondaryAction" asChild>
+            <Link href="/dashboard">Retour au tableau de bord</Link>
+          </Button>
         </div>
       </div>
     </div>

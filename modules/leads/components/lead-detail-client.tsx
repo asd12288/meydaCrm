@@ -1,13 +1,14 @@
 'use client';
 
-import { useState } from 'react';
-import { ErrorBoundary, SectionErrorFallback } from '@/modules/shared';
+import { useEffect } from 'react';
+import { ErrorBoundary, SectionErrorFallback, useModal } from '@/modules/shared';
 import { LeadProfileCard } from './lead-profile-card';
 import { LeadActivityTabs } from './lead-activity-tabs';
 import { LeadEditModal } from './lead-edit-modal';
 import { LeadComments } from './lead-comments';
 import { LeadHistory } from './lead-history';
 import { LeadMeetings } from './lead-meetings';
+import { analytics } from '@/lib/analytics';
 import type { LeadWithFullDetails, SalesUser } from '../types';
 
 interface LeadDetailClientProps {
@@ -23,7 +24,12 @@ export function LeadDetailClient({
   salesUsers,
   currentUserId,
 }: LeadDetailClientProps) {
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const editModal = useModal();
+
+  // Track lead view on mount
+  useEffect(() => {
+    analytics.leadViewed({ leadId: lead.id, status: lead.status });
+  }, [lead.id, lead.status]);
 
   return (
     <>
@@ -35,7 +41,7 @@ export function LeadDetailClient({
               lead={lead}
               isAdmin={isAdmin}
               salesUsers={salesUsers}
-              onEditClick={() => setIsEditModalOpen(true)}
+              onEditClick={() => editModal.open()}
             />
           </ErrorBoundary>
         </div>
@@ -74,8 +80,8 @@ export function LeadDetailClient({
 
       {/* Edit Modal */}
       <LeadEditModal
-        isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
+        isOpen={editModal.isOpen}
+        onClose={editModal.close}
         lead={lead}
       />
     </>

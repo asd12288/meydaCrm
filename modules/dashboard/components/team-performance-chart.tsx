@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { CardBox, Badge, UserAvatar } from '@/modules/shared';
+import { DISPLAY_LIMITS } from '@/lib/constants';
 import { IconTrophy } from '@tabler/icons-react';
 import type { TeamPerformanceItem } from '../types';
 
@@ -21,8 +22,8 @@ export function TeamPerformanceChart({ teamData }: TeamPerformanceChartProps) {
     );
   }
 
-  // Take top 5 performers
-  const topPerformers = teamData.slice(0, 5);
+  // Take top performers
+  const topPerformers = teamData.slice(0, DISPLAY_LIMITS.TOP_PERFORMERS);
 
   return (
     <CardBox className="h-full">

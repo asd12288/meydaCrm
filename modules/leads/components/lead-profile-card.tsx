@@ -27,6 +27,7 @@ import { LeadStatusBadge } from '../ui/lead-status-badge';
 import { ContactInfoItem } from '../ui/contact-info-item';
 import { AddressMapCard } from './address-map-card';
 import { assignLead } from '../lib/actions';
+import { ROLES } from '@/lib/constants';
 import type { LeadWithFullDetails, SalesUser } from '../types';
 
 interface LeadProfileCardProps {
@@ -125,10 +126,11 @@ export function LeadProfileCard({
             position="bottom-left"
             widthClass="w-56"
             trigger={(isOpen) => (
-              <button
-                type="button"
+              <Button
+                variant="secondaryAction"
+                size="sm"
                 disabled={isPending}
-                className="inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm bg-lightgray dark:bg-darkborder hover:bg-lightprimary dark:hover:bg-primary/20 transition-colors disabled:opacity-50"
+                className="gap-2"
               >
                 {optimisticAssignee ? (
                   <UserAvatar
@@ -144,7 +146,7 @@ export function LeadProfileCard({
                   size={14}
                   className={`transition-transform ${isOpen ? 'rotate-180' : ''}`}
                 />
-              </button>
+              </Button>
             )}
           >
             <DropdownMenuContent maxHeight="300px">
@@ -172,7 +174,7 @@ export function LeadProfileCard({
                   <span className="flex items-center gap-2">
                     <UserAvatar name={user.display_name} avatar={user.avatar} size="sm" />
                     <span>{user.display_name || user.id.slice(0, 8)}</span>
-                    {user.role === 'admin' && (
+                    {user.role === ROLES.ADMIN && (
                       <span className="text-xs text-darklink">(Admin)</span>
                     )}
                   </span>

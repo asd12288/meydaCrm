@@ -17,6 +17,7 @@ import {
   DropdownMenuItem,
   DropdownMenuDivider,
 } from '@/modules/shared';
+import { TOAST } from '@/lib/constants';
 import { useToast } from '@/modules/shared/hooks/use-toast';
 import { getPostItColorClasses } from '../config/constants';
 import { renderMarkdown } from '../lib/markdown';
@@ -123,7 +124,7 @@ export function PostItNote({
       if (result.error) {
         toast.error(result.error);
       } else {
-        toast.success('Note supprimee');
+        toast.success(TOAST.NOTE_DELETED);
       }
     });
   };

@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase/server';
 import { usernameSchema, extractValidationError } from '@/lib/validation';
 import { loginRateLimiter } from '@/lib/rate-limit';
 import { normalizeProfile, type SupabaseProfile } from '@/lib/auth';
+import { ROLES } from '@/lib/constants';
 import type { AuthUser } from '../types';
 
 // Login validation schema
@@ -93,7 +94,7 @@ export async function requireAuth(): Promise<AuthUser> {
 
 export async function requireAdmin(): Promise<AuthUser> {
   const user = await requireAuth();
-  if (user.profile?.role !== 'admin') {
+  if (user.profile?.role !== ROLES.ADMIN) {
     redirect('/dashboard');
   }
   return user;
@@ -101,7 +102,7 @@ export async function requireAdmin(): Promise<AuthUser> {
 
 export async function requireAdminOrDeveloper(): Promise<AuthUser> {
   const user = await requireAuth();
-  if (user.profile?.role !== 'admin' && user.profile?.role !== 'developer') {
+  if (user.profile?.role !== ROLES.ADMIN && user.profile?.role !== ROLES.DEVELOPER) {
     redirect('/dashboard');
   }
   return user;
@@ -109,7 +110,7 @@ export async function requireAdminOrDeveloper(): Promise<AuthUser> {
 
 export async function requireDeveloper(): Promise<AuthUser> {
   const user = await requireAuth();
-  if (user.profile?.role !== 'developer') {
+  if (user.profile?.role !== ROLES.DEVELOPER) {
     redirect('/dashboard');
   }
   return user;

@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { IconCurrencyBitcoin, IconExternalLink } from '@tabler/icons-react';
-import { Button } from '@/modules/shared';
-import { Spinner, FormErrorAlert } from '@/modules/shared';
+import { Button, useFormState } from '@/modules/shared';
+import { InlineSpinner, FormErrorAlert } from '@/modules/shared';
 import type { SubscriptionPlan, SubscriptionPeriod } from '@/db/types';
 import { createPayment } from '../lib/actions';
 import { calculatePrice } from '../config/constants';
@@ -15,14 +15,14 @@ interface PaymentButtonProps {
 }
 
 export function PaymentButton({ plan, period, disabled = false }: PaymentButtonProps) {
+  const { error, setError, resetError } = useFormState();
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const price = calculatePrice(plan, period);
 
   const handlePayment = async () => {
     setIsLoading(true);
-    setError(null);
+    resetError();
 
     try {
       const result = await createPayment(plan, period);
@@ -32,11 +32,11 @@ export function PaymentButton({ plan, period, disabled = false }: PaymentButtonP
         return;
       }
 
-      // Redirect to payment page
+      // Redirect to payment page (no toast - user leaves page)
       window.location.href = result.paymentUrl;
     } catch (err) {
       console.error('Payment error:', err);
-      setError('Une erreur est survenue. Veuillez reessayer.');
+      setError('Une erreur est survenue. Veuillez réessayer.');
     } finally {
       setIsLoading(false);
     }
@@ -55,10 +55,7 @@ export function PaymentButton({ plan, period, disabled = false }: PaymentButtonP
         className="w-full py-3"
       >
         {isLoading ? (
-          <>
-            <Spinner size="sm" />
-            <span>Creation du paiement...</span>
-          </>
+          <InlineSpinner>Creation du paiement...</InlineSpinner>
         ) : (
           <>
             <IconCurrencyBitcoin size={20} />

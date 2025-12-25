@@ -21,7 +21,15 @@ export { DateTimePicker } from './ui/datetime-picker';
 
 // UI components
 export { CardBox } from './ui/card-box';
-export { Spinner } from './ui/spinner';
+export {
+  Spinner,
+  LoadingState,
+  InlineSpinner,
+  type SpinnerSize,
+  type SpinnerVariant,
+  type SpinnerType,
+  type SpinnerProps,
+} from './ui/spinner';
 export { PageHeader } from './ui/page-header';
 export { ThemeSwitcher } from './ui/theme-switcher';
 export { Logo } from './ui/logo';

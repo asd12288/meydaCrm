@@ -13,7 +13,7 @@ import {
   useFormState,
 } from '@/modules/shared';
 import { leadUpdateSchema } from '../types';
-import { LEAD_FIELD_LABELS } from '@/lib/constants';
+import { LEAD_FIELD_LABELS, TIMING, TEXTAREA_ROWS } from '@/lib/constants';
 import type { LeadUpdateInput, LeadWithFullDetails } from '../types';
 import { updateLead } from '../lib/actions';
 
@@ -61,7 +61,7 @@ export function LeadEditForm({ lead, onSuccess }: LeadEditFormProps) {
         reset(data);
         handleFormSuccess({
           onSuccess,
-          onSuccessDelay: 1000,
+          onSuccessDelay: TIMING.SUCCESS_DELAY_DEFAULT,
           autoResetDelay: onSuccess ? undefined : 3000,
         });
       }
@@ -146,7 +146,7 @@ export function LeadEditForm({ lead, onSuccess }: LeadEditFormProps) {
         <FormTextarea
           label={LEAD_FIELD_LABELS.notes}
           error={errors.notes?.message}
-          rows={4}
+          rows={TEXTAREA_ROWS.LEAD_NOTES}
           placeholder="Notes sur ce lead..."
           {...register('notes')}
         />

@@ -5,6 +5,7 @@ import { IconChevronDown, IconX, IconUser } from '@tabler/icons-react';
 import { cn } from '@/lib/utils';
 import { createPortal } from 'react-dom';
 import { getAssignedLeadsForNotes } from '../lib/actions';
+import { TIMING } from '@/lib/constants';
 
 interface Lead {
   id: string;
@@ -74,7 +75,7 @@ export function NoteLeadPicker({
     }
     setIsOpen(true);
     // Focus input after opening
-    setTimeout(() => inputRef.current?.focus(), 0);
+    setTimeout(() => inputRef.current?.focus(), TIMING.FOCUS_DELAY);
   };
 
   const handleClose = () => {

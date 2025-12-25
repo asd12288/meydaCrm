@@ -83,22 +83,17 @@ export function Pagination({
             position="top-right"
             widthClass="w-20"
             trigger={(isOpen) => (
-              <button
-                type="button"
-                className={`
-                  h-9 w-16 px-2 flex items-center justify-between gap-1
-                  text-sm border border-ld rounded-md
-                  bg-white dark:bg-darkgray dark:text-white
-                  hover:border-primary/50 transition-colors cursor-pointer
-                  ${isOpen ? 'border-primary ring-1 ring-primary/20' : ''}
-                `}
+              <Button
+                variant="outline"
+                size="default"
+                className={`w-16 justify-between ${isOpen ? 'border-primary ring-1 ring-primary/20' : ''}`}
               >
                 <span>{pageSize}</span>
                 <IconChevronDown
                   size={14}
                   className={`text-darklink transition-transform ${isOpen ? 'rotate-180' : ''}`}
                 />
-              </button>
+              </Button>
             )}
           >
             <DropdownMenuContent>

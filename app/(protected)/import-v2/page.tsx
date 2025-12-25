@@ -6,7 +6,7 @@ import { getSalesUsers } from '@/modules/leads';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Import V2 - Pulse CRM',
+  title: 'Import - Pulse CRM',
 };
 
 export default async function ImportV2Page() {
@@ -16,8 +16,8 @@ export default async function ImportV2Page() {
   return (
     <div>
       <PageHeader
-        title="Import de leads (V2)"
-        description="Nouveau systeme d'import avec apercu detaille"
+        title="Import de leads"
+        description="Nouveau système d'import avec aperçu détaillé"
       />
 
       <Suspense fallback={<ImportWizardV2Skeleton />}>

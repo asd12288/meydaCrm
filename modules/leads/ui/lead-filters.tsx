@@ -18,6 +18,7 @@ import type { ExportFilters } from '@/modules/export/types';
 import { LEAD_STATUS_OPTIONS, STATUS_ICON_MAP, SEARCH_DEBOUNCE_MS, MIN_SEARCH_LENGTH } from '../config/constants';
 import { STATUS_BADGE_CLASSES, BADGE_TO_TEXT_CLASS } from '@/lib/constants';
 import { UNASSIGNED_FILTER_VALUE } from '../types';
+import { analytics } from '@/lib/analytics';
 import type { SalesUser } from '../types';
 
 interface LeadFiltersProps {
@@ -42,6 +43,18 @@ export function LeadFilters({ salesUsers, isAdmin, hideStatusFilter = false }: L
     // Only trigger search if empty or meets minimum length
     if (term.length === 0 || term.length >= MIN_SEARCH_LENGTH) {
       updateFilter('search', term);
+      // Track non-empty searches
+      if (term.length >= MIN_SEARCH_LENGTH) {
+        const activeFilters: Record<string, string> = {};
+        if (currentStatus) activeFilters.status = currentStatus;
+        if (currentAssignee) activeFilters.assignedTo = currentAssignee;
+
+        analytics.searchPerformed({
+          query: term,
+          resultsCount: -1, // Unknown at this point, set by server
+          filters: Object.keys(activeFilters).length > 0 ? activeFilters : undefined,
+        });
+      }
     }
   }, SEARCH_DEBOUNCE_MS);
 

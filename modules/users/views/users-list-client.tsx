@@ -1,8 +1,7 @@
 'use client';
 
-import { useState } from 'react';
 import { IconUserPlus } from '@tabler/icons-react';
-import { CardBox, PageHeader, ErrorBoundary, SectionErrorFallback } from '@/modules/shared';
+import { CardBox, PageHeader, ErrorBoundary, SectionErrorFallback, useModal } from '@/modules/shared';
 import { Button } from '@/modules/shared';
 import { UsersTable } from '../components/users-table';
 import { CreateUserModal } from '../components/create-user-modal';
@@ -27,7 +26,7 @@ export function UsersListClient({
   pageSize,
   totalPages,
 }: UsersListClientProps) {
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const createModal = useModal();
 
   return (
     <div className="min-w-0">
@@ -37,7 +36,7 @@ export function UsersListClient({
         actions={
           <Button
             variant="primary"
-            onClick={() => setIsCreateModalOpen(true)}
+            onClick={() => createModal.open()}
           >
             <IconUserPlus size={18} />
             Créer un utilisateur
@@ -65,8 +64,8 @@ export function UsersListClient({
 
       {/* Create User Modal */}
       <CreateUserModal
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
+        isOpen={createModal.isOpen}
+        onClose={createModal.close}
       />
     </div>
   );
