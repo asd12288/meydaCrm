@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { CardBox, Badge } from '@/modules/shared';
+import { DISPLAY_LIMITS } from '@/lib/constants';
 import { IconFileUpload, IconCheck, IconX, IconLoader, IconClock } from '@tabler/icons-react';
 import Link from 'next/link';
 import type { ImportActivityItem } from '../types';
@@ -61,7 +62,7 @@ export function ImportActivityTable({ imports }: ImportActivityTableProps) {
               </tr>
             </thead>
             <tbody>
-              {imports.slice(0, 5).map((item) => {
+              {imports.slice(0, DISPLAY_LIMITS.RECENT_IMPORTS).map((item) => {
                 const statusConfig = getStatusConfig(item.status);
                 return (
                   <tr

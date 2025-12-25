@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceRoleClient } from '@/lib/supabase/server';
 import { getCurrentUser } from '@/modules/auth';
+import { ROLES } from '@/lib/constants';
 import { detectDbDuplicates } from '@/modules/import-v2/lib/processors/db-dedupe';
 import type { RowValidationResultV2 } from '@/modules/import-v2/types';
 import { DUPLICATE_CHECK_FIELDS } from '@/modules/import-v2/config/constants';
@@ -41,7 +42,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check admin role
-    if (user.profile?.role !== 'admin') {
+    if (user.profile?.role !== ROLES.ADMIN) {
       return NextResponse.json(
         { error: 'Acces refuse' },
         { status: 403 }

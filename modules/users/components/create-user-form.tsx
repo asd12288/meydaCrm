@@ -14,8 +14,9 @@ import {
 } from '@/modules/shared';
 import { createUserSchema, USER_FIELD_LABELS } from '../types';
 import type { CreateUserInput } from '../types';
-import { USER_ROLE_OPTIONS } from '@/lib/constants';
+import { USER_ROLE_OPTIONS, TIMING } from '@/lib/constants';
 import { createUser } from '../lib/actions';
+import { analytics } from '@/lib/analytics';
 
 interface CreateUserFormProps {
   onSuccess?: () => void;
@@ -52,8 +53,9 @@ export function CreateUserForm({ onSuccess, onCancel }: CreateUserFormProps) {
       if (result.error) {
         setError(result.error);
       } else {
+        analytics.userCreated({ role: data.role });
         reset();
-        handleFormSuccess({ onSuccess, onSuccessDelay: 1000 });
+        handleFormSuccess({ onSuccess, onSuccessDelay: TIMING.SUCCESS_DELAY_DEFAULT });
       }
     });
   };

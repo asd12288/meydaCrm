@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useTransition } from 'react';
 import { IconX, IconTransfer } from '@tabler/icons-react';
-import { Button } from '@/modules/shared';
+import { Button, useModal } from '@/modules/shared';
 import { useToast } from '@/modules/shared';
 import { bulkAssignLeads } from '../lib/actions';
 import { AssignDropdown } from '../ui/assign-dropdown';
 import { BulkTransferDialog } from './bulk-transfer-dialog';
+import { ROLES, TOAST } from '@/lib/constants';
 import type { SalesUser } from '../types';
 
 interface BulkActionsBarProps {
@@ -27,7 +28,7 @@ export function BulkActionsBar({
   currentUserId,
 }: BulkActionsBarProps) {
   const [isPending, startTransition] = useTransition();
-  const [showTransferDialog, setShowTransferDialog] = useState(false);
+  const transferModal = useModal();
   const { toast } = useToast();
 
   const handleAssign = (userIds: string | string[] | null) => {
@@ -82,27 +83,27 @@ export function BulkActionsBar({
 
         if (errors.length > 0) {
           if (totalAssigned > 0) {
-            toast.warning(`${totalAssigned}/${totalLeads} leads assignés`);
+            toast.warning(TOAST.LEADS_PARTIAL_ASSIGNED(totalAssigned, totalLeads));
           } else {
-            toast.error('Erreur lors de l\'assignation');
+            toast.error(TOAST.ERROR_ASSIGN);
           }
         } else {
-          toast.success(`${totalAssigned} lead${totalAssigned > 1 ? 's' : ''} assigné${totalAssigned > 1 ? 's' : ''}`);
+          toast.success(TOAST.LEADS_ASSIGNED(totalAssigned));
         }
       } catch {
-        toast.error('Erreur lors de l\'assignation');
+        toast.error(TOAST.ERROR_ASSIGN);
       }
     });
   };
 
   // Check if transfer is available for sales users
   const canTransfer = !isAdmin && currentUserId && salesUsers.some(
-    (u) => u.id !== currentUserId && u.role === 'sales'
+    (u) => u.id !== currentUserId && u.role === ROLES.SALES
   );
 
   const handleTransferSuccess = () => {
     onClearSelection();
-    setShowTransferDialog(false);
+    transferModal.close();
   };
 
   return (
@@ -138,7 +139,7 @@ export function BulkActionsBar({
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => setShowTransferDialog(true)}
+              onClick={() => transferModal.open()}
               disabled={isPending}
               className="gap-2"
             >
@@ -168,8 +169,8 @@ export function BulkActionsBar({
       {/* Bulk Transfer Dialog */}
       {canTransfer && currentUserId && (
         <BulkTransferDialog
-          isOpen={showTransferDialog}
-          onClose={() => setShowTransferDialog(false)}
+          isOpen={transferModal.isOpen}
+          onClose={transferModal.close}
           selectedIds={selectedIds}
           salesUsers={salesUsers}
           currentUserId={currentUserId}

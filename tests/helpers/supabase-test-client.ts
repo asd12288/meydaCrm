@@ -73,14 +73,14 @@ export async function createTestUser(
     throw new Error(`Failed to create test user: ${error.message}`)
   }
 
-  // Update profile with role (trigger creates profile, we just update role)
+  // Upsert profile (works whether trigger exists or not)
   const { error: profileError } = await adminClient
     .from('profiles')
-    .update({
+    .upsert({
+      id: data.user.id,
       role: options.role,
       display_name: `Test ${options.role}`,
     })
-    .eq('id', data.user.id)
 
   if (profileError) {
     // Clean up auth user if profile update fails

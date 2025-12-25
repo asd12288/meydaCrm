@@ -154,6 +154,49 @@ export const analytics = {
     }
   },
 
+  loginSuccess: (props: {
+    role: string;
+  }) => {
+    if (isClient) {
+      posthog.capture('login_success', props);
+    }
+  },
+
+  passwordChanged: () => {
+    if (isClient) {
+      posthog.capture('password_changed');
+    }
+  },
+
+  // Export Events
+  exportStarted: (props: {
+    limit: number | null;
+    hasFilters: boolean;
+  }) => {
+    if (isClient) {
+      posthog.capture('export_started', props);
+    }
+  },
+
+  exportDownloaded: (props: {
+    rowCount: number;
+    fileSizeBytes?: number;
+  }) => {
+    if (isClient) {
+      posthog.capture('export_downloaded', props);
+    }
+  },
+
+  // Lead Events (additional)
+  leadViewed: (props: {
+    leadId: string;
+    status: string;
+  }) => {
+    if (isClient) {
+      posthog.capture('lead_viewed', props);
+    }
+  },
+
   // Generic feature usage
   featureUsed: (feature: string, props?: Record<string, unknown>) => {
     if (isClient) {

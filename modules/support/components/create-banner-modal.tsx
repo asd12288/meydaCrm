@@ -11,10 +11,11 @@ import {
   FormActions,
   Checkbox,
   useToast,
+  useFormState,
 } from '@/modules/shared';
-import { useTransition, useState } from 'react';
 import { z } from 'zod';
 import { createBanner } from '../lib/banner-actions';
+import { TOAST, TEXTAREA_ROWS } from '@/lib/constants';
 
 const BANNER_TYPE_OPTIONS = [
   { value: 'info', label: 'Information' },
@@ -48,8 +49,7 @@ export function CreateBannerModal({
   onClose,
   onSuccess,
 }: CreateBannerModalProps) {
-  const [isPending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
+  const { isPending, startTransition, error, setError, resetError } = useFormState();
   const { toast } = useToast();
 
   const {
@@ -69,7 +69,7 @@ export function CreateBannerModal({
   });
 
   const onSubmit = (data: CreateBannerFormData) => {
-    setError(null);
+    resetError();
 
     startTransition(async () => {
       const result = await createBanner(data);
@@ -79,7 +79,7 @@ export function CreateBannerModal({
       } else {
         reset();
         onClose();
-        toast.success('Annonce créée avec succès');
+        toast.success(TOAST.BANNER_CREATED);
         onSuccess?.();
       }
     });
@@ -87,7 +87,7 @@ export function CreateBannerModal({
 
   const handleClose = () => {
     reset();
-    setError(null);
+    resetError();
     onClose();
   };
 
@@ -104,7 +104,7 @@ export function CreateBannerModal({
           label="Message"
           error={errors.message?.message}
           placeholder="Contenu de l'annonce..."
-          rows={4}
+          rows={TEXTAREA_ROWS.BANNER_CONTENT}
           {...register('message')}
         />
 

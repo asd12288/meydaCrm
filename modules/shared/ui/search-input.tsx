@@ -2,8 +2,9 @@
 
 import { useState, useCallback } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
-import { IconSearch, IconX, IconLoader2 } from '@tabler/icons-react';
+import { IconSearch, IconX } from '@tabler/icons-react';
 import { Button } from './button';
+import { Spinner } from './spinner';
 
 export interface SearchInputProps {
   /** Initial/controlled value */
@@ -98,7 +99,7 @@ export function SearchInput({
         {/* Clear button or loading indicator */}
         {isLoading ? (
           <div className="absolute right-3 top-1/2 -translate-y-1/2">
-            <IconLoader2 size={16} className="text-darklink animate-spin" />
+            <Spinner size="sm" variant="muted" />
           </div>
         ) : showClearButton && displayValue ? (
           <Button

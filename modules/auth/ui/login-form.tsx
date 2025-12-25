@@ -1,8 +1,7 @@
 'use client';
 
-import { useState } from 'react';
 import { useFormStatus } from 'react-dom';
-import { Button } from '@/modules/shared';
+import { Button, useFormState } from '@/modules/shared';
 import { PasswordInput, FormErrorAlert } from '@/modules/shared';
 import { login } from '../lib/actions';
 
@@ -22,10 +21,10 @@ function SubmitButton() {
 }
 
 export function LoginForm() {
-  const [error, setError] = useState<string | null>(null);
+  const { error, setError, resetError } = useFormState();
 
   async function handleSubmit(formData: FormData) {
-    setError(null);
+    resetError();
     const result = await login(formData);
     if (result?.error) {
       setError(result.error);

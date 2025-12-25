@@ -9,6 +9,7 @@
 import { createServiceRoleClient } from '@/lib/supabase/server';
 import { getCurrentUser } from '@/modules/auth';
 import { handleCommitV2 } from '../workers';
+import { ROLES } from '@/lib/constants';
 import type {
   ColumnMappingV2,
   AssignmentConfigV2,
@@ -91,7 +92,7 @@ export async function startImportV2(
       return { success: false, error: 'Non authentifie' };
     }
 
-    if (user.profile?.role !== 'admin') {
+    if (user.profile?.role !== ROLES.ADMIN) {
       return { success: false, error: 'Acces refuse' };
     }
 

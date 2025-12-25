@@ -4,24 +4,25 @@
  */
 
 import type { AuthUser } from '../types';
+import { ROLES } from '@/lib/constants';
 
 /**
  * Check if a user is a developer
  */
 export function isDeveloper(user: AuthUser | null): boolean {
-  return user?.profile?.role === 'developer';
+  return user?.profile?.role === ROLES.DEVELOPER;
 }
 
 /**
  * Check if a user is an admin or developer
  */
 export function isAdminOrDeveloper(user: AuthUser | null): boolean {
-  return user?.profile?.role === 'admin' || user?.profile?.role === 'developer';
+  return user?.profile?.role === ROLES.ADMIN || user?.profile?.role === ROLES.DEVELOPER;
 }
 
 /**
  * Check if a user is an admin
  */
 export function isAdmin(user: AuthUser | null): boolean {
-  return user?.profile?.role === 'admin';
+  return user?.profile?.role === ROLES.ADMIN;
 }

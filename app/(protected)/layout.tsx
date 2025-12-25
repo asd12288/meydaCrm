@@ -4,6 +4,7 @@ import { DashboardLayout } from '@/modules/layout';
 import { getProfile, createDefaultProfile } from '@/lib/auth';
 import { checkSubscriptionStatus } from '@/lib/subscription';
 import { PostHogIdentify } from '@/lib/analytics';
+import { ROLES } from '@/lib/constants';
 
 export default async function ProtectedLayout({
   children,
@@ -30,7 +31,7 @@ export default async function ProtectedLayout({
 
   // For admins with EXPIRED subscription, redirect to /renew page
   // This is a clean separation - expired users can't access the app at all
-  const isAdmin = profile?.role === 'admin';
+  const isAdmin = profile?.role === ROLES.ADMIN;
   const subscriptionExpired = subscriptionStatus.status === 'expired';
   if (isAdmin && subscriptionExpired) {
     redirect('/renew');

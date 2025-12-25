@@ -7,11 +7,12 @@ import {
   getCoreRowModel,
   flexRender,
 } from '@tanstack/react-table';
-import { TableEmptyState, ConfirmDialog, useToast, Modal } from '@/modules/shared';
+import { TableEmptyState, ConfirmDialog, useToast, Modal, useFormState, useModal } from '@/modules/shared';
 import { MeetingForm } from '@/modules/meetings';
 import { getLeadColumns } from '../config/columns';
 import { BulkActionsBar } from './bulk-actions-bar';
 import { deleteLead } from '../lib/actions';
+import { ROLES, TOAST } from '@/lib/constants';
 import type { LeadWithAssignee, SalesUser } from '../types';
 
 interface LeadsTableProps {
@@ -34,46 +35,41 @@ export const LeadsTable = memo(function LeadsTable({
   const router = useRouter();
   const { toast } = useToast();
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
-  const [deleteLeadId, setDeleteLeadId] = useState<string | null>(null);
-  const [meetingLeadId, setMeetingLeadId] = useState<string | null>(null);
-  const [isPending, setIsPending] = useState(false);
+  const deleteModal = useModal<string>();
+  const meetingModal = useModal<string>();
+  const { isPending, startTransition } = useFormState();
 
   const handleDeleteClick = useCallback((leadId: string) => {
-    setDeleteLeadId(leadId);
-  }, []);
+    deleteModal.open(leadId);
+  }, [deleteModal]);
 
-  const handleDeleteConfirm = useCallback(async () => {
-    if (!deleteLeadId || isPending) return;
+  const handleDeleteConfirm = useCallback(() => {
+    if (!deleteModal.data || isPending) return;
 
-    const idToDelete = deleteLeadId;
-    setDeleteLeadId(null);
-    setIsPending(true);
+    const idToDelete = deleteModal.data;
+    deleteModal.close();
 
-    try {
-      const result = await deleteLead(idToDelete);
-      if (result.error) {
-        toast.error(result.error);
-      } else {
-        toast.success('Lead supprimé');
-        router.refresh();
+    startTransition(async () => {
+      try {
+        const result = await deleteLead(idToDelete);
+        if (result.error) {
+          toast.error(result.error);
+        } else {
+          toast.success(TOAST.LEAD_DELETED);
+          router.refresh();
+        }
+      } catch {
+        toast.error(TOAST.GENERIC_ERROR);
       }
-    } catch {
-      toast.error('Une erreur est survenue');
-    } finally {
-      setIsPending(false);
-    }
-  }, [deleteLeadId, isPending, toast, router]);
-
-  const handleDeleteCancel = useCallback(() => {
-    setDeleteLeadId(null);
-  }, []);
+    });
+  }, [deleteModal, isPending, startTransition, toast, router]);
 
   const handleCreateMeeting = useCallback((leadId: string) => {
-    setMeetingLeadId(leadId);
-  }, []);
+    meetingModal.open(leadId);
+  }, [meetingModal]);
 
   const handleTransferSuccess = useCallback(() => {
-    toast.success('Lead transféré avec succès');
+    toast.success(TOAST.LEAD_TRANSFERRED);
     router.refresh();
   }, [toast, router]);
 
@@ -86,7 +82,7 @@ export const LeadsTable = memo(function LeadsTable({
 
   // Check if sales user can transfer (has other sales users to transfer to)
   const canTransfer = !isAdmin && !!currentUserId && salesUsers.some(
-    (u) => u.id !== currentUserId && u.role === 'sales'
+    (u) => u.id !== currentUserId && u.role === ROLES.SALES
   );
 
   // Enable selection for admin (bulk assign) or sales users who can transfer
@@ -197,8 +193,8 @@ export const LeadsTable = memo(function LeadsTable({
       {/* Delete confirmation dialog */}
       {isAdmin && (
         <ConfirmDialog
-          isOpen={deleteLeadId !== null}
-          onClose={handleDeleteCancel}
+          isOpen={deleteModal.isOpen}
+          onClose={deleteModal.close}
           onConfirm={handleDeleteConfirm}
           title="Supprimer le lead"
           message="Êtes-vous sûr de vouloir supprimer ce lead ? Cette action est irréversible."
@@ -210,19 +206,19 @@ export const LeadsTable = memo(function LeadsTable({
       )}
 
       {/* Create meeting modal */}
-      {meetingLeadId && (
+      {meetingModal.data && (
         <Modal
-          isOpen={!!meetingLeadId}
-          onClose={() => setMeetingLeadId(null)}
+          isOpen={meetingModal.isOpen}
+          onClose={meetingModal.close}
           title="Planifier un rendez-vous"
         >
           <MeetingForm
-            leadId={meetingLeadId}
+            leadId={meetingModal.data}
             onSuccess={() => {
-              setMeetingLeadId(null);
-              toast.success('Rendez-vous créé');
+              meetingModal.close();
+              toast.success(TOAST.MEETING_CREATED);
             }}
-            onCancel={() => setMeetingLeadId(null)}
+            onCancel={meetingModal.close}
           />
         </Modal>
       )}

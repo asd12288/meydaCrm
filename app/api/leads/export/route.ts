@@ -4,6 +4,7 @@
  */
 
 import { createClient } from '@/lib/supabase/server';
+import { ROLES } from '@/lib/constants';
 import {
   UTF8_BOM,
   getCSVHeader,
@@ -90,7 +91,7 @@ export async function GET(request: Request) {
       .eq('id', user.id)
       .single();
 
-    if (profile?.role !== 'admin') {
+    if (profile?.role !== ROLES.ADMIN) {
       return new Response('Accès non autorisé', { status: 403 });
     }
 

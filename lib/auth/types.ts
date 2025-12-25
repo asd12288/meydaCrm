@@ -4,6 +4,7 @@
  */
 
 import type { UserRole } from '@/db/types';
+import { ROLES } from '@/lib/constants';
 
 /**
  * Raw profile response from Supabase (snake_case).
@@ -35,5 +36,5 @@ export interface NormalizedProfile {
  * Check if a role is admin
  */
 export function isAdminRole(role: UserRole | string): boolean {
-  return role === 'admin';
+  return role === ROLES.ADMIN;
 }

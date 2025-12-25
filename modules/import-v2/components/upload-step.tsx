@@ -14,10 +14,9 @@ import {
   IconAlertCircle,
   IconChevronRight,
 } from '@tabler/icons-react';
-import { CardBox, Spinner } from '@/modules/shared';
-import { Button } from '@/modules/shared';
+import { CardBox, LoadingState, InlineSpinner, Button, InlineDropdown, type InlineDropdownOptionGroup } from '@/modules/shared';
 import { FILE_CONSTRAINTS } from '../config/constants';
-import { InlineDropdown, type InlineDropdownOptionGroup } from '@/modules/shared';
+import { DISPLAY_LIMITS } from '@/lib/constants';
 import type { ColumnMappingV2, ParsedFileV2, ColumnMappingConfigV2 } from '../types';
 import type { LeadFieldKey } from '../../import/types/mapping';
 
@@ -173,10 +172,7 @@ function DropZone({ onFileSelect, isParsing }: DropZoneProps) {
       />
 
       {isParsing ? (
-        <div className="flex flex-col items-center gap-4">
-          <Spinner size="lg" />
-          <p className="text-sm text-darklink">Analyse du fichier en cours...</p>
-        </div>
+        <LoadingState message="Analyse du fichier en cours..." className="py-0" />
       ) : (
         <div className="flex flex-col items-center gap-4">
           <div className="w-16 h-16 rounded-full bg-lightprimary dark:bg-primary/10 flex items-center justify-center">
@@ -223,14 +219,14 @@ function FileInfo({ file, onClear }: FileInfoProps) {
           {file.rowCount.toLocaleString('fr-FR')} lignes · {sizeDisplay}
         </span>
       </div>
-      <button
-        type="button"
+      <Button
+        variant="ghostDanger"
+        size="iconSm"
         onClick={onClear}
-        className="p-1.5 text-darklink hover:text-error transition-colors"
         title="Supprimer"
       >
         <IconX size={18} />
-      </button>
+      </Button>
     </div>
   );
 }
@@ -282,7 +278,7 @@ function MappingTable({ mappings, onMappingChange }: MappingTableProps) {
                 />
               </td>
               <td className="px-3 py-2 text-xs text-darklink truncate max-w-xs">
-                {mapping.sampleValues.slice(0, 3).filter(Boolean).join(', ') || (
+                {mapping.sampleValues.slice(0, DISPLAY_LIMITS.MAPPING_SAMPLE_VALUES).filter(Boolean).join(', ') || (
                   <em className="text-darklink/50">vide</em>
                 )}
               </td>
@@ -395,10 +391,7 @@ export function UploadStep({
           className="gap-2"
         >
           {isCheckingDuplicates ? (
-            <>
-              <Spinner size="sm" />
-              Analyse en cours...
-            </>
+            <InlineSpinner>Analyse en cours...</InlineSpinner>
           ) : (
             <>
               Continuer

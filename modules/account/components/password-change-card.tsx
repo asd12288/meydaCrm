@@ -15,6 +15,7 @@ import {
 import { changePasswordSchema } from '../types';
 import type { ChangePasswordInput } from '../types';
 import { changePassword } from '../lib/actions';
+import { analytics } from '@/lib/analytics';
 
 export function PasswordChangeCard() {
   const { isPending, startTransition, error, setError, success, handleFormSuccess, resetAll } =
@@ -47,6 +48,7 @@ export function PasswordChangeCard() {
       if (result.error) {
         setError(result.error);
       } else {
+        analytics.passwordChanged();
         reset();
         handleFormSuccess();
       }

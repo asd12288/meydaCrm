@@ -10,7 +10,7 @@ import {
   IconClock,
 } from '@tabler/icons-react';
 import { HISTORY_EVENT_LABELS } from '@/db/types';
-import { LEAD_FIELD_LABELS } from '@/lib/constants';
+import { LEAD_FIELD_LABELS, DISPLAY_LIMITS } from '@/lib/constants';
 import { formatRelativeTime, formatDisplayValue } from '../lib/format';
 import type { HistoryEventWithActor } from '../types';
 
@@ -151,7 +151,7 @@ function EventDetails({ event }: { event: HistoryEventWithActor }) {
 
     return (
       <div className="text-xs bg-lightgray dark:bg-darkborder rounded p-2 mt-1 space-y-1">
-        {changedFields.slice(0, 5).map((field) => {
+        {changedFields.slice(0, DISPLAY_LIMITS.CHANGED_FIELDS).map((field) => {
           const fieldLabel =
             LEAD_FIELD_LABELS[field as keyof typeof LEAD_FIELD_LABELS] || field;
           const oldValue = before_data[field];
@@ -168,9 +168,9 @@ function EventDetails({ event }: { event: HistoryEventWithActor }) {
             </div>
           );
         })}
-        {changedFields.length > 5 && (
+        {changedFields.length > DISPLAY_LIMITS.CHANGED_FIELDS && (
           <p className="text-darklink">
-            +{changedFields.length - 5} autre(s) modification(s)
+            +{changedFields.length - DISPLAY_LIMITS.CHANGED_FIELDS} autre(s) modification(s)
           </p>
         )}
       </div>

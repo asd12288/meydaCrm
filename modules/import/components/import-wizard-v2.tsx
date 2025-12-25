@@ -6,10 +6,9 @@ import {
   IconChevronRight,
   IconUpload,
   IconAlertCircle,
-  IconLoader2,
   IconX,
 } from '@tabler/icons-react';
-import { ErrorBoundary, SectionErrorFallback } from '@/modules/shared';
+import { ErrorBoundary, SectionErrorFallback, useFormState, LoadingState, InlineSpinner } from '@/modules/shared';
 import { Button } from '@/modules/shared';
 
 // Step components
@@ -39,6 +38,7 @@ import {
 // Types
 import type { SalesUser } from '@/modules/leads/types';
 import type { ImportWizardStep } from '../config/constants';
+import { TIMING } from '@/lib/constants';
 
 interface ImportWizardV2Props {
   salesUsers: SalesUser[];
@@ -56,9 +56,8 @@ export function ImportWizardV2({ salesUsers, onImportComplete }: ImportWizardV2P
   // Local state
   const [currentStep, setCurrentStep] = useState<ImportWizardStep>('upload');
   const [completedSteps, setCompletedSteps] = useState<ImportWizardStep[]>([]);
-  const [isProcessing, setIsProcessing] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const { isPending: isProcessing, startTransition, error, setError, resetError } = useFormState();
 
   // SSE for real-time progress
   const {
@@ -163,7 +162,7 @@ export function ImportWizardV2({ salesUsers, onImportComplete }: ImportWizardV2P
 
   // Handle file selection
   const handleFileSelect = async (file: File) => {
-    setError(null);
+    resetError();
     await wizard.handleFileSelect(file);
   };
 
@@ -175,113 +174,109 @@ export function ImportWizardV2({ salesUsers, onImportComplete }: ImportWizardV2P
   };
 
   // Handle upload and move to mapping
-  const handleUploadComplete = async () => {
+  const handleUploadComplete = () => {
     if (!fileToUpload || !state.file) return;
 
-    setIsProcessing(true);
-    setError(null);
+    resetError();
 
-    try {
-      // Upload file if not already uploaded
-      if (!state.importJobId) {
-        const result = await uploadFileWithProgress(fileToUpload, (progress) => {
-          setUploadProgress(progress);
-        });
+    startTransition(async () => {
+      try {
+        // Upload file if not already uploaded
+        if (!state.importJobId) {
+          const result = await uploadFileWithProgress(fileToUpload, (progress) => {
+            setUploadProgress(progress);
+          });
 
-        if (!result.success) {
-          setError(result.error || 'Erreur lors du telechargement');
-          setUploadProgress(null);
-          setIsProcessing(false);
-          return;
+          if (!result.success) {
+            setError(result.error || 'Erreur lors du telechargement');
+            setUploadProgress(null);
+            return;
+          }
+
+          wizard.setImportJobId(result.importJobId!);
+          setTimeout(() => setUploadProgress(null), TIMING.UPLOAD_PROGRESS_CLEAR);
         }
 
-        wizard.setImportJobId(result.importJobId!);
-        setTimeout(() => setUploadProgress(null), 500);
+        goNext();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Erreur lors du telechargement');
       }
-
-      goNext();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur lors du telechargement');
-    } finally {
-      setIsProcessing(false);
-    }
+    });
   };
 
   // Handle save mapping
-  const handleSaveMapping = async () => {
+  const handleSaveMapping = () => {
     if (!state.importJobId || !state.mapping) return;
 
-    setIsProcessing(true);
-    setError(null);
+    resetError();
 
-    try {
-      const result = await updateImportJobMapping(state.importJobId, state.mapping);
+    startTransition(async () => {
+      try {
+        const result = await updateImportJobMapping(state.importJobId!, state.mapping!);
 
-      if (!result.success) {
-        throw new Error(result.error || 'Erreur lors de la sauvegarde du mapping');
+        if (!result.success) {
+          throw new Error(result.error || 'Erreur lors de la sauvegarde du mapping');
+        }
+
+        goNext();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Erreur lors de la sauvegarde');
       }
-
-      goNext();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur lors de la sauvegarde');
-    } finally {
-      setIsProcessing(false);
-    }
+    });
   };
 
   // Handle save options
-  const handleSaveOptions = async () => {
+  const handleSaveOptions = () => {
     if (!state.importJobId) return;
 
-    setIsProcessing(true);
-    setError(null);
+    resetError();
 
-    try {
-      const result = await updateImportJobOptions(state.importJobId, {
-        assignmentConfig: state.assignment,
-        duplicateConfig: state.duplicates,
-      });
+    startTransition(async () => {
+      try {
+        const result = await updateImportJobOptions(state.importJobId!, {
+          assignmentConfig: state.assignment,
+          duplicateConfig: state.duplicates,
+        });
 
-      if (!result.success) {
-        throw new Error(result.error || 'Erreur lors de la sauvegarde des options');
+        if (!result.success) {
+          throw new Error(result.error || 'Erreur lors de la sauvegarde des options');
+        }
+
+        // Trigger validation/preview
+        // For now, just move to preview step
+        // In a full implementation, we'd validate rows here
+        wizard.setValidationFromServer({
+          totalRows: state.file?.rowCount || 0,
+          validRows: state.file?.rowCount || 0,
+          invalidRows: 0,
+        });
+
+        goNext();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Erreur lors de la sauvegarde');
       }
-
-      // Trigger validation/preview
-      // For now, just move to preview step
-      // In a full implementation, we'd validate rows here
-      wizard.setValidationFromServer({
-        totalRows: state.file?.rowCount || 0,
-        validRows: state.file?.rowCount || 0,
-        invalidRows: 0,
-      });
-
-      goNext();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur lors de la sauvegarde');
-    } finally {
-      setIsProcessing(false);
-    }
+    });
   };
 
   // Handle start import
-  const handleStartImport = async () => {
+  const handleStartImport = () => {
     if (!state.importJobId) return;
 
-    setIsProcessing(true);
-    setError(null);
+    resetError();
 
-    try {
-      const result = await startImportParsing(state.importJobId);
+    startTransition(async () => {
+      try {
+        const result = await startImportParsing(state.importJobId!);
 
-      if (!result.success) {
-        throw new Error(result.error || 'Erreur lors du demarrage de l\'import');
+        if (!result.success) {
+          throw new Error(result.error || 'Erreur lors du demarrage de l\'import');
+        }
+
+        goNext(); // Move to progress step - SSE will take over
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Erreur lors du demarrage');
       }
-
-      goNext(); // Move to progress step - SSE will take over
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur lors du demarrage');
-      setIsProcessing(false);
-    }
+    });
   };
 
   // Handle cancel import
@@ -305,7 +300,7 @@ export function ImportWizardV2({ salesUsers, onImportComplete }: ImportWizardV2P
     wizard.reset();
     setCurrentStep('upload');
     setCompletedSteps([]);
-    setError(null);
+    resetError();
   };
 
   // Render step content
@@ -365,13 +360,12 @@ export function ImportWizardV2({ salesUsers, onImportComplete }: ImportWizardV2P
         // If no SSE data yet, show connecting state
         if (!sseProgress) {
           return (
-            <div className="flex flex-col items-center justify-center py-16 space-y-4">
-              <IconLoader2 className="w-12 h-12 text-primary animate-spin" />
-              <div className="text-center">
-                <h3 className="text-lg font-medium text-ld">Demarrage de l&apos;import...</h3>
-                <p className="text-sm text-darklink mt-1">Connexion au serveur</p>
-              </div>
-            </div>
+            <LoadingState
+              size="xl"
+              type="bars"
+              message="Démarrage de l'import... Connexion au serveur"
+              className="py-16"
+            />
           );
         }
 
@@ -454,10 +448,7 @@ export function ImportWizardV2({ salesUsers, onImportComplete }: ImportWizardV2P
         disabled={!canGoNext || isProcessing}
       >
         {isProcessing ? (
-          <>
-            <IconLoader2 size={18} className="animate-spin" />
-            Traitement...
-          </>
+          <InlineSpinner>Traitement...</InlineSpinner>
         ) : (
           <>
             {config.label}

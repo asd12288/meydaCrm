@@ -15,6 +15,7 @@ import {
   OptionCardGroup,
   InlineDropdown,
 } from '@/modules/shared';
+import { ROLES } from '@/lib/constants';
 import type { AssignmentConfig, DuplicateConfig } from '../types';
 import type { SalesUser } from '@/modules/leads/types';
 
@@ -79,7 +80,7 @@ export function OptionsStep({
   onUpdateDuplicates,
 }: OptionsStepProps) {
   const activeSalesUsers = salesUsers.filter(
-    (u) => u.role === 'sales' || u.role === 'admin'
+    (u) => u.role === ROLES.SALES || u.role === ROLES.ADMIN
   );
 
   // Sort columns by relevance - columns with "commercial", "assign", "user", "rep" are likely assignment columns

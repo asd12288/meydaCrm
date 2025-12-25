@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { IconSend, IconLoader2 } from '@tabler/icons-react';
-import { Button } from '@/modules/shared';
+import { IconSend } from '@tabler/icons-react';
+import { Button, Spinner } from '@/modules/shared';
+import { TEXTAREA_ROWS } from '@/lib/constants';
 
 interface TicketReplyInputProps {
   onSubmit: (body: string) => void;
@@ -60,7 +61,7 @@ export function TicketReplyInput({
           onChange={(e) => setBody(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Écrivez votre message..."
-          rows={1}
+          rows={TEXTAREA_ROWS.SINGLE_LINE}
           className="ticket-reply-input"
           disabled={isPending || disabled}
         />
@@ -72,7 +73,7 @@ export function TicketReplyInput({
           title="Envoyer (Ctrl+Entrée)"
         >
           {isPending ? (
-            <IconLoader2 size={18} className="animate-spin" />
+            <Spinner size="sm" />
           ) : (
             <IconSend size={18} />
           )}

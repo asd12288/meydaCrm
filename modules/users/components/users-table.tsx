@@ -1,18 +1,19 @@
 'use client';
 
-import { useState, useMemo, useCallback, memo } from 'react';
+import { useMemo, useCallback, memo } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
   flexRender,
 } from '@tanstack/react-table';
 import { useRouter } from 'next/navigation';
-import { TableEmptyState, ConfirmDialog, useToast } from '@/modules/shared';
+import { TableEmptyState, ConfirmDialog, useToast, useFormState, useModal } from '@/modules/shared';
 import { getUserColumns } from '../config/columns';
 import { ResetPasswordModal } from './reset-password-modal';
 import { EditUserModal } from './edit-user-modal';
 import { deleteUser } from '../lib/actions';
 import type { UserProfile } from '../types';
+import { TOAST } from '@/lib/constants';
 
 interface UsersTableProps {
   users: UserProfile[];
@@ -27,65 +28,46 @@ interface UsersTableProps {
 export const UsersTable = memo(function UsersTable({ users, currentUserId }: UsersTableProps) {
   const router = useRouter();
   const { toast } = useToast();
-  const [resetPasswordUser, setResetPasswordUser] = useState<{
-    id: string;
-    name: string;
-  } | null>(null);
-  const [editUser, setEditUser] = useState<UserProfile | null>(null);
-  const [deleteUserData, setDeleteUserData] = useState<{
-    id: string;
-    name: string;
-  } | null>(null);
-  const [isPending, setIsPending] = useState(false);
+  const resetPasswordModal = useModal<{ id: string; name: string }>();
+  const editUserModal = useModal<UserProfile>();
+  const deleteModal = useModal<{ id: string; name: string }>();
+  const { isPending, startTransition } = useFormState();
 
   const handleResetPassword = useCallback(
     (userId: string, userName: string) => {
-      setResetPasswordUser({ id: userId, name: userName });
+      resetPasswordModal.open({ id: userId, name: userName });
     },
-    []
+    [resetPasswordModal]
   );
 
   const handleEditUser = useCallback((user: UserProfile) => {
-    setEditUser(user);
-  }, []);
+    editUserModal.open(user);
+  }, [editUserModal]);
 
   const handleDeleteUser = useCallback((userId: string, userName: string) => {
-    setDeleteUserData({ id: userId, name: userName });
-  }, []);
+    deleteModal.open({ id: userId, name: userName });
+  }, [deleteModal]);
 
-  const closeResetPasswordModal = useCallback(() => {
-    setResetPasswordUser(null);
-  }, []);
+  const handleDeleteConfirm = useCallback(() => {
+    if (!deleteModal.data || isPending) return;
 
-  const closeEditUserModal = useCallback(() => {
-    setEditUser(null);
-  }, []);
+    const idToDelete = deleteModal.data.id;
+    deleteModal.close();
 
-  const handleDeleteConfirm = useCallback(async () => {
-    if (!deleteUserData || isPending) return;
-
-    const idToDelete = deleteUserData.id;
-    setDeleteUserData(null); // Close dialog immediately
-    setIsPending(true);
-
-    try {
-      const result = await deleteUser(idToDelete);
-      if (result.success) {
-        toast.success('Utilisateur supprimé');
-        router.refresh();
-      } else {
-        toast.error(result.error || 'Erreur lors de la suppression');
+    startTransition(async () => {
+      try {
+        const result = await deleteUser(idToDelete);
+        if (result.success) {
+          toast.success(TOAST.USER_DELETED);
+          router.refresh();
+        } else {
+          toast.error(result.error || TOAST.ERROR_DELETE);
+        }
+      } catch {
+        toast.error(TOAST.GENERIC_ERROR);
       }
-    } catch {
-      toast.error('Une erreur est survenue');
-    } finally {
-      setIsPending(false);
-    }
-  }, [deleteUserData, isPending, toast, router]);
-
-  const handleDeleteCancel = useCallback(() => {
-    setDeleteUserData(null);
-  }, []);
+    });
+  }, [deleteModal, isPending, startTransition, toast, router]);
 
   const columns = useMemo(
     () =>
@@ -162,32 +144,32 @@ export const UsersTable = memo(function UsersTable({ users, currentUserId }: Use
       </div>
 
       {/* Reset Password Modal */}
-      {resetPasswordUser && (
+      {resetPasswordModal.data && (
         <ResetPasswordModal
-          isOpen={true}
-          onClose={closeResetPasswordModal}
-          userId={resetPasswordUser.id}
-          userName={resetPasswordUser.name}
+          isOpen={resetPasswordModal.isOpen}
+          onClose={resetPasswordModal.close}
+          userId={resetPasswordModal.data.id}
+          userName={resetPasswordModal.data.name}
         />
       )}
 
       {/* Edit User Modal */}
-      {editUser && (
+      {editUserModal.data && (
         <EditUserModal
-          isOpen={true}
-          onClose={closeEditUserModal}
-          user={editUser}
-          isSelf={editUser.id === currentUserId}
+          isOpen={editUserModal.isOpen}
+          onClose={editUserModal.close}
+          user={editUserModal.data}
+          isSelf={editUserModal.data.id === currentUserId}
         />
       )}
 
       {/* Delete confirmation dialog */}
       <ConfirmDialog
-        isOpen={deleteUserData !== null}
-        onClose={handleDeleteCancel}
+        isOpen={deleteModal.isOpen}
+        onClose={deleteModal.close}
         onConfirm={handleDeleteConfirm}
         title="Supprimer l'utilisateur"
-        message={`Êtes-vous sûr de vouloir supprimer l'utilisateur "${deleteUserData?.name}" ? Cette action est irréversible et supprimera définitivement le compte.`}
+        message={`Êtes-vous sûr de vouloir supprimer l'utilisateur "${deleteModal.data?.name}" ? Cette action est irréversible et supprimera définitivement le compte.`}
         confirmLabel="Supprimer"
         cancelLabel="Annuler"
         variant="danger"

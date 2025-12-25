@@ -5,6 +5,7 @@ import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { getCurrentUser, requireAdmin } from '@/modules/auth';
 import { extractValidationError } from '@/lib/validation';
 import { FR_MESSAGES } from '@/lib/errors';
+import { ROLES } from '@/lib/constants';
 import { LEAD_STATUS_LABELS } from '@/db/types';
 import type { LeadStatus } from '@/db/types';
 import { notifyLeadAssigned, notifyBulkLeadsTransferred, notifyLeadComment } from '@/modules/notifications';
@@ -194,7 +195,7 @@ export async function getSalesUsers(): Promise<SalesUser[]> {
       const { data, error } = await supabase
         .from('profiles')
         .select('id, display_name, role, avatar')
-        .neq('role', 'developer') // Exclude developers from all user selectors
+        .neq('role', ROLES.DEVELOPER) // Exclude developers from all user selectors
         .order('display_name');
 
       if (error) {
@@ -732,7 +733,7 @@ export async function deleteComment(
   }
 
   // Check permission: own comment or admin
-  const isAdmin = user.profile?.role === 'admin';
+  const isAdmin = user.profile?.role === ROLES.ADMIN;
   if (comment.author_id !== user.id && !isAdmin) {
     return { error: FR_MESSAGES.CANNOT_DELETE_OTHERS_COMMENTS };
   }
@@ -829,7 +830,7 @@ export async function transferLead(
   }
 
   // Only sales users can use this action (admins use assignLead instead)
-  if (user.profile?.role !== 'sales') {
+  if (user.profile?.role !== ROLES.SALES) {
     return { error: FR_MESSAGES.UNAUTHORIZED };
   }
 
@@ -863,7 +864,7 @@ export async function transferLead(
   }
 
   // Only allow transfer to sales users (not admin or developer)
-  if (newAssignee.role !== 'sales') {
+  if (newAssignee.role !== ROLES.SALES) {
     return { error: FR_MESSAGES.TRANSFER_TO_SALES_ONLY };
   }
 
@@ -953,7 +954,7 @@ export async function bulkTransferLeads(
   }
 
   // Only sales users can use this action
-  if (user.profile?.role !== 'sales') {
+  if (user.profile?.role !== ROLES.SALES) {
     return { error: FR_MESSAGES.UNAUTHORIZED };
   }
 
@@ -977,7 +978,7 @@ export async function bulkTransferLeads(
     return { error: FR_MESSAGES.USER_NOT_FOUND };
   }
 
-  if (newAssignee.role !== 'sales') {
+  if (newAssignee.role !== ROLES.SALES) {
     return { error: FR_MESSAGES.TRANSFER_TO_SALES_ONLY };
   }
 

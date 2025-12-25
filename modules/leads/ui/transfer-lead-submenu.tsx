@@ -1,9 +1,11 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { IconArrowRight, IconLoader2 } from '@tabler/icons-react';
-import { UserAvatar } from '@/modules/shared';
+import { IconArrowRight } from '@tabler/icons-react';
+import { UserAvatar, Spinner } from '@/modules/shared';
 import { transferLead } from '../lib/actions';
+import { analytics } from '@/lib/analytics';
+import { ROLES } from '@/lib/constants';
 import type { SalesUser } from '../types';
 
 interface TransferLeadSubmenuProps {
@@ -26,7 +28,7 @@ export function TransferLeadSubmenu({
 
   // Filter out current user and non-sales users
   const transferableUsers = salesUsers.filter(
-    (user) => user.id !== currentUserId && user.role === 'sales'
+    (user) => user.id !== currentUserId && user.role === ROLES.SALES
   );
 
   const handleTransfer = (userId: string) => {
@@ -36,6 +38,11 @@ export function TransferLeadSubmenu({
       if (result.error) {
         onError?.(result.error);
       } else {
+        analytics.leadTransferred({
+          leadId,
+          fromUserId: currentUserId,
+          toUserId: userId,
+        });
         onSuccess?.();
       }
       setTransferringTo(null);
@@ -65,7 +72,7 @@ export function TransferLeadSubmenu({
             {user.display_name || 'Sans nom'}
           </span>
           {transferringTo === user.id ? (
-            <IconLoader2 size={16} className="animate-spin text-primary" />
+            <Spinner size="sm" />
           ) : (
             <IconArrowRight size={16} className="text-darklink" />
           )}

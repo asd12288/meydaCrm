@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { IconUserExclamation, IconEye, IconX, IconLoader2 } from '@tabler/icons-react';
+import { IconUserExclamation, IconEye, IconX } from '@tabler/icons-react';
+import { Button, useFormState, useToast, Spinner } from '@/modules/shared';
 import { AssignDropdown } from '../ui/assign-dropdown';
 import { bulkAssignLeads } from '../lib/actions';
 import type { SalesUser } from '../types';
@@ -25,9 +26,9 @@ export function UnassignedLeadsBanner({
 }: UnassignedLeadsBannerProps) {
   const router = useRouter();
   const [isDismissed, setIsDismissed] = useState(false);
-  const [isPending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
-  const [successCount, setSuccessCount] = useState<number | null>(null);
+  const [isNavigating, setIsNavigating] = useState(false);
+  const { isPending, startTransition, error, setError, resetError } = useFormState();
+  const { toast } = useToast();
 
   // Don't render if dismissed or no leads
   if (isDismissed || count === 0) {
@@ -35,6 +36,7 @@ export function UnassignedLeadsBanner({
   }
 
   const handleViewLeads = () => {
+    setIsNavigating(true);
     // Navigate to leads page with filter for new + unassigned
     router.push('/leads?status=new&assignedTo=unassigned');
   };
@@ -47,8 +49,7 @@ export function UnassignedLeadsBanner({
     if (assigneeIds.length === 0) return;
 
     // Reset state
-    setError(null);
-    setSuccessCount(null);
+    resetError();
 
     startTransition(async () => {
       // Group leads by assignee (round-robin distribution)
@@ -72,19 +73,21 @@ export function UnassignedLeadsBanner({
       );
 
       // Check for errors
-      const errors = results.filter((r) => r.error);
+      const errorResults = results.filter((r) => r.error);
       const totalAssigned = results.reduce((sum, r) => sum + (r.count || 0), 0);
 
-      if (errors.length > 0) {
+      if (errorResults.length > 0) {
+        const errorMessages = errorResults.map((r) => r.error).join(', ');
         setError(
-          `Erreur lors de l'assignation de certains leads. ${totalAssigned} leads assignes avec succes.`
+          totalAssigned > 0
+            ? `${totalAssigned} leads assignés, mais erreurs sur certains : ${errorMessages}`
+            : `Erreur d'assignation : ${errorMessages}`
         );
       } else {
-        setSuccessCount(totalAssigned);
-        // Auto-dismiss after success
-        setTimeout(() => {
-          setIsDismissed(true);
-        }, 2000);
+        toast.success(
+          `${totalAssigned} lead${totalAssigned > 1 ? 's' : ''} assigné${totalAssigned > 1 ? 's' : ''} avec succès`
+        );
+        setIsDismissed(true);
       }
 
       router.refresh();
@@ -96,11 +99,9 @@ export function UnassignedLeadsBanner({
       className={`mb-4 rounded-xl p-5 shadow-sm border-2 transition-colors ${
         isPending
           ? 'bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-600'
-          : successCount
-            ? 'bg-success/10 border-success/30'
-            : error
-              ? 'bg-error/10 border-error/30'
-              : 'bg-info/10 border-info/30'
+          : error
+            ? 'bg-error/10 border-error/30'
+            : 'bg-info/10 border-info/30'
       }`}
     >
       <div className="flex items-start gap-4">
@@ -109,21 +110,17 @@ export function UnassignedLeadsBanner({
           className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${
             isPending
               ? 'bg-gray-200 dark:bg-gray-700'
-              : successCount
-                ? 'bg-success/20'
-                : error
-                  ? 'bg-error/20'
-                  : 'bg-info/20'
+              : error
+                ? 'bg-error/20'
+                : 'bg-info/20'
           }`}
         >
           {isPending ? (
-            <IconLoader2 size={20} className="text-darklink animate-spin" />
+            <Spinner size="md" variant="muted" />
           ) : (
             <IconUserExclamation
               size={20}
-              className={
-                successCount ? 'text-success' : error ? 'text-error' : 'text-info'
-              }
+              className={error ? 'text-error' : 'text-info'}
             />
           )}
         </span>
@@ -134,17 +131,7 @@ export function UnassignedLeadsBanner({
             <>
               <h3 className="font-semibold text-ld">Assignation en cours...</h3>
               <p className="text-sm text-darklink mt-0.5">
-                Distribution des leads aux commerciaux selectionnes
-              </p>
-            </>
-          ) : successCount ? (
-            <>
-              <h3 className="font-semibold text-success">
-                {successCount} lead{successCount > 1 ? 's' : ''} assigne
-                {successCount > 1 ? 's' : ''} avec succes
-              </h3>
-              <p className="text-sm text-darklink mt-0.5">
-                Les leads ont ete distribues aux commerciaux
+                Distribution des leads aux commerciaux sélectionnés
               </p>
             </>
           ) : error ? (
@@ -156,12 +143,12 @@ export function UnassignedLeadsBanner({
             <>
               <h3 className="font-semibold text-ld">
                 {count} nouveau{count > 1 ? 'x' : ''} lead{count > 1 ? 's' : ''} non
-                assigne{count > 1 ? 's' : ''}
+                assigné{count > 1 ? 's' : ''}
               </h3>
               <p className="text-sm text-darklink mt-0.5">
                 {count > 1
-                  ? "Ces leads attendent d'etre assignes a un commercial"
-                  : "Ce lead attend d'etre assigne a un commercial"}
+                  ? "Ces leads attendent d'être assignés à un commercial"
+                  : "Ce lead attend d'être assigné à un commercial"}
               </p>
             </>
           )}
@@ -169,17 +156,24 @@ export function UnassignedLeadsBanner({
 
         {/* Actions */}
         <div className="flex items-center gap-2 flex-shrink-0">
-          {!isPending && !successCount && (
+          {!isPending && (
             <>
               {/* View leads button */}
-              <button
+              <Button
                 type="button"
+                variant="outline"
+                size="sm"
                 onClick={handleViewLeads}
-                className="h-9 px-4 flex items-center gap-2 text-sm font-medium rounded-md border border-info/30 text-info hover:bg-info/10 transition-colors"
+                disabled={isNavigating}
+                className="border-info/30 text-info hover:bg-info/10"
               >
-                <IconEye size={16} />
+                {isNavigating ? (
+                  <Spinner size="sm" />
+                ) : (
+                  <IconEye size={16} />
+                )}
                 <span className="hidden sm:inline">Voir les leads</span>
-              </button>
+              </Button>
 
               {/* Assign dropdown - with multi-select for distribution */}
               <AssignDropdown
@@ -194,15 +188,17 @@ export function UnassignedLeadsBanner({
           )}
 
           {/* Dismiss button */}
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon"
             onClick={() => setIsDismissed(true)}
             disabled={isPending}
-            className="p-2 text-darklink hover:text-error hover:bg-error/10 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="text-darklink hover:text-error hover:bg-error/10"
             title="Ignorer"
           >
             <IconX size={18} />
-          </button>
+          </Button>
         </div>
       </div>
     </div>

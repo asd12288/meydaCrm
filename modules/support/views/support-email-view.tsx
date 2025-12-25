@@ -7,6 +7,7 @@ import { IconPlus } from '@tabler/icons-react';
 import { Button } from '@/modules/shared';
 import { CardBox, PageHeader, useModal, ErrorBoundary, SectionErrorFallback } from '@/modules/shared';
 import { getCurrentUser } from '@/modules/auth';
+import { ROLES } from '@/lib/constants';
 import { TicketListPanel } from '../components/ticket-list-panel';
 import { TicketDetailPanel } from '../components/ticket-detail-panel';
 import { CreateTicketModal } from '../components/create-ticket-modal';
@@ -63,8 +64,8 @@ export function SupportEmailView({
     isMountedRef.current = true;
     getCurrentUser().then((user) => {
       if (isMountedRef.current) {
-        setIsAdmin(user?.profile?.role === 'admin');
-        setIsDeveloper(user?.profile?.role === 'developer');
+        setIsAdmin(user?.profile?.role === ROLES.ADMIN);
+        setIsDeveloper(user?.profile?.role === ROLES.DEVELOPER);
         setCurrentUserId(user?.profile?.id || null);
       }
     });

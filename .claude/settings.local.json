@@ -106,7 +106,12 @@
       "Bash(del \"c:\\Users\\ilanc\\Desktop\\crm\\modules\\import-v2\\components\\duplicate-comparison-modal.tsx\")",
       "Bash(xargs grep:*)",
       "Bash(docker logs:*)",
-      "Bash(cp:*)"
+      "Bash(cp:*)",
+      "Bash(if not exist \"c:\\Users\\ilanc\\Desktop\\crm\\scripts\" mkdir \"c:\\Users\\ilanc\\Desktop\\crm\\scripts\")",
+      "Bash(npm run test)",
+      "Bash(npm run test:*)",
+      "Bash(node scripts/create-support-user.mjs:*)",
+      "Bash(set \"SUPABASE_SERVICE_ROLE_KEY=sb_secret_LvF0HFUQMJxppCS7SDm2mA__Yaatrgp\")"
     ]
   },
   "enableAllProjectMcpServers": true,

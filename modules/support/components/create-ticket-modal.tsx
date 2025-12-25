@@ -11,8 +11,9 @@ import {
   FormErrorAlert,
   FormActions,
   useToast,
+  useFormState,
 } from '@/modules/shared';
-import { useTransition, useState } from 'react';
+import { TOAST, TEXTAREA_ROWS } from '@/lib/constants';
 import { z } from 'zod';
 import { createTicket } from '../lib/actions';
 import { TICKET_CATEGORY_OPTIONS } from '../config/constants';
@@ -36,8 +37,7 @@ export function CreateTicketModal({
   onClose,
   onSuccess,
 }: CreateTicketModalProps) {
-  const [isPending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
+  const { isPending, startTransition, error, setError, resetError } = useFormState();
   const { toast } = useToast();
 
   const {
@@ -56,7 +56,7 @@ export function CreateTicketModal({
   });
 
   const onSubmit = (data: CreateTicketFormData) => {
-    setError(null);
+    resetError();
 
     startTransition(async () => {
       const result = await createTicket(data);
@@ -64,10 +64,9 @@ export function CreateTicketModal({
       if (result.error) {
         setError(result.error);
       } else {
-        // Close immediately and show toast
         reset();
         onClose();
-        toast.success('Ticket créé avec succès');
+        toast.success(TOAST.TICKET_CREATED);
         onSuccess?.();
       }
     });
@@ -75,7 +74,7 @@ export function CreateTicketModal({
 
   const handleClose = () => {
     reset();
-    setError(null);
+    resetError();
     onClose();
   };
 
@@ -113,7 +112,7 @@ export function CreateTicketModal({
           label="Description"
           error={errors.description?.message}
           placeholder="Décrivez en détail le problème, la fonctionnalité demandée, ou votre commentaire..."
-          rows={6}
+          rows={TEXTAREA_ROWS.SUPPORT_TICKET}
           {...register('description')}
         />
 

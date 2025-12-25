@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useTransition, useOptimistic } from "react";
-import { IconSend, IconTrash, IconMessageOff, IconLoader2 } from "@tabler/icons-react";
-import { Button, UserAvatar, ConfirmDialog } from "@/modules/shared";
+import { useState, useOptimistic } from "react";
+import { IconSend, IconTrash, IconMessageOff } from "@tabler/icons-react";
+import { Button, UserAvatar, ConfirmDialog, useFormState, useToast, Spinner } from "@/modules/shared";
 import { addComment, deleteComment } from "../lib/actions";
 import { formatRelativeTime } from "../lib/format";
+import { analytics } from "@/lib/analytics";
 import type { CommentWithAuthor } from "../types";
+import { TOAST, TEXTAREA_ROWS } from "@/lib/constants";
 
 interface LeadCommentsProps {
   leadId: string;
@@ -20,9 +22,9 @@ export function LeadComments({
   currentUserId,
   isAdmin,
 }: LeadCommentsProps) {
-  const [isPending, startTransition] = useTransition();
+  const { isPending, startTransition, error, setError, resetError } = useFormState();
+  const { toast } = useToast();
   const [newComment, setNewComment] = useState("");
-  const [error, setError] = useState<string | null>(null);
   const [deleteCommentId, setDeleteCommentId] = useState<string | null>(null);
 
   // Optimistic state for comments
@@ -48,7 +50,7 @@ export function LeadComments({
     e.preventDefault();
     if (!newComment.trim() || isPending) return;
 
-    setError(null);
+    resetError();
     const commentText = newComment.trim();
     setNewComment("");
 
@@ -70,6 +72,9 @@ export function LeadComments({
       if (result.error) {
         setError(result.error);
         setNewComment(commentText); // Restore the comment text on error
+      } else {
+        toast.success(TOAST.COMMENT_ADDED);
+        analytics.commentAdded({ leadId });
       }
     });
   };
@@ -92,6 +97,8 @@ export function LeadComments({
       if (result.error) {
         setError(result.error);
         // Data will auto-revert from revalidatePath
+      } else {
+        toast.success(TOAST.COMMENT_DELETED);
       }
     });
   };
@@ -141,7 +148,7 @@ export function LeadComments({
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
             placeholder="Ajouter un commentaire..."
-            rows={2}
+            rows={TEXTAREA_ROWS.COMMENT}
             className="form-control-input flex-1 resize-none"
             disabled={isPending}
           />
@@ -153,7 +160,7 @@ export function LeadComments({
             title="Envoyer"
           >
             {isPending ? (
-              <IconLoader2 size={18} className="animate-spin" />
+              <Spinner size="sm" />
             ) : (
               <IconSend size={18} />
             )}

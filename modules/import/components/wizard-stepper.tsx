@@ -1,6 +1,7 @@
 'use client';
 
-import { IconCheck, IconLoader2 } from '@tabler/icons-react';
+import { IconCheck } from '@tabler/icons-react';
+import { Spinner } from '@/modules/shared';
 import { IMPORT_WIZARD_STEPS, type ImportWizardStep } from '../config/constants';
 
 interface WizardStepperProps {
@@ -66,7 +67,7 @@ export function WizardStepper({
                 {status === 'completed' ? (
                   <IconCheck size={16} />
                 ) : status === 'processing' ? (
-                  <IconLoader2 size={16} className="animate-spin" />
+                  <Spinner size="sm" />
                 ) : (
                   step.number
                 )}
@@ -116,7 +117,7 @@ export function WizardStepper({
                   {status === 'completed' ? (
                     <IconCheck size={20} />
                   ) : status === 'processing' ? (
-                    <IconLoader2 size={20} className="animate-spin" />
+                    <Spinner size="md" />
                   ) : (
                     step.number
                   )}

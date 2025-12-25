@@ -17,8 +17,6 @@ export { CreateBannerModal } from './components/create-banner-modal';
 export { EditBannerModal } from './components/edit-banner-modal';
 
 // UI
-export { TicketCategoryBadge } from './ui/ticket-category-badge';
-export { TicketStatusBadge } from './ui/ticket-status-badge';
 export { TicketListSkeleton } from './ui/ticket-list-skeleton';
 export { TicketDetailSkeleton, TicketEmptyStateSkeleton } from './ui/ticket-detail-skeleton';
 

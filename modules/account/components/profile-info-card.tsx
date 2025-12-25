@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { CardBox, UserAvatar, useToast } from '@/modules/shared';
+import { CardBox, UserAvatar, useToast, useModal } from '@/modules/shared';
 import { Button } from '@/modules/shared';
 import { IconEdit, IconCheck, IconX, IconCamera } from '@tabler/icons-react';
 import type { NormalizedProfile } from '@/lib/auth';
-import { getRoleLabel } from '@/lib/constants';
+import { getRoleLabel, ROLES } from '@/lib/constants';
 import { updateProfile } from '../lib/actions';
 import { AvatarPickerModal } from './avatar-picker-modal';
 
@@ -16,7 +16,7 @@ interface ProfileInfoCardProps {
 
 export function ProfileInfoCard({ profile, email }: ProfileInfoCardProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
+  const avatarModal = useModal();
   const [displayName, setDisplayName] = useState(profile.displayName);
   const [currentAvatar, setCurrentAvatar] = useState<string | null>(
     profile.avatar
@@ -85,7 +85,7 @@ export function ProfileInfoCard({ profile, email }: ProfileInfoCardProps) {
           {/* Clickable Avatar */}
           <Button
             variant="ghost"
-            onClick={() => setIsAvatarModalOpen(true)}
+            onClick={() => avatarModal.open()}
             className="relative group shrink-0 p-0 h-auto"
             title="Changer l'avatar"
           >
@@ -157,7 +157,7 @@ export function ProfileInfoCard({ profile, email }: ProfileInfoCardProps) {
               </label>
               <div className="mt-1">
                 <span
-                  className={`badge-${profile.role === 'admin' ? 'primary' : 'secondary'}`}
+                  className={`badge-${profile.role === ROLES.ADMIN ? 'primary' : 'secondary'}`}
                 >
                   {getRoleLabel(profile.role)}
                 </span>
@@ -177,8 +177,8 @@ export function ProfileInfoCard({ profile, email }: ProfileInfoCardProps) {
 
       {/* Avatar Picker Modal */}
       <AvatarPickerModal
-        isOpen={isAvatarModalOpen}
-        onClose={() => setIsAvatarModalOpen(false)}
+        isOpen={avatarModal.isOpen}
+        onClose={avatarModal.close}
         currentAvatar={currentAvatar}
         onAvatarChange={handleAvatarChange}
       />

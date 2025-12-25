@@ -1,6 +1,7 @@
 'use client';
 
-import { IconLoader2, IconCheck, IconUpload } from '@tabler/icons-react';
+import { IconCheck, IconUpload } from '@tabler/icons-react';
+import { Spinner } from '@/modules/shared';
 import type { UploadProgress } from '../lib/client-upload';
 
 interface UploadProgressOverlayProps {
@@ -65,7 +66,7 @@ export function UploadProgressOverlay({ progress, fileName }: UploadProgressOver
         {/* Status message */}
         <div className="flex items-center gap-2 text-sm text-darklink">
           {!isComplete && (
-            <IconLoader2 className="w-4 h-4 animate-spin" />
+            <Spinner size="sm" />
           )}
           <span>{progress.message}</span>
         </div>

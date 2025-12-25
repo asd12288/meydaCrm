@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useTransition } from 'react';
+import { useState, useEffect } from 'react';
 import {
   IconPlus,
   IconEdit,
@@ -16,12 +16,15 @@ import {
 } from '@tabler/icons-react';
 import {
   CardBox,
-  Spinner,
+  LoadingState,
   EmptyState,
   useToast,
   ConfirmDialog,
   Badge,
+  useFormState,
+  useModal,
 } from '@/modules/shared';
+import { TOAST } from '@/lib/constants';
 import { Button } from '@/modules/shared';
 import {
   getAllBanners,
@@ -50,22 +53,22 @@ const TYPE_LABELS: Record<BannerType, string> = {
 export function BannerManagement() {
   const [banners, setBanners] = useState<SystemBanner[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
-  // Modal states
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [editBanner, setEditBanner] = useState<SystemBanner | null>(null);
-  const [deletingBanner, setDeletingBanner] = useState<SystemBanner | null>(null);
+  // Modal states - using useModal for create and edit
+  const createModal = useModal();
+  const editModal = useModal<SystemBanner>();
+  const deleteModal = useModal<SystemBanner>();
 
-  const [isPending, startTransition] = useTransition();
+  const { isPending, startTransition } = useFormState();
   const { toast } = useToast();
 
   const fetchBanners = async () => {
     setIsLoading(true);
-    setError(null);
+    setFetchError(null);
     const result = await getAllBanners();
     if (result.error) {
-      setError(result.error);
+      setFetchError(result.error);
     } else {
       setBanners(result.banners || []);
     }
@@ -90,34 +93,32 @@ export function BannerManagement() {
   };
 
   const handleDelete = () => {
-    if (!deletingBanner) return;
+    if (!deleteModal.data) return;
 
     startTransition(async () => {
-      const result = await deleteBanner(deletingBanner.id);
+      const result = await deleteBanner(deleteModal.data!.id);
       if (result.error) {
         toast.error(result.error);
       } else {
-        toast.success('Annonce supprimée');
+        toast.success(TOAST.BANNER_DELETED);
         fetchBanners();
       }
-      setDeletingBanner(null);
+      deleteModal.close();
     });
   };
 
   if (isLoading) {
     return (
       <CardBox>
-        <div className="flex items-center justify-center py-12">
-          <Spinner size="lg" />
-        </div>
+        <LoadingState />
       </CardBox>
     );
   }
 
-  if (error) {
+  if (fetchError) {
     return (
       <CardBox>
-        <div className="text-center py-8 text-red-500">{error}</div>
+        <div className="text-center py-8 text-red-500">{fetchError}</div>
       </CardBox>
     );
   }
@@ -133,7 +134,7 @@ export function BannerManagement() {
           <Button
             variant="primary"
             size="sm"
-            onClick={() => setShowCreateModal(true)}
+            onClick={() => createModal.open()}
           >
             <IconPlus size={16} />
             <span>Nouvelle annonce</span>
@@ -204,14 +205,14 @@ export function BannerManagement() {
                       )}
                     </button>
                     <button
-                      onClick={() => setEditBanner(banner)}
+                      onClick={() => editModal.open(banner)}
                       className="btn-circle-hover"
                       title="Modifier"
                     >
                       <IconEdit size={18} />
                     </button>
                     <button
-                      onClick={() => setDeletingBanner(banner)}
+                      onClick={() => deleteModal.open(banner)}
                       className="btn-circle-hover text-red-500 hover:text-red-600"
                       title="Supprimer"
                     >
@@ -227,23 +228,23 @@ export function BannerManagement() {
 
       {/* Create Modal */}
       <CreateBannerModal
-        isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
+        isOpen={createModal.isOpen}
+        onClose={createModal.close}
         onSuccess={fetchBanners}
       />
 
       {/* Edit Modal */}
       <EditBannerModal
-        isOpen={!!editBanner}
-        onClose={() => setEditBanner(null)}
+        isOpen={editModal.isOpen}
+        onClose={editModal.close}
         onSuccess={fetchBanners}
-        banner={editBanner}
+        banner={editModal.data}
       />
 
       {/* Delete Confirmation */}
       <ConfirmDialog
-        isOpen={!!deletingBanner}
-        onClose={() => setDeletingBanner(null)}
+        isOpen={deleteModal.isOpen}
+        onClose={deleteModal.close}
         onConfirm={handleDelete}
         title="Supprimer l'annonce"
         message="Êtes-vous sûr de vouloir supprimer cette annonce ? Cette action est irréversible."
