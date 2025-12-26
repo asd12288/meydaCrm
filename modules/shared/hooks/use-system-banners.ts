@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { useState, useEffect, useCallback } from 'react';
 import {
   getActiveBanners,
   getDismissedBannerIds,
@@ -28,8 +27,9 @@ interface UseSystemBannersReturn {
 }
 
 /**
- * Hook for fetching and managing system banners with real-time updates
- * Filters out dismissed banners and handles real-time changes
+ * Hook for fetching and managing system banners
+ * Fetches banners on mount and filters out dismissed ones
+ * Note: Realtime removed - system_banners table not in realtime publication
  */
 export function useSystemBanners(options: UseSystemBannersOptions = {}): UseSystemBannersReturn {
   const { enabled = true } = options;
@@ -38,9 +38,6 @@ export function useSystemBanners(options: UseSystemBannersOptions = {}): UseSyst
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const channelRef = useRef<ReturnType<ReturnType<typeof createClient>['channel']> | null>(null);
-  const supabaseRef = useRef(createClient());
 
   // Fetch banners and dismissals
   const fetchData = useCallback(async () => {
@@ -70,41 +67,10 @@ export function useSystemBanners(options: UseSystemBannersOptions = {}): UseSyst
     }
   }, [enabled]);
 
-  // Setup real-time subscription
+  // Fetch on mount
   useEffect(() => {
     if (!enabled) return;
-
-    // Initial fetch
     fetchData();
-
-    // Subscribe to real-time changes on system_banners table
-    const channel = supabaseRef.current
-      .channel('system_banners_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'system_banners',
-        },
-        () => {
-          // Refetch on any change
-          fetchData();
-        }
-      )
-      .subscribe();
-
-    channelRef.current = channel;
-
-    // Capture supabase client ref for cleanup
-    const supabase = supabaseRef.current;
-
-    return () => {
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
-      }
-    };
   }, [enabled, fetchData]);
 
   // Dismiss a banner

@@ -159,13 +159,19 @@ export function useNotifications(options: UseNotificationsOptions = {}): UseNoti
     if (!enabled) return;
 
     const supabase = supabaseRef.current;
+    let subscriptionAttempted = false;
 
     // Get current user ID from session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      // Don't attempt subscription if no valid session
       if (!session?.user?.id) {
         console.warn('[Notifications] No user session, skipping real-time subscription');
         return;
       }
+
+      // Prevent multiple subscription attempts
+      if (subscriptionAttempted) return;
+      subscriptionAttempted = true;
 
       const userId = session.user.id;
 
@@ -187,7 +193,7 @@ export function useNotifications(options: UseNotificationsOptions = {}): UseNoti
             // Broadcast payload from realtime.broadcast_changes contains the data directly
             // The structure depends on how we called broadcast_changes - NEW record is passed
             const notificationData = (payload as { new?: Record<string, unknown> }).new || payload;
-            
+
             // Transform snake_case to camelCase if needed
             const notification: Notification = {
               id: notificationData.id as string,
@@ -208,9 +214,20 @@ export function useNotifications(options: UseNotificationsOptions = {}): UseNoti
             setUnreadCount((prev) => prev + 1);
           }
         )
-        .subscribe((status) => {
-          console.log('[Notifications] Subscription status:', status);
-          setIsConnected(status === 'SUBSCRIBED');
+        .subscribe((status, err) => {
+          console.log('[Notifications] Subscription status:', status, err ? `Error: ${err.message}` : '');
+
+          if (status === 'SUBSCRIBED') {
+            setIsConnected(true);
+          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+            // Don't retry on errors - graceful degradation
+            // User will still get notifications on next page load
+            setIsConnected(false);
+            console.warn('[Notifications] Realtime subscription failed, falling back to polling on refresh');
+            // Note: Don't call removeChannel here - it causes recursion
+            // The cleanup function will handle removal on unmount
+            channelRef.current = null;
+          }
         });
 
       channelRef.current = channel;
@@ -219,7 +236,7 @@ export function useNotifications(options: UseNotificationsOptions = {}): UseNoti
     // Cleanup on unmount
     return () => {
       if (channelRef.current) {
-        channelRef.current.unsubscribe();
+        supabase.removeChannel(channelRef.current);
         channelRef.current = null;
       }
     };
