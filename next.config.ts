@@ -9,6 +9,8 @@ const nextConfig: NextConfig = {
     // Middleware/proxy body size limit for large file uploads
     middlewareClientMaxBodySize: '100MB',
   },
+  // Mark ssh2 as external to avoid Turbopack bundling issues with native crypto
+  serverExternalPackages: ['ssh2', 'ssh2-sftp-client'],
 };
 
 export default nextConfig;
