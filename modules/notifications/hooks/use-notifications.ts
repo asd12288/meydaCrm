@@ -1,12 +1,11 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { useState, useEffect, useCallback } from 'react';
 import { fetchNotifications, markNotificationRead, markAllNotificationsRead, getUnreadCount } from '../lib/actions';
 import type { Notification } from '../types';
 
 interface UseNotificationsOptions {
-  /** Enable/disable real-time subscription */
+  /** Enable/disable fetching */
   enabled?: boolean;
   /** Page size for pagination */
   pageSize?: number;
@@ -25,8 +24,6 @@ interface UseNotificationsReturn {
   isLoadingMore: boolean;
   /** Error message */
   error: string | null;
-  /** Whether real-time subscription is connected */
-  isConnected: boolean;
   /** Load more notifications (pagination) */
   loadMore: () => void;
   /** Mark a notification as read */
@@ -38,8 +35,9 @@ interface UseNotificationsReturn {
 }
 
 /**
- * Hook for managing notifications with real-time updates via Supabase Broadcast
- * Supports infinite scroll pagination and real-time delivery
+ * Hook for managing notifications with pagination
+ * Fetches notifications on mount and supports infinite scroll
+ * Note: Realtime removed to prevent 401 websocket errors from stale sessions
  */
 export function useNotifications(options: UseNotificationsOptions = {}): UseNotificationsReturn {
   const { enabled = true, pageSize = 20 } = options;
@@ -50,11 +48,7 @@ export function useNotifications(options: UseNotificationsOptions = {}): UseNoti
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-
-  const channelRef = useRef<ReturnType<ReturnType<typeof createClient>['channel']> | null>(null);
-  const supabaseRef = useRef(createClient());
 
   // Fetch initial notifications and unread count
   const fetchInitialData = useCallback(async () => {
@@ -154,94 +148,6 @@ export function useNotifications(options: UseNotificationsOptions = {}): UseNoti
     await fetchInitialData();
   }, [fetchInitialData]);
 
-  // Setup real-time subscription
-  useEffect(() => {
-    if (!enabled) return;
-
-    const supabase = supabaseRef.current;
-    let subscriptionAttempted = false;
-
-    // Get current user ID from session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      // Don't attempt subscription if no valid session
-      if (!session?.user?.id) {
-        console.warn('[Notifications] No user session, skipping real-time subscription');
-        return;
-      }
-
-      // Prevent multiple subscription attempts
-      if (subscriptionAttempted) return;
-      subscriptionAttempted = true;
-
-      const userId = session.user.id;
-
-      // Create private channel for user-specific notifications
-      const channel = supabase
-        .channel(`notifications-${userId}`, {
-          config: {
-            private: true,
-          },
-        })
-        .on(
-          'broadcast',
-          {
-            event: 'INSERT', // Event type from broadcast_changes (INSERT/UPDATE/DELETE)
-          },
-          (payload) => {
-            console.log('[Notifications] Received broadcast:', payload);
-
-            // Broadcast payload from realtime.broadcast_changes contains the data directly
-            // The structure depends on how we called broadcast_changes - NEW record is passed
-            const notificationData = (payload as { new?: Record<string, unknown> }).new || payload;
-
-            // Transform snake_case to camelCase if needed
-            const notification: Notification = {
-              id: notificationData.id as string,
-              userId: (notificationData.user_id || notificationData.userId) as string,
-              type: notificationData.type as Notification['type'],
-              title: notificationData.title as string,
-              message: notificationData.message as string,
-              metadata: (notificationData.metadata as Notification['metadata']) ?? null,
-              readAt: ((notificationData.read_at || notificationData.readAt) as string) ?? null,
-              actionUrl: ((notificationData.action_url || notificationData.actionUrl) as string) ?? null,
-              createdAt: (notificationData.created_at || notificationData.createdAt) as string,
-            };
-
-            // Add to top of list
-            setNotifications((prev) => [notification, ...prev]);
-
-            // Increment unread count (local is accurate for real-time updates)
-            setUnreadCount((prev) => prev + 1);
-          }
-        )
-        .subscribe((status, err) => {
-          console.log('[Notifications] Subscription status:', status, err ? `Error: ${err.message}` : '');
-
-          if (status === 'SUBSCRIBED') {
-            setIsConnected(true);
-          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
-            // Don't retry on errors - graceful degradation
-            // User will still get notifications on next page load
-            setIsConnected(false);
-            console.warn('[Notifications] Realtime subscription failed, falling back to polling on refresh');
-            // Note: Don't call removeChannel here - it causes recursion
-            // The cleanup function will handle removal on unmount
-            channelRef.current = null;
-          }
-        });
-
-      channelRef.current = channel;
-    });
-
-    // Cleanup on unmount
-    return () => {
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
-      }
-    };
-  }, [enabled]);
-
   // Initial fetch
   useEffect(() => {
     fetchInitialData();
@@ -254,7 +160,6 @@ export function useNotifications(options: UseNotificationsOptions = {}): UseNoti
     isLoading,
     isLoadingMore,
     error,
-    isConnected,
     loadMore,
     markAsRead,
     markAllAsRead,
