@@ -210,42 +210,6 @@ export async function getSalesUsers(): Promise<SalesUser[]> {
 }
 
 /**
- * Get count and IDs of unassigned leads with "Nouveau" status (admin only)
- * Used for the quick assignment banner on leads page
- */
-export async function getUnassignedNewLeadsCount(): Promise<{
-  count: number;
-  leadIds: string[];
-}> {
-  // Silently return empty if not admin (no error for UI display)
-  try {
-    await requireAdmin();
-  } catch {
-    return { count: 0, leadIds: [] };
-  }
-
-  const supabase = await createClient();
-
-  const { data, count, error } = await supabase
-    .from('leads')
-    .select('id', { count: 'exact' })
-    .eq('status', 'new') // Database uses lowercase English status keys
-    .is('assigned_to', null)
-    .is('deleted_at', null)
-    .limit(500); // Cap at 500 for bulk operations
-
-  if (error) {
-    console.error('Error fetching unassigned new leads count:', error);
-    return { count: 0, leadIds: [] };
-  }
-
-  return {
-    count: count || 0,
-    leadIds: data?.map((lead) => lead.id) || [],
-  };
-}
-
-/**
  * Update lead status and create history entry
  */
 export async function updateLeadStatus(
