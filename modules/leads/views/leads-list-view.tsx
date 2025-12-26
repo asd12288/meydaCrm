@@ -1,12 +1,11 @@
 import { CardBox, PageHeader, ErrorBoundary, ErrorFallback } from '@/modules/shared';
 import { getCurrentUser } from '@/modules/auth';
 import { ROLES } from '@/lib/constants';
-import { getLeads, getSalesUsers, getUnassignedNewLeadsCount, getLeadsForKanban } from '../lib/actions';
+import { getLeads, getSalesUsers, getLeadsForKanban } from '../lib/actions';
 import { leadFiltersSchema } from '../types';
 import { LeadFilters } from '../ui/lead-filters';
 import { LeadsTable } from '../components/leads-table';
 import { LeadsPagination } from '../ui/leads-pagination';
-import { UnassignedLeadsBanner } from '../components/unassigned-leads-banner';
 import { ViewToggle, type ViewMode } from '../components/view-toggle';
 import { LeadsKanbanBoard } from '../components/kanban';
 import { KANBAN_PAGE_SIZE } from '../config/constants';
@@ -41,11 +40,10 @@ export async function LeadsListView({ searchParams }: LeadsListViewProps) {
   // Kanban: only assigned leads with last comments
   // Table: all leads based on filters and RLS
   // Note: salesUsers needed for both admin (bulk assign) and sales (transfer leads)
-  const [leadsData, kanbanData, salesUsers, unassignedData] = await Promise.all([
+  const [leadsData, kanbanData, salesUsers] = await Promise.all([
     isKanbanView ? Promise.resolve({ leads: [], page: 1, pageSize: 20, hasMore: false }) : getLeads(filters),
     isKanbanView ? getLeadsForKanban(filters) : Promise.resolve({ leads: [], total: 0 }),
     getSalesUsers(), // Both admin and sales need this (sales for transfer feature)
-    isAdmin && !isKanbanView ? getUnassignedNewLeadsCount() : Promise.resolve({ count: 0, leadIds: [] }),
   ]);
 
   return (
@@ -57,15 +55,6 @@ export async function LeadsListView({ searchParams }: LeadsListViewProps) {
         }
         actions={<ViewToggle currentView={viewMode} />}
       />
-
-      {/* Unassigned new leads banner - admin only (only in table view) */}
-      {!isKanbanView && isAdmin && unassignedData.count > 0 && (
-        <UnassignedLeadsBanner
-          count={unassignedData.count}
-          leadIds={unassignedData.leadIds}
-          salesUsers={salesUsers}
-        />
-      )}
 
       {isKanbanView ? (
         /* Kanban View - Shows only user's assigned leads */
