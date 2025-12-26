@@ -111,7 +111,8 @@
       "Bash(npm run test)",
       "Bash(npm run test:*)",
       "Bash(node scripts/create-support-user.mjs:*)",
-      "Bash(set \"SUPABASE_SERVICE_ROLE_KEY=sb_secret_LvF0HFUQMJxppCS7SDm2mA__Yaatrgp\")"
+      "Bash(set \"SUPABASE_SERVICE_ROLE_KEY=sb_secret_LvF0HFUQMJxppCS7SDm2mA__Yaatrgp\")",
+      "Bash(git remote prune:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
