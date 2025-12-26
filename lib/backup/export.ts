@@ -1,10 +1,15 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Use service role for backup (bypasses RLS)
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+/**
+ * Get Supabase client with service role (for server-side backup operations)
+ * Created lazily to avoid build-time environment variable access
+ */
+function getSupabaseAdmin() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 // CSV column headers (French labels for client)
 const CSV_HEADERS = [
@@ -97,6 +102,9 @@ export async function exportLeadsToCSV(): Promise<{
 }> {
   try {
     console.log('[Export] Starting leads export...');
+
+    // Get Supabase admin client (lazy initialization)
+    const supabase = getSupabaseAdmin();
 
     // Fetch all leads with assigned user info
     // Using pagination to handle large datasets
