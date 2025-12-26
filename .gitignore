@@ -28,6 +28,13 @@
 # testing
 /coverage
 
+# playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/.auth/
+
 # next.js
 /.next/
 /out/
@@ -37,7 +44,20 @@
 
 # misc
 .DS_Store
+Thumbs.db
 *.pem
+*.log
+
+# editor
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# cache
+.eslintcache
+.prettiercache
+*.cache
 
 # debug
 npm-debug.log*
