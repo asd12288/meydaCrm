@@ -62,6 +62,7 @@ export { OptionCard, OptionCardGroup, type OptionCardProps, type OptionCardGroup
 export { ToggleChip, ToggleChipGroup, type ToggleChipProps, type ToggleChipGroupProps } from './ui/toggle-chip';
 export { Checkbox, CheckboxCard, type CheckboxProps, type CheckboxCardProps } from './ui/checkbox';
 export { Select, InlineSelect, type SelectProps, type SelectOption, type InlineSelectProps } from './ui/select';
+export { SearchableSelect, type SearchableSelectProps, type SearchableSelectOption } from './ui/searchable-select';
 export {
   InlineDropdown,
   type InlineDropdownOption,
