@@ -54,8 +54,12 @@ export async function updateSession(request: NextRequest) {
     pathname === '/api/webhooks/nowpayments' ||
     pathname === '/api/webhooks/nowpayments/test';
 
-  // Allow external webhooks through - signature verification happens in route handler
-  if (isQStashWebhook || isNowPaymentsWebhook) {
+  // Vercel Cron routes - authenticated via x-vercel-cron header or Bearer token
+  // SECURITY: The route handler verifies the cron header or CRON_SECRET token
+  const isCronRoute = pathname === '/api/cron/daily-backup';
+
+  // Allow external webhooks and cron through - signature verification happens in route handler
+  if (isQStashWebhook || isNowPaymentsWebhook || isCronRoute) {
     return supabaseResponse;
   }
 
