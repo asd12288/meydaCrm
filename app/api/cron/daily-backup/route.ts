@@ -10,33 +10,12 @@ import {
 const CRON_SECRET = process.env.CRON_SECRET;
 
 /**
- * Daily backup cron job
- * Triggered by Vercel Cron at 2 AM UTC daily
- *
- * Manual trigger (for testing):
- * curl -X POST https://your-app.vercel.app/api/cron/daily-backup \
- *   -H "Authorization: Bearer YOUR_CRON_SECRET"
+ * Shared backup logic used by both GET (Vercel Cron) and POST (manual trigger)
  */
-export async function POST(request: NextRequest) {
+async function runBackup(): Promise<NextResponse> {
   const startTime = Date.now();
 
   try {
-    // Verify the request is from Vercel Cron or has valid authorization
-    const authHeader = request.headers.get('authorization');
-    const cronHeader = request.headers.get('x-vercel-cron');
-
-    // In production, verify either Vercel Cron header or Bearer token
-    if (process.env.NODE_ENV === 'production') {
-      const isVercelCron = cronHeader === '1';
-      const isValidToken =
-        CRON_SECRET && authHeader === `Bearer ${CRON_SECRET}`;
-
-      if (!isVercelCron && !isValidToken) {
-        console.error('[Backup] Unauthorized request');
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-    }
-
     console.log('[Backup] Starting daily backup...');
 
     // Step 1: Export leads to CSV
@@ -112,19 +91,53 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * GET endpoint to check backup status / test connection
+ * POST endpoint for manual triggers
+ *
+ * Manual trigger (for testing):
+ * curl -X POST https://your-app.vercel.app/api/cron/daily-backup \
+ *   -H "Authorization: Bearer YOUR_CRON_SECRET"
  */
-export async function GET(request: NextRequest) {
-  // Require authorization for status check too
+export async function POST(request: NextRequest) {
+  // Verify the request has valid authorization
   const authHeader = request.headers.get('authorization');
   const cronHeader = request.headers.get('x-vercel-cron');
 
+  // In production, verify either Vercel Cron header or Bearer token
   if (process.env.NODE_ENV === 'production') {
     const isVercelCron = cronHeader === '1';
     const isValidToken =
       CRON_SECRET && authHeader === `Bearer ${CRON_SECRET}`;
 
     if (!isVercelCron && !isValidToken) {
+      console.error('[Backup] Unauthorized request');
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+  }
+
+  return runBackup();
+}
+
+/**
+ * GET endpoint - Vercel Cron uses GET by default
+ * This triggers the actual backup when called by Vercel Cron
+ */
+export async function GET(request: NextRequest) {
+  const cronHeader = request.headers.get('x-vercel-cron');
+
+  // If this is a Vercel Cron request, run the backup
+  if (cronHeader === '1') {
+    console.log('[Backup] Triggered by Vercel Cron');
+    return runBackup();
+  }
+
+  // Otherwise, just return status (for manual status checks)
+  const authHeader = request.headers.get('authorization');
+
+  if (process.env.NODE_ENV === 'production') {
+    const isValidToken =
+      CRON_SECRET && authHeader === `Bearer ${CRON_SECRET}`;
+
+    if (!isValidToken) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
   }
