@@ -117,6 +117,7 @@
       "Bash(gh pr create --title \"Fix: Stop 401 Realtime WebSocket errors\" --body \"$(cat <<''EOF''\n## Summary\n- Remove realtime subscription from `useNotifications` hook to prevent 401 WebSocket errors\n- Add rate limiting (`eventsPerSecond: 1`) to Supabase client to reduce reconnection spam\n- Remove UnassignedLeadsBanner feature (cleanup)\n\n## Problem\nUsers with browser tabs open were causing continuous 401 errors in Supabase logs. This happened because:\n1. The notifications hook created realtime subscriptions on every browser tab\n2. When access tokens expired, the realtime connections kept trying to reconnect with stale tokens\n3. This caused 401 errors every 2-4 seconds per active user\n\n## Solution\n- Removed realtime from notifications - now uses server actions with manual refresh\n- Added rate limiting to slow down any remaining reconnection attempts\n- Notifications still work, just without real-time push (users refresh to see new ones)\n\n## Test plan\n- [ ] Verify notifications still load on page\n- [ ] Check Supabase logs - 401 errors should stop for new sessions\n- [ ] Existing tabs with old cached JS will still error until refreshed\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\nEOF\n)\")",
       "Bash(gh pr list:*)",
       "Bash(gh pr view:*)"
+      "Bash(git remote prune:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
