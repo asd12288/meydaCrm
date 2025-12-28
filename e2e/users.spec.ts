@@ -1,9 +1,10 @@
 import { test, expect } from '@playwright/test'
-import { login, TEST_USERS } from './helpers/auth'
+import { TEST_USERS } from './helpers/auth'
+import path from 'path'
 
 test.describe('User Management (Admin Only)', () => {
   test.beforeEach(async ({ page }) => {
-    await login(page, 'admin')
+    // Session loaded via storageState
     await page.goto('/users')
   })
 
@@ -230,8 +231,10 @@ test.describe('User Management (Admin Only)', () => {
 })
 
 test.describe('User Management Access Control', () => {
+  // Use sales session for access control tests
+  test.use({ storageState: path.join(__dirname, '.auth/sales.json') })
   test('sales user cannot access users page', async ({ page }) => {
-    await login(page, 'sales')
+    // Sales session loaded via storageState
 
     // Try to navigate to users page
     await page.goto('/users')
@@ -243,7 +246,8 @@ test.describe('User Management Access Control', () => {
   })
 
   test('sales user does not see users link in sidebar', async ({ page }) => {
-    await login(page, 'sales')
+    // Sales session loaded via storageState - navigate to dashboard
+    await page.goto('/dashboard')
 
     // Users link should not be visible for sales
     await expect(page.getByRole('link', { name: /utilisateurs/i })).not.toBeVisible()

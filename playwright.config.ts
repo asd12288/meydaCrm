@@ -1,8 +1,12 @@
 import { defineConfig, devices } from '@playwright/test'
 import dotenv from 'dotenv'
+import path from 'path'
 
 // Load test environment (local Supabase)
 dotenv.config({ path: '.env.test' })
+
+// Auth storage directory
+const STORAGE_DIR = path.join(__dirname, 'e2e/.auth')
 
 export default defineConfig({
   testDir: './e2e',
@@ -19,9 +23,22 @@ export default defineConfig({
   },
 
   projects: [
+    // Setup project - runs first to create auth sessions (only 2 logins total)
     {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      name: 'setup',
+      testMatch: /auth\.setup\.ts/,
+    },
+
+    // Admin tests - reuse saved admin session (no additional logins)
+    {
+      name: 'admin-tests',
+      testMatch: /.*\.spec\.ts/,
+      testIgnore: /auth\.setup\.ts/,
+      dependencies: ['setup'],
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: path.join(STORAGE_DIR, 'admin.json'),
+      },
     },
   ],
 
