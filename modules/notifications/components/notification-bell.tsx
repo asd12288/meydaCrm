@@ -44,7 +44,7 @@ export function NotificationBell() {
         )}
       </button>
 
-      {isOpen && <NotificationDropdown onClose={() => setIsOpen(false)} />}
+      {isOpen && <NotificationDropdown />}
     </div>
   );
 }

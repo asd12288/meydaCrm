@@ -3,45 +3,10 @@
  *
  * Shared utilities for subscription management including:
  * - Notification deduplication
- * - Payment cleanup
+ * - Subscription date calculations
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
-
-/**
- * Check if we should create a subscription notification
- * Prevents duplicate notifications by checking for recent ones
- *
- * @param supabase - Supabase client (can be admin or regular)
- * @param userId - User ID to check notifications for
- * @param type - Notification type (e.g., 'subscription_warning')
- * @param windowHours - Time window in hours (default 24)
- * @returns true if notification should be created, false if recent one exists
- */
-export async function shouldCreateSubscriptionNotification(
-  supabase: SupabaseClient,
-  userId: string,
-  type: string,
-  windowHours: number = 24
-): Promise<boolean> {
-  const windowStart = new Date();
-  windowStart.setHours(windowStart.getHours() - windowHours);
-
-  const { count, error } = await supabase
-    .from('notifications')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', userId)
-    .eq('type', type)
-    .gte('created_at', windowStart.toISOString());
-
-  if (error) {
-    // On error, allow notification to be created (fail open)
-    console.error('[Subscription] Error checking notification deduplication:', error);
-    return true;
-  }
-
-  return (count || 0) === 0;
-}
 
 /**
  * Check if any admin user should receive a subscription notification
@@ -82,44 +47,6 @@ export async function shouldNotifyAdmins(
 }
 
 /**
- * Mark stale payments as expired
- * Payments older than specified hours in 'waiting' status are considered expired
- *
- * @param supabase - Supabase admin client (needs service role for RLS bypass)
- * @param hoursOld - Hours after which waiting payments are expired (default 24)
- * @returns Number of payments marked as expired
- */
-export async function cleanupExpiredPayments(
-  supabase: SupabaseClient,
-  hoursOld: number = 24
-): Promise<number> {
-  const expiryCutoff = new Date();
-  expiryCutoff.setHours(expiryCutoff.getHours() - hoursOld);
-
-  const { data, error } = await supabase
-    .from('payments')
-    .update({
-      status: 'expired',
-      updated_at: new Date().toISOString(),
-    })
-    .eq('status', 'waiting')
-    .lt('created_at', expiryCutoff.toISOString())
-    .select('id');
-
-  if (error) {
-    console.error('[Payment Cleanup] Error marking payments as expired:', error);
-    return 0;
-  }
-
-  const count = data?.length || 0;
-  if (count > 0) {
-    console.log(`[Payment Cleanup] Marked ${count} stale payments as expired`);
-  }
-
-  return count;
-}
-
-/**
  * Calculate subscription end date, optionally extending from existing end date
  *
  * @param period - Subscription period ('6_months', '12_months')
@@ -157,38 +84,4 @@ export function calculateSubscriptionEndDate(
   endDate.setMonth(endDate.getMonth() + months);
 
   return endDate;
-}
-
-/**
- * Check if subscription should transition to grace period
- * Returns the number of grace days remaining, or null if not applicable
- *
- * @param endDate - Subscription end date
- * @param gracePeriodDays - Number of grace period days (default 7)
- * @returns Object with isInGrace flag and daysRemaining
- */
-export function checkGracePeriod(
-  endDate: Date | string,
-  gracePeriodDays: number = 7
-): { isInGrace: boolean; daysRemaining: number | null } {
-  const end = new Date(endDate);
-  const now = new Date();
-
-  if (now < end) {
-    // Subscription still active
-    return { isInGrace: false, daysRemaining: null };
-  }
-
-  const daysSinceExpiry = Math.floor(
-    (now.getTime() - end.getTime()) / (1000 * 60 * 60 * 24)
-  );
-
-  if (daysSinceExpiry >= gracePeriodDays) {
-    // Grace period has ended
-    return { isInGrace: false, daysRemaining: 0 };
-  }
-
-  // In grace period
-  const daysRemaining = gracePeriodDays - daysSinceExpiry;
-  return { isInGrace: true, daysRemaining };
 }

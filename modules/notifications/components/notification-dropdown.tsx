@@ -7,18 +7,12 @@ import { useNotifications } from '../hooks/use-notifications';
 import { NotificationItem } from './notification-item';
 import { NotificationSkeletons } from './notification-skeleton';
 
-interface NotificationDropdownProps {
-  /** @deprecated Not currently used, kept for future implementation */
-  onClose?: () => void;
-}
-
 /**
  * Notification dropdown with infinite scroll
  * Shows all notifications with pagination and real-time updates
  * Automatically marks all notifications as read when opened
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function NotificationDropdown({ onClose }: NotificationDropdownProps) {
+export function NotificationDropdown() {
   const {
     notifications,
     hasMore,
