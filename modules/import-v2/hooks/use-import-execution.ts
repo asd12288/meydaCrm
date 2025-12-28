@@ -12,7 +12,7 @@ import { useCallback } from 'react';
 import { useImportWizard } from '../context';
 import { validateRows } from '../lib/validators/row-validator';
 import { detectFileDuplicates } from '../lib/processors';
-import { startImportV2 } from '../lib/actions';
+import { startImportV2, uploadImportFileV2 } from '../lib/actions';
 import { analytics } from '@/lib/analytics';
 
 export function useImportExecution() {
@@ -26,7 +26,23 @@ export function useImportExecution() {
     nextStep();
 
     try {
-      // Re-validate rows to get normalized data for the server
+      // Step 1: Upload original file to storage (if available)
+      let storagePath: string | undefined;
+      let fileHash: string | undefined;
+
+      if (state.originalFile) {
+        const formData = new FormData();
+        formData.append('file', state.originalFile);
+
+        const uploadResult = await uploadImportFileV2(formData);
+        if (uploadResult.success && uploadResult.data) {
+          storagePath = uploadResult.data.storagePath;
+          fileHash = uploadResult.data.fileHash;
+        }
+        // Note: We don't fail the import if upload fails - file download just won't be available
+      }
+
+      // Step 2: Re-validate rows to get normalized data for the server
       const validationResults = validateRows(state.parsedFile.rows, state.mapping.mappings);
 
       // CRITICAL FIX: Apply user edits to ALL rows (not just invalid)
@@ -101,7 +117,7 @@ export function useImportExecution() {
           existingLeadId: row.existingLead.id,
         })) || [];
 
-      // Call server action with unified row decisions
+      // Step 3: Call server action with unified row decisions + storage info
       const result = await startImportV2({
         fileName: state.parsedFile.name,
         fileType: state.parsedFile.type,
@@ -114,6 +130,8 @@ export function useImportExecution() {
         dbDuplicateInfo,
         defaultStatus: state.defaultStatus,
         defaultSource: state.defaultSource || state.parsedFile.name,
+        storagePath,
+        fileHash,
       });
 
       if (result.success && result.results) {
@@ -154,6 +172,7 @@ export function useImportExecution() {
       dispatch({ type: 'SET_IMPORTING', payload: false });
     }
   }, [
+    state.originalFile,
     state.parsedFile,
     state.mapping,
     state.rowDecisions,

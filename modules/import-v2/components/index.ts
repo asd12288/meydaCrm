@@ -30,3 +30,6 @@ export { ImportStep, ImportStepSkeleton } from './import-step';
 
 // Main wizard
 export { ImportWizardV2, ImportWizardV2Skeleton } from './import-wizard-v2';
+
+// History card
+export { ImportHistoryCard } from './import-history-card';

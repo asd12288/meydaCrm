@@ -129,6 +129,8 @@ export {
   // Main wizard
   ImportWizardV2,
   ImportWizardV2Skeleton,
+  // History card
+  ImportHistoryCard,
 } from './components';
 
 // =============================================================================
@@ -151,4 +153,17 @@ export {
 // VIEWS
 // =============================================================================
 
-export { ImportV2View } from './views';
+export { ImportV2View, ImportDashboardV2View } from './views';
+
+// =============================================================================
+// SERVER ACTIONS
+// =============================================================================
+
+export {
+  startImportV2,
+  getImportJobStatus,
+  uploadImportFileV2,
+  getPaginatedImportJobsV2,
+  downloadImportFileV2,
+  deleteImportJobV2,
+} from './lib/actions';

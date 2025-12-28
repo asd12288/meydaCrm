@@ -273,3 +273,60 @@ export interface ImportProgressV2 {
   /** Estimated time remaining (seconds) */
   estimatedTimeRemaining?: number;
 }
+
+// =============================================================================
+// IMPORT HISTORY TYPES
+// =============================================================================
+
+/**
+ * Import job status for history display
+ */
+export type ImportStatus =
+  | 'pending'
+  | 'queued'
+  | 'parsing'
+  | 'validating'
+  | 'ready'
+  | 'importing'
+  | 'completed'
+  | 'failed'
+  | 'cancelled';
+
+/**
+ * Import job with stats for history display
+ */
+export interface ImportJobWithStatsV2 {
+  id: string;
+  created_by: string;
+  file_name: string;
+  file_type: string;
+  storage_path: string;
+  status: ImportStatus;
+  total_rows: number | null;
+  valid_rows: number | null;
+  invalid_rows: number | null;
+  imported_rows: number | null;
+  skipped_rows: number | null;
+  processed_rows: number | null;
+  current_chunk: number | null;
+  total_chunks: number | null;
+  file_hash: string | null;
+  error_message: string | null;
+  created_at: string;
+  updated_at: string;
+  started_at: string | null;
+  completed_at: string | null;
+  creator?: {
+    id: string;
+    display_name: string | null;
+  };
+}
+
+/**
+ * Standard action result for import operations
+ */
+export interface ImportActionResultV2<T = void> {
+  success: boolean;
+  error?: string;
+  data?: T;
+}
