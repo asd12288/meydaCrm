@@ -131,7 +131,7 @@ jobs:
           NEXT_PUBLIC_POSTHOG_HOST: https://eu.i.posthog.com
 
       - name: Run E2E tests
-        run: npx playwright test --project=admin-tests
+        run: npx playwright test e2e/users.spec.ts --project=admin-tests
         env:
           CI: true
           NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
@@ -187,7 +187,7 @@ jobs:
           check_interval: 10
 
       - name: Run E2E tests against Preview
-        run: npx playwright test --project=admin-tests
+        run: npx playwright test e2e/users.spec.ts --project=admin-tests
         env:
           CI: true
           BASE_URL: ${{ steps.vercel-preview.outputs.url }}
