@@ -8,6 +8,9 @@ dotenv.config({ path: '.env.test' })
 // Auth storage directory
 const STORAGE_DIR = path.join(__dirname, 'e2e/.auth')
 
+// Check if using external URL (Vercel Preview)
+const isExternalUrl = !!(process.env.PLAYWRIGHT_BASE_URL || process.env.BASE_URL)
+
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: false, // Run tests sequentially to avoid conflicts
@@ -17,7 +20,7 @@ export default defineConfig({
   reporter: 'html',
 
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL: process.env.PLAYWRIGHT_BASE_URL || process.env.BASE_URL || 'http://localhost:3000',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },
@@ -43,7 +46,8 @@ export default defineConfig({
   ],
 
   // Start dev server before running tests
-  webServer: {
+  // Only start local dev server if not using external URL (Preview)
+  webServer: isExternalUrl ? undefined : {
     command: 'npm run dev',
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
