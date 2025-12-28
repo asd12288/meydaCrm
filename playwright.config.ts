@@ -16,18 +16,18 @@ export default defineConfig({
   testDir: './e2e',
   fullyParallel: false, // Run tests sequentially to avoid conflicts
   forbidOnly: isCI,
-  retries: isCI ? 2 : 0,
+  retries: isCI ? 1 : 0, // Reduced from 2 to speed up CI
   workers: 1, // Single worker for sequential execution
   reporter: 'html',
-  // Global timeout for each test (2 minutes)
-  timeout: 120000,
+  // Global timeout for each test (1 minute)
+  timeout: 60000,
 
   use: {
     baseURL: process.env.PLAYWRIGHT_BASE_URL || process.env.BASE_URL || 'http://localhost:3000',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     // Action timeout (clicks, fills, etc)
-    actionTimeout: 15000,
+    actionTimeout: 10000,
   },
 
   projects: [
@@ -58,6 +58,6 @@ export default defineConfig({
     command: isCI ? 'npm start' : 'npm run dev',
     url: 'http://localhost:3000',
     reuseExistingServer: !isCI,
-    timeout: 120000,
+    timeout: 60000, // 1 minute to start server
   },
 })
