@@ -108,6 +108,12 @@ max_enrolled_factors = 0
 timebox = 86400
 inactivity_timeout = 3600
 
+# Rate limits - increased for E2E testing (local only)
+[auth.rate_limit]
+email_sent = 100
+sms_sent = 100
+token_refresh = 150
+
 # =============================================================================
 # Realtime Configuration
 # =============================================================================
