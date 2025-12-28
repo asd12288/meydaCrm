@@ -10,19 +10,24 @@ const STORAGE_DIR = path.join(__dirname, 'e2e/.auth')
 
 // Check if using external URL (Vercel Preview)
 const isExternalUrl = !!(process.env.PLAYWRIGHT_BASE_URL || process.env.BASE_URL)
+const isCI = !!process.env.CI
 
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: false, // Run tests sequentially to avoid conflicts
-  forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
+  forbidOnly: isCI,
+  retries: isCI ? 2 : 0,
   workers: 1, // Single worker for sequential execution
   reporter: 'html',
+  // Global timeout for each test (2 minutes)
+  timeout: 120000,
 
   use: {
     baseURL: process.env.PLAYWRIGHT_BASE_URL || process.env.BASE_URL || 'http://localhost:3000',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
+    // Action timeout (clicks, fills, etc)
+    actionTimeout: 15000,
   },
 
   projects: [
@@ -45,12 +50,14 @@ export default defineConfig({
     },
   ],
 
-  // Start dev server before running tests
-  // Only start local dev server if not using external URL (Preview)
+  // Start server before running tests
+  // - External URL (Preview): no server needed
+  // - CI: use production build (npm start) - faster and more reliable
+  // - Local: use dev server (npm run dev)
   webServer: isExternalUrl ? undefined : {
-    command: 'npm run dev',
+    command: isCI ? 'npm start' : 'npm run dev',
     url: 'http://localhost:3000',
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: !isCI,
     timeout: 120000,
   },
 })
