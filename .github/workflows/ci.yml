@@ -125,6 +125,11 @@ jobs:
           CI: true
           NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
           NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
+          # Optional services - provide dummy values to prevent crashes
+          UPSTASH_REDIS_REST_URL: http://localhost:6379
+          UPSTASH_REDIS_REST_TOKEN: dummy-token-for-ci
+          NEXT_PUBLIC_POSTHOG_KEY: phc_dummy_key_for_ci
+          NEXT_PUBLIC_POSTHOG_HOST: https://eu.i.posthog.com
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
