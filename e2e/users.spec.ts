@@ -10,11 +10,12 @@ test.describe('User Management (Admin Only)', () => {
 
   test('should display users table with seeded users', async ({ page }) => {
     // Should see the users table
-    await expect(page.getByRole('table')).toBeVisible()
+    const table = page.getByRole('table')
+    await expect(table).toBeVisible()
 
-    // Should see seeded users (admin, marie, jean, sophie)
-    await expect(page.getByText('Admin Test')).toBeVisible()
-    await expect(page.getByText('Marie Dupont')).toBeVisible()
+    // Should see seeded users in table (scope to table to avoid matching header)
+    await expect(table.getByText('Admin Test')).toBeVisible()
+    await expect(table.getByText('Marie Dupont')).toBeVisible()
   })
 
   test('should display page header with create button', async ({ page }) => {
