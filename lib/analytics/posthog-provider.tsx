@@ -5,8 +5,7 @@ import { PostHogProvider } from 'posthog-js/react';
 import { useEffect } from 'react';
 
 // Set to true to test locally, false for production
-// TODO: Set back to false before deploying to production!
-const ENABLE_DEV_TRACKING = true;
+const ENABLE_DEV_TRACKING = false;
 
 export function PHProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
