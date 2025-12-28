@@ -1,7 +1,6 @@
-import { Suspense } from 'react';
 import { requireAdmin } from '@/modules/auth';
 import { PageHeader } from '@/modules/shared';
-import { ImportWizardV2, ImportWizardV2Skeleton } from '@/modules/import-v2';
+import { ImportDashboardV2View, getPaginatedImportJobsV2 } from '@/modules/import-v2';
 import { getSalesUsers } from '@/modules/leads';
 import type { Metadata } from 'next';
 
@@ -11,7 +10,15 @@ export const metadata: Metadata = {
 
 export default async function ImportV2Page() {
   await requireAdmin();
-  const salesUsers = await getSalesUsers();
+
+  // Fetch data in parallel
+  const [salesUsers, historyResult] = await Promise.all([
+    getSalesUsers(),
+    getPaginatedImportJobsV2(1, 10),
+  ]);
+
+  const initialJobs = historyResult.success && historyResult.data ? historyResult.data.jobs : [];
+  const initialTotal = historyResult.success && historyResult.data ? historyResult.data.total : 0;
 
   return (
     <div>
@@ -20,9 +27,11 @@ export default async function ImportV2Page() {
         description="Nouveau système d'import avec aperçu détaillé"
       />
 
-      <Suspense fallback={<ImportWizardV2Skeleton />}>
-        <ImportWizardV2 salesUsers={salesUsers} />
-      </Suspense>
+      <ImportDashboardV2View
+        salesUsers={salesUsers}
+        initialJobs={initialJobs}
+        initialTotal={initialTotal}
+      />
     </div>
   );
 }

@@ -101,9 +101,10 @@ function Stepper({ currentStep, completedSteps }: StepperProps) {
 
 interface WizardContentProps {
   salesUsers: SalesUser[];
+  onComplete?: () => void;
 }
 
-function WizardContent({ salesUsers }: WizardContentProps) {
+function WizardContent({ salesUsers, onComplete }: WizardContentProps) {
   const { state, prevStep, canProceedToPreview, canProceedToImport } = useImportWizard();
 
   // Step 1: File processing
@@ -135,6 +136,12 @@ function WizardContent({ salesUsers }: WizardContentProps) {
   // Step 3: Results actions
   const { handleViewLeads, handleNewImport, handleDownloadReport, handleCancelImport } =
     useResultsActions();
+
+  // Wrap handleNewImport to call onComplete when starting new import
+  const handleNewImportWithCallback = () => {
+    handleNewImport();
+    onComplete?.();
+  };
 
   // Determine which steps are completed
   const completedSteps: WizardStepV2[] = [];
@@ -227,7 +234,7 @@ function WizardContent({ salesUsers }: WizardContentProps) {
             error={state.error}
             isImporting={state.isImporting && !state.results && !state.error}
             onViewLeads={handleViewLeads}
-            onNewImport={handleNewImport}
+            onNewImport={handleNewImportWithCallback}
             onDownloadReport={handleDownloadReport}
             onCancel={handleCancelImport}
           />
@@ -243,12 +250,14 @@ function WizardContent({ salesUsers }: WizardContentProps) {
 
 interface ImportWizardV2Props {
   salesUsers: SalesUser[];
+  /** Callback when import is complete (success or user clicks "New import") */
+  onComplete?: () => void;
 }
 
-export function ImportWizardV2({ salesUsers }: ImportWizardV2Props) {
+export function ImportWizardV2({ salesUsers, onComplete }: ImportWizardV2Props) {
   return (
     <ImportWizardProvider>
-      <WizardContent salesUsers={salesUsers} />
+      <WizardContent salesUsers={salesUsers} onComplete={onComplete} />
     </ImportWizardProvider>
   );
 }
