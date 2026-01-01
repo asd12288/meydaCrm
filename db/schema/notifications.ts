@@ -72,3 +72,5 @@ export const notifications = pgTable(
     // No delete policy for authenticated role
   ]
 );
+
+

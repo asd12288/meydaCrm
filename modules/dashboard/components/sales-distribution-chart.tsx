@@ -74,3 +74,5 @@ export function SalesDistributionChart({
     </CardBox>
   );
 }
+
+

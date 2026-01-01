@@ -22,3 +22,5 @@ export async function SalesTrendSection() {
 
   return <LeadsTrendChart trendData={trendData} />;
 }
+
+

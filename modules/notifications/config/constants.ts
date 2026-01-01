@@ -77,3 +77,5 @@ export function getNotificationColor(type: NotificationType): string {
 export function getNotificationLabel(type: NotificationType): string {
   return NOTIFICATION_TYPES[type]?.label || type;
 }
+
+

@@ -26,3 +26,5 @@ export function isAdminOrDeveloper(user: AuthUser | null): boolean {
 export function isAdmin(user: AuthUser | null): boolean {
   return user?.profile?.role === ROLES.ADMIN;
 }
+
+

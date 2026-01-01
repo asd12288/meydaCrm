@@ -263,3 +263,5 @@ GROUP BY type;
    ```
 
 **Note**: Everything runs as Next.js API routes - no Supabase Edge Functions needed!
+
+

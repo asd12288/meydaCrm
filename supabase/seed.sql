@@ -551,6 +551,100 @@ VALUES
   ('EXT-050', 'Oscar', 'Roger', 'oscar.roger@example.com', '0622224444', 'DataSoft', 'Biarritz', '64200', 'new', 'Nouveau', 'Cold call', NULL, now());
 
 -- =============================================================================
+-- SECTION 3b: Test Leads with Varied Dates (for time period filter testing)
+-- =============================================================================
+-- These leads have different created_at dates to test the status chart time filter
+
+-- LAST WEEK leads (3 days ago) - 8 leads with varied statuses
+INSERT INTO public.leads (external_id, first_name, last_name, email, phone, company, city, status, status_label, source, assigned_to, created_at)
+VALUES
+  ('WEEK-001', 'Week', 'Lead1', 'week1@test.com', '0700000001', 'WeekCo1', 'Paris', 'new', 'Nouveau', 'Test', '00000000-0000-0000-0000-000000000002', now() - interval '3 days'),
+  ('WEEK-002', 'Week', 'Lead2', 'week2@test.com', '0700000002', 'WeekCo2', 'Paris', 'new', 'Nouveau', 'Test', '00000000-0000-0000-0000-000000000002', now() - interval '4 days'),
+  ('WEEK-003', 'Week', 'Lead3', 'week3@test.com', '0700000003', 'WeekCo3', 'Paris', 'new', 'Nouveau', 'Test', '00000000-0000-0000-0000-000000000002', now() - interval '5 days'),
+  ('WEEK-004', 'Week', 'Lead4', 'week4@test.com', '0700000004', 'WeekCo4', 'Paris', 'contacted', 'Contacte', 'Test', '00000000-0000-0000-0000-000000000002', now() - interval '3 days'),
+  ('WEEK-005', 'Week', 'Lead5', 'week5@test.com', '0700000005', 'WeekCo5', 'Paris', 'contacted', 'Contacte', 'Test', '00000000-0000-0000-0000-000000000002', now() - interval '4 days'),
+  ('WEEK-006', 'Week', 'Lead6', 'week6@test.com', '0700000006', 'WeekCo6', 'Paris', 'callback', 'Rappeler', 'Test', '00000000-0000-0000-0000-000000000003', now() - interval '5 days'),
+  ('WEEK-007', 'Week', 'Lead7', 'week7@test.com', '0700000007', 'WeekCo7', 'Paris', 'callback', 'Rappeler', 'Test', '00000000-0000-0000-0000-000000000003', now() - interval '6 days'),
+  ('WEEK-008', 'Week', 'Lead8', 'week8@test.com', '0700000008', 'WeekCo8', 'Paris', 'deposit', 'Depot', 'Test', '00000000-0000-0000-0000-000000000003', now() - interval '6 days');
+
+-- LAST MONTH leads (20 days ago) - 15 leads with varied statuses
+INSERT INTO public.leads (external_id, first_name, last_name, email, phone, company, city, status, status_label, source, assigned_to, created_at)
+VALUES
+  ('MONTH-001', 'Month', 'Lead1', 'month1@test.com', '0710000001', 'MonthCo1', 'Lyon', 'new', 'Nouveau', 'Test', '00000000-0000-0000-0000-000000000002', now() - interval '20 days'),
+  ('MONTH-002', 'Month', 'Lead2', 'month2@test.com', '0710000002', 'MonthCo2', 'Lyon', 'new', 'Nouveau', 'Test', '00000000-0000-0000-0000-000000000002', now() - interval '21 days'),
+  ('MONTH-003', 'Month', 'Lead3', 'month3@test.com', '0710000003', 'MonthCo3', 'Lyon', 'new', 'Nouveau', 'Test', '00000000-0000-0000-0000-000000000002', now() - interval '22 days'),
+  ('MONTH-004', 'Month', 'Lead4', 'month4@test.com', '0710000004', 'MonthCo4', 'Lyon', 'new', 'Nouveau', 'Test', '00000000-0000-0000-0000-000000000003', now() - interval '23 days'),
+  ('MONTH-005', 'Month', 'Lead5', 'month5@test.com', '0710000005', 'MonthCo5', 'Lyon', 'new', 'Nouveau', 'Test', '00000000-0000-0000-0000-000000000003', now() - interval '24 days'),
+  ('MONTH-006', 'Month', 'Lead6', 'month6@test.com', '0710000006', 'MonthCo6', 'Lyon', 'contacted', 'Contacte', 'Test', '00000000-0000-0000-0000-000000000003', now() - interval '18 days'),
+  ('MONTH-007', 'Month', 'Lead7', 'month7@test.com', '0710000007', 'MonthCo7', 'Lyon', 'contacted', 'Contacte', 'Test', '00000000-0000-0000-0000-000000000004', now() - interval '19 days'),
+  ('MONTH-008', 'Month', 'Lead8', 'month8@test.com', '0710000008', 'MonthCo8', 'Lyon', 'contacted', 'Contacte', 'Test', '00000000-0000-0000-0000-000000000004', now() - interval '20 days'),
+  ('MONTH-009', 'Month', 'Lead9', 'month9@test.com', '0710000009', 'MonthCo9', 'Lyon', 'contacted', 'Contacte', 'Test', '00000000-0000-0000-0000-000000000004', now() - interval '21 days'),
+  ('MONTH-010', 'Month', 'Lead10', 'month10@test.com', '0710000010', 'MonthCo10', 'Lyon', 'contacted', 'Contacte', 'Test', '00000000-0000-0000-0000-000000000002', now() - interval '22 days'),
+  ('MONTH-011', 'Month', 'Lead11', 'month11@test.com', '0710000011', 'MonthCo11', 'Lyon', 'callback', 'Rappeler', 'Test', '00000000-0000-0000-0000-000000000002', now() - interval '18 days'),
+  ('MONTH-012', 'Month', 'Lead12', 'month12@test.com', '0710000012', 'MonthCo12', 'Lyon', 'callback', 'Rappeler', 'Test', '00000000-0000-0000-0000-000000000003', now() - interval '19 days'),
+  ('MONTH-013', 'Month', 'Lead13', 'month13@test.com', '0710000013', 'MonthCo13', 'Lyon', 'callback', 'Rappeler', 'Test', '00000000-0000-0000-0000-000000000003', now() - interval '20 days'),
+  ('MONTH-014', 'Month', 'Lead14', 'month14@test.com', '0710000014', 'MonthCo14', 'Lyon', 'deposit', 'Depot', 'Test', '00000000-0000-0000-0000-000000000004', now() - interval '21 days'),
+  ('MONTH-015', 'Month', 'Lead15', 'month15@test.com', '0710000015', 'MonthCo15', 'Lyon', 'deposit', 'Depot', 'Test', '00000000-0000-0000-0000-000000000004', now() - interval '22 days');
+
+-- LAST YEAR leads (6 months ago) - 30 leads with varied statuses
+INSERT INTO public.leads (external_id, first_name, last_name, email, phone, company, city, status, status_label, source, assigned_to, created_at)
+VALUES
+  ('YEAR-001', 'Year', 'Lead1', 'year1@test.com', '0720000001', 'YearCo1', 'Marseille', 'new', 'Nouveau', 'Test', '00000000-0000-0000-0000-000000000002', now() - interval '6 months'),
+  ('YEAR-002', 'Year', 'Lead2', 'year2@test.com', '0720000002', 'YearCo2', 'Marseille', 'new', 'Nouveau', 'Test', '00000000-0000-0000-0000-000000000002', now() - interval '6 months'),
+  ('YEAR-003', 'Year', 'Lead3', 'year3@test.com', '0720000003', 'YearCo3', 'Marseille', 'new', 'Nouveau', 'Test', '00000000-0000-0000-0000-000000000003', now() - interval '7 months'),
+  ('YEAR-004', 'Year', 'Lead4', 'year4@test.com', '0720000004', 'YearCo4', 'Marseille', 'new', 'Nouveau', 'Test', '00000000-0000-0000-0000-000000000003', now() - interval '7 months'),
+  ('YEAR-005', 'Year', 'Lead5', 'year5@test.com', '0720000005', 'YearCo5', 'Marseille', 'new', 'Nouveau', 'Test', '00000000-0000-0000-0000-000000000004', now() - interval '8 months'),
+  ('YEAR-006', 'Year', 'Lead6', 'year6@test.com', '0720000006', 'YearCo6', 'Marseille', 'new', 'Nouveau', 'Test', '00000000-0000-0000-0000-000000000004', now() - interval '8 months'),
+  ('YEAR-007', 'Year', 'Lead7', 'year7@test.com', '0720000007', 'YearCo7', 'Marseille', 'contacted', 'Contacte', 'Test', '00000000-0000-0000-0000-000000000002', now() - interval '5 months'),
+  ('YEAR-008', 'Year', 'Lead8', 'year8@test.com', '0720000008', 'YearCo8', 'Marseille', 'contacted', 'Contacte', 'Test', '00000000-0000-0000-0000-000000000002', now() - interval '5 months'),
+  ('YEAR-009', 'Year', 'Lead9', 'year9@test.com', '0720000009', 'YearCo9', 'Marseille', 'contacted', 'Contacte', 'Test', '00000000-0000-0000-0000-000000000003', now() - interval '6 months'),
+  ('YEAR-010', 'Year', 'Lead10', 'year10@test.com', '0720000010', 'YearCo10', 'Marseille', 'contacted', 'Contacte', 'Test', '00000000-0000-0000-0000-000000000003', now() - interval '6 months'),
+  ('YEAR-011', 'Year', 'Lead11', 'year11@test.com', '0720000011', 'YearCo11', 'Marseille', 'contacted', 'Contacte', 'Test', '00000000-0000-0000-0000-000000000004', now() - interval '7 months'),
+  ('YEAR-012', 'Year', 'Lead12', 'year12@test.com', '0720000012', 'YearCo12', 'Marseille', 'contacted', 'Contacte', 'Test', '00000000-0000-0000-0000-000000000004', now() - interval '7 months'),
+  ('YEAR-013', 'Year', 'Lead13', 'year13@test.com', '0720000013', 'YearCo13', 'Marseille', 'callback', 'Rappeler', 'Test', '00000000-0000-0000-0000-000000000002', now() - interval '4 months'),
+  ('YEAR-014', 'Year', 'Lead14', 'year14@test.com', '0720000014', 'YearCo14', 'Marseille', 'callback', 'Rappeler', 'Test', '00000000-0000-0000-0000-000000000002', now() - interval '4 months'),
+  ('YEAR-015', 'Year', 'Lead15', 'year15@test.com', '0720000015', 'YearCo15', 'Marseille', 'callback', 'Rappeler', 'Test', '00000000-0000-0000-0000-000000000003', now() - interval '5 months'),
+  ('YEAR-016', 'Year', 'Lead16', 'year16@test.com', '0720000016', 'YearCo16', 'Marseille', 'callback', 'Rappeler', 'Test', '00000000-0000-0000-0000-000000000003', now() - interval '5 months'),
+  ('YEAR-017', 'Year', 'Lead17', 'year17@test.com', '0720000017', 'YearCo17', 'Marseille', 'callback', 'Rappeler', 'Test', '00000000-0000-0000-0000-000000000004', now() - interval '6 months'),
+  ('YEAR-018', 'Year', 'Lead18', 'year18@test.com', '0720000018', 'YearCo18', 'Marseille', 'callback', 'Rappeler', 'Test', '00000000-0000-0000-0000-000000000004', now() - interval '6 months'),
+  ('YEAR-019', 'Year', 'Lead19', 'year19@test.com', '0720000019', 'YearCo19', 'Marseille', 'deposit', 'Depot', 'Test', '00000000-0000-0000-0000-000000000002', now() - interval '3 months'),
+  ('YEAR-020', 'Year', 'Lead20', 'year20@test.com', '0720000020', 'YearCo20', 'Marseille', 'deposit', 'Depot', 'Test', '00000000-0000-0000-0000-000000000002', now() - interval '3 months'),
+  ('YEAR-021', 'Year', 'Lead21', 'year21@test.com', '0720000021', 'YearCo21', 'Marseille', 'deposit', 'Depot', 'Test', '00000000-0000-0000-0000-000000000003', now() - interval '4 months'),
+  ('YEAR-022', 'Year', 'Lead22', 'year22@test.com', '0720000022', 'YearCo22', 'Marseille', 'deposit', 'Depot', 'Test', '00000000-0000-0000-0000-000000000003', now() - interval '4 months'),
+  ('YEAR-023', 'Year', 'Lead23', 'year23@test.com', '0720000023', 'YearCo23', 'Marseille', 'deposit', 'Depot', 'Test', '00000000-0000-0000-0000-000000000004', now() - interval '5 months'),
+  ('YEAR-024', 'Year', 'Lead24', 'year24@test.com', '0720000024', 'YearCo24', 'Marseille', 'deposit', 'Depot', 'Test', '00000000-0000-0000-0000-000000000004', now() - interval '5 months'),
+  ('YEAR-025', 'Year', 'Lead25', 'year25@test.com', '0720000025', 'YearCo25', 'Marseille', 'no_answer_1', 'Pas de reponse 1', 'Test', '00000000-0000-0000-0000-000000000002', now() - interval '6 months'),
+  ('YEAR-026', 'Year', 'Lead26', 'year26@test.com', '0720000026', 'YearCo26', 'Marseille', 'no_answer_1', 'Pas de reponse 1', 'Test', '00000000-0000-0000-0000-000000000003', now() - interval '7 months'),
+  ('YEAR-027', 'Year', 'Lead27', 'year27@test.com', '0720000027', 'YearCo27', 'Marseille', 'no_answer_2', 'Pas de reponse 2', 'Test', '00000000-0000-0000-0000-000000000004', now() - interval '8 months'),
+  ('YEAR-028', 'Year', 'Lead28', 'year28@test.com', '0720000028', 'YearCo28', 'Marseille', 'not_interested', 'Pas interesse', 'Test', '00000000-0000-0000-0000-000000000002', now() - interval '9 months'),
+  ('YEAR-029', 'Year', 'Lead29', 'year29@test.com', '0720000029', 'YearCo29', 'Marseille', 'not_interested', 'Pas interesse', 'Test', '00000000-0000-0000-0000-000000000003', now() - interval '10 months'),
+  ('YEAR-030', 'Year', 'Lead30', 'year30@test.com', '0720000030', 'YearCo30', 'Marseille', 'lost', 'Perdu', 'Test', '00000000-0000-0000-0000-000000000004', now() - interval '11 months');
+
+-- OLDER THAN 1 YEAR leads (18 months ago) - 20 leads with varied statuses
+INSERT INTO public.leads (external_id, first_name, last_name, email, phone, company, city, status, status_label, source, assigned_to, created_at)
+VALUES
+  ('OLD-001', 'Old', 'Lead1', 'old1@test.com', '0730000001', 'OldCo1', 'Bordeaux', 'deposit', 'Depot', 'Test', '00000000-0000-0000-0000-000000000002', now() - interval '18 months'),
+  ('OLD-002', 'Old', 'Lead2', 'old2@test.com', '0730000002', 'OldCo2', 'Bordeaux', 'deposit', 'Depot', 'Test', '00000000-0000-0000-0000-000000000002', now() - interval '18 months'),
+  ('OLD-003', 'Old', 'Lead3', 'old3@test.com', '0730000003', 'OldCo3', 'Bordeaux', 'deposit', 'Depot', 'Test', '00000000-0000-0000-0000-000000000003', now() - interval '20 months'),
+  ('OLD-004', 'Old', 'Lead4', 'old4@test.com', '0730000004', 'OldCo4', 'Bordeaux', 'deposit', 'Depot', 'Test', '00000000-0000-0000-0000-000000000003', now() - interval '20 months'),
+  ('OLD-005', 'Old', 'Lead5', 'old5@test.com', '0730000005', 'OldCo5', 'Bordeaux', 'deposit', 'Depot', 'Test', '00000000-0000-0000-0000-000000000004', now() - interval '22 months'),
+  ('OLD-006', 'Old', 'Lead6', 'old6@test.com', '0730000006', 'OldCo6', 'Bordeaux', 'deposit', 'Depot', 'Test', '00000000-0000-0000-0000-000000000004', now() - interval '22 months'),
+  ('OLD-007', 'Old', 'Lead7', 'old7@test.com', '0730000007', 'OldCo7', 'Bordeaux', 'deposit', 'Depot', 'Test', '00000000-0000-0000-0000-000000000002', now() - interval '24 months'),
+  ('OLD-008', 'Old', 'Lead8', 'old8@test.com', '0730000008', 'OldCo8', 'Bordeaux', 'deposit', 'Depot', 'Test', '00000000-0000-0000-0000-000000000003', now() - interval '24 months'),
+  ('OLD-009', 'Old', 'Lead9', 'old9@test.com', '0730000009', 'OldCo9', 'Bordeaux', 'lost', 'Perdu', 'Test', '00000000-0000-0000-0000-000000000002', now() - interval '15 months'),
+  ('OLD-010', 'Old', 'Lead10', 'old10@test.com', '0730000010', 'OldCo10', 'Bordeaux', 'lost', 'Perdu', 'Test', '00000000-0000-0000-0000-000000000002', now() - interval '16 months'),
+  ('OLD-011', 'Old', 'Lead11', 'old11@test.com', '0730000011', 'OldCo11', 'Bordeaux', 'lost', 'Perdu', 'Test', '00000000-0000-0000-0000-000000000003', now() - interval '17 months'),
+  ('OLD-012', 'Old', 'Lead12', 'old12@test.com', '0730000012', 'OldCo12', 'Bordeaux', 'lost', 'Perdu', 'Test', '00000000-0000-0000-0000-000000000003', now() - interval '18 months'),
+  ('OLD-013', 'Old', 'Lead13', 'old13@test.com', '0730000013', 'OldCo13', 'Bordeaux', 'lost', 'Perdu', 'Test', '00000000-0000-0000-0000-000000000004', now() - interval '19 months'),
+  ('OLD-014', 'Old', 'Lead14', 'old14@test.com', '0730000014', 'OldCo14', 'Bordeaux', 'lost', 'Perdu', 'Test', '00000000-0000-0000-0000-000000000004', now() - interval '20 months'),
+  ('OLD-015', 'Old', 'Lead15', 'old15@test.com', '0730000015', 'OldCo15', 'Bordeaux', 'no_answer_1', 'Pas de reponse 1', 'Test', '00000000-0000-0000-0000-000000000002', now() - interval '14 months'),
+  ('OLD-016', 'Old', 'Lead16', 'old16@test.com', '0730000016', 'OldCo16', 'Bordeaux', 'no_answer_1', 'Pas de reponse 1', 'Test', '00000000-0000-0000-0000-000000000003', now() - interval '15 months'),
+  ('OLD-017', 'Old', 'Lead17', 'old17@test.com', '0730000017', 'OldCo17', 'Bordeaux', 'no_answer_2', 'Pas de reponse 2', 'Test', '00000000-0000-0000-0000-000000000004', now() - interval '16 months'),
+  ('OLD-018', 'Old', 'Lead18', 'old18@test.com', '0730000018', 'OldCo18', 'Bordeaux', 'no_answer_2', 'Pas de reponse 2', 'Test', '00000000-0000-0000-0000-000000000002', now() - interval '17 months'),
+  ('OLD-019', 'Old', 'Lead19', 'old19@test.com', '0730000019', 'OldCo19', 'Bordeaux', 'not_interested', 'Pas interesse', 'Test', '00000000-0000-0000-0000-000000000003', now() - interval '18 months'),
+  ('OLD-020', 'Old', 'Lead20', 'old20@test.com', '0730000020', 'OldCo20', 'Bordeaux', 'not_interested', 'Pas interesse', 'Test', '00000000-0000-0000-0000-000000000004', now() - interval '19 months');
+
+-- =============================================================================
 -- SECTION 4: Sample Comments
 -- =============================================================================
 

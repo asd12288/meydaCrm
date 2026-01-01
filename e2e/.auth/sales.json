@@ -1,0 +1,43 @@
+{
+  "cookies": [
+    {
+      "name": "ph_phc_DTH6avc2aaN2rhlWWe3My9JcZT0RJFaoL3ItxpGzBR0_posthog",
+      "value": "%7B%22distinct_id%22%3A%22019b6511-5958-79e9-8d40-97a256276499%22%2C%22%24sesid%22%3A%5B1766927194846%2C%22019b6511-5acc-750e-af49-7b5975762d1d%22%2C1766927194828%5D%7D",
+      "domain": "localhost",
+      "path": "/",
+      "expires": 1798463194,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "sb-127-auth-token",
+      "value": "base64-eyJhY2Nlc3NfdG9rZW4iOiJleUpoYkdjaU9pSklVekkxTmlJc0luUjVjQ0k2SWtwWFZDSjkuZXlKcGMzTWlPaUpvZEhSd09pOHZNVEkzTGpBdU1DNHhPalUwTXpJeEwyRjFkR2d2ZGpFaUxDSnpkV0lpT2lJd01EQXdNREF3TUMwd01EQXdMVEF3TURBdE1EQXdNQzB3TURBd01EQXdNREF3TURJaUxDSmhkV1FpT2lKaGRYUm9aVzUwYVdOaGRHVmtJaXdpWlhod0lqb3hOelkyT1RNd056azBMQ0pwWVhRaU9qRTNOalk1TWpjeE9UUXNJbVZ0WVdsc0lqb2liV0Z5YVdWQVkzSnRMbXh2WTJGc0lpd2ljR2h2Ym1VaU9pSWlMQ0poY0hCZmJXVjBZV1JoZEdFaU9uc2ljSEp2ZG1sa1pYSWlPaUpsYldGcGJDSXNJbkJ5YjNacFpHVnljeUk2V3lKbGJXRnBiQ0pkZlN3aWRYTmxjbDl0WlhSaFpHRjBZU0k2ZXlKa2FYTndiR0Y1WDI1aGJXVWlPaUpOWVhKcFpTQkVkWEJ2Ym5RaUxDSnliMnhsSWpvaWMyRnNaWE1pTENKMWMyVnlibUZ0WlNJNkltMWhjbWxsSW4wc0luSnZiR1VpT2lKaGRYUm9aVzUwYVdOaGRHVmtJaXdpWVdGc0lqb2lZV0ZzTVNJc0ltRnRjaUk2VzNzaWJXVjBhRzlrSWpvaWNHRnpjM2R2Y21RaUxDSjBhVzFsYzNSaGJYQWlPakUzTmpZNU1qY3hPVFI5WFN3aWMyVnpjMmx2Ymw5cFpDSTZJamN3TTJKbVlUSTNMV0kxWmprdE5HVTVOUzA0WTJJNExUZGlNMlk0TWprNU9UVTNOU0lzSW1selgyRnViMjU1Ylc5MWN5STZabUZzYzJWOS4xTGRJZEg4TWVWdUZpendrZ2hGSktXN0hFTktyZ0NvRHB5N21xQlhtNmJnIiwidG9rZW5fdHlwZSI6ImJlYXJlciIsImV4cGlyZXNfaW4iOjM2MDAsImV4cGlyZXNfYXQiOjE3NjY5MzA3OTQsInJlZnJlc2hfdG9rZW4iOiJ4M3g0NTdmNHhrbm0iLCJ1c2VyIjp7ImlkIjoiMDAwMDAwMDAtMDAwMC0wMDAwLTAwMDAtMDAwMDAwMDAwMDAyIiwiYXVkIjoiYXV0aGVudGljYXRlZCIsInJvbGUiOiJhdXRoZW50aWNhdGVkIiwiZW1haWwiOiJtYXJpZUBjcm0ubG9jYWwiLCJlbWFpbF9jb25maXJtZWRfYXQiOiIyMDI1LTEyLTI4VDA1OjMxOjQ3LjczODA1MVoiLCJwaG9uZSI6IiIsImNvbmZpcm1lZF9hdCI6IjIwMjUtMTItMjhUMDU6MzE6NDcuNzM4MDUxWiIsImxhc3Rfc2lnbl9pbl9hdCI6IjIwMjUtMTItMjhUMTM6MDY6MzQuODA2MTg1MzE4WiIsImFwcF9tZXRhZGF0YSI6eyJwcm92aWRlciI6ImVtYWlsIiwicHJvdmlkZXJzIjpbImVtYWlsIl19LCJ1c2VyX21ldGFkYXRhIjp7ImRpc3BsYXlfbmFtZSI6Ik1hcmllIER1cG9udCIsInJvbGUiOiJzYWxlcyIsInVzZXJuYW1lIjoibWFyaWUifSwiaWRlbnRpdGllcyI6W3siaWRlbnRpdHlfaWQiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDIiLCJpZCI6Im1hcmllQGNybS5sb2NhbCIsInVzZXJfaWQiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDIiLCJpZGVudGl0eV9kYXRhIjp7ImVtYWlsIjoibWFyaWVAY3JtLmxvY2FsIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsInN1YiI6IjAwMDAwMDAwLTAwMDAtMDAwMC0wMDAwLTAwMDAwMDAwMDAwMiJ9LCJwcm92aWRlciI6ImVtYWlsIiwibGFzdF9zaWduX2luX2F0IjoiMjAyNS0xMi0yOFQwNTozMTo0Ny43MzgwNTFaIiwiY3JlYXRlZF9hdCI6IjIwMjUtMTItMjhUMDU6MzE6NDcuNzM4MDUxWiIsInVwZGF0ZWRfYXQiOiIyMDI1LTEyLTI4VDA1OjMxOjQ3LjczODA1MVoiLCJlbWFpbCI6Im1hcmllQGNybS5sb2NhbCJ9XSwiY3JlYXRlZF9hdCI6IjIwMjUtMTItMjhUMDU6MzE6NDcuNzM4MDUxWiIsInVwZGF0ZWRfYXQiOiIyMDI1LTEyLTI4VDEzOjA2OjM0LjgwOTE3NloiLCJpc19hbm9ueW1vdXMiOmZhbHNlfSwid2Vha19wYXNzd29yZCI6bnVsbH0",
+      "domain": "localhost",
+      "path": "/",
+      "expires": 1801487194.964937,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    }
+  ],
+  "origins": [
+    {
+      "origin": "http://localhost:3000",
+      "localStorage": [
+        {
+          "name": "ph_phc_DTH6avc2aaN2rhlWWe3My9JcZT0RJFaoL3ItxpGzBR0_posthog",
+          "value": "{\"$user_state\":\"identified\",\"$sesid\":[null,null,null],\"distinct_id\":\"00000000-0000-0000-0000-000000000002\",\"$device_id\":\"019b6511-5958-79e9-8d40-97a256276499\",\"$last_posthog_reset\":\"2025-12-28T13:06:35.553Z\",\"$epp\":true,\"$user_id\":\"00000000-0000-0000-0000-000000000002\",\"$stored_person_properties\":{\"name\":\"Marie Dupont\",\"role\":\"sales\"}}"
+        },
+        {
+          "name": "crm-theme",
+          "value": "system"
+        },
+        {
+          "name": "ph_debug",
+          "value": "\"true\""
+        }
+      ]
+    }
+  ]
+}

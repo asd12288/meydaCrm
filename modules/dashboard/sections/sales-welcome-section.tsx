@@ -11,3 +11,5 @@ interface SalesWelcomeSectionProps {
 export function SalesWelcomeSection({ userName, userAvatar }: SalesWelcomeSectionProps) {
   return <WelcomeCard userName={userName} userAvatar={userAvatar} />;
 }
+
+

@@ -12,6 +12,7 @@ import type {
   LeadsTrendPoint,
   MonthlyTrendPoint,
   TrendYearsData,
+  ChartTimePeriod,
 } from '../types';
 
 // =============================================================================
@@ -43,6 +44,25 @@ function getThirtyDaysAgo(): string {
 function getOneMonthAgo(): string {
   const date = new Date();
   date.setMonth(date.getMonth() - 1);
+  return date.toISOString();
+}
+
+// Helper to get date based on time period
+function getDateForPeriod(period: ChartTimePeriod): string | null {
+  if (period === 'all') return null;
+
+  const date = new Date();
+  switch (period) {
+    case 'week':
+      date.setDate(date.getDate() - 7);
+      break;
+    case 'month':
+      date.setMonth(date.getMonth() - 1);
+      break;
+    case 'year':
+      date.setFullYear(date.getFullYear() - 1);
+      break;
+  }
   return date.toISOString();
 }
 
@@ -148,6 +168,55 @@ export async function getStatusChartData(): Promise<StatusChartData> {
     leadsByStatus: stats?.leadsByStatus || {},
     totalLeads: stats?.totalLeads || 0,
   };
+}
+
+/**
+ * Status chart data with time period filter
+ * Default period is 'month' (last 30 days)
+ */
+export async function getStatusChartDataFiltered(
+  period: ChartTimePeriod = 'month'
+): Promise<StatusChartData> {
+  // Security: Only admins can see global status distribution
+  if (!(await checkIsAdmin())) {
+    return { leadsByStatus: {}, totalLeads: 0 };
+  }
+
+  // For 'all', use existing RPC (more efficient)
+  if (period === 'all') {
+    return getStatusChartData();
+  }
+
+  const supabase = await createClient();
+  const fromDate = getDateForPeriod(period);
+
+  // Query leads with date filter and group by status
+  let query = supabase
+    .from('leads')
+    .select('status')
+    .is('deleted_at', null);
+
+  if (fromDate) {
+    query = query.gte('created_at', fromDate);
+  }
+
+  const { data, error } = await query;
+
+  if (error || !data) {
+    console.error('Error fetching filtered status chart data:', error);
+    return { leadsByStatus: {}, totalLeads: 0 };
+  }
+
+  // Aggregate by status
+  const leadsByStatus: Record<string, number> = {};
+  for (const lead of data) {
+    const status = lead.status || 'unknown';
+    leadsByStatus[status] = (leadsByStatus[status] || 0) + 1;
+  }
+
+  const totalLeads = data.length;
+
+  return { leadsByStatus, totalLeads };
 }
 
 /**
@@ -601,3 +670,5 @@ export async function getSalesTrendData(): Promise<LeadsTrendPoint[]> {
 
   return leadsTrend;
 }
+
+

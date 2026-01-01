@@ -16,3 +16,5 @@ export default async function SupportPage({ searchParams }: SupportPageProps) {
 
   return <TicketsListView searchParams={searchParams} />;
 }
+
+

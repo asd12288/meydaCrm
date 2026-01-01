@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
-  exportLeadsToCSV,
+  exportAllTables,
   generateBackupFilename,
   uploadBackup,
   cleanupOldBackups,
@@ -16,41 +16,54 @@ async function runBackup(): Promise<NextResponse> {
   const startTime = Date.now();
 
   try {
-    console.log('[Backup] Starting daily backup...');
+    console.log('[Backup] Starting daily backup of all tables...');
 
-    // Step 1: Export leads to CSV
-    const exportResult = await exportLeadsToCSV();
-    if (!exportResult.success || !exportResult.content) {
-      console.error('[Backup] Export failed:', exportResult.error);
-      return NextResponse.json(
-        {
-          success: false,
+    // Step 1: Export all tables to CSV
+    const exportResults = await exportAllTables();
+
+    const uploadedFiles: {
+      table: string;
+      filename: string;
+      remotePath: string;
+      rowCount: number;
+      sizeBytes: number;
+    }[] = [];
+    const failedTables: { table: string; step: string; error: string }[] = [];
+
+    // Step 2: Upload each table's CSV to SFTP
+    for (const result of exportResults.results) {
+      if (!result.success || !result.content) {
+        console.error(`[Backup] Export failed for ${result.table}:`, result.error);
+        failedTables.push({
+          table: result.table,
           step: 'export',
-          error: exportResult.error,
-        },
-        { status: 500 }
-      );
-    }
+          error: result.error || 'Unknown export error',
+        });
+        continue;
+      }
 
-    console.log(`[Backup] Exported ${exportResult.rowCount} leads`);
+      const filename = generateBackupFilename(result.table);
+      const uploadResult = await uploadBackup(result.content, filename);
 
-    // Step 2: Generate filename and upload to SFTP
-    const filename = generateBackupFilename();
-    const uploadResult = await uploadBackup(exportResult.content, filename);
-
-    if (!uploadResult.success) {
-      console.error('[Backup] Upload failed:', uploadResult.error);
-      return NextResponse.json(
-        {
-          success: false,
+      if (!uploadResult.success) {
+        console.error(`[Backup] Upload failed for ${result.table}:`, uploadResult.error);
+        failedTables.push({
+          table: result.table,
           step: 'upload',
-          error: uploadResult.error,
-        },
-        { status: 500 }
-      );
-    }
+          error: uploadResult.error || 'Unknown upload error',
+        });
+        continue;
+      }
 
-    console.log(`[Backup] Uploaded to: ${uploadResult.remotePath}`);
+      console.log(`[Backup] Uploaded ${result.table}: ${uploadResult.remotePath}`);
+      uploadedFiles.push({
+        table: result.table,
+        filename,
+        remotePath: uploadResult.remotePath,
+        rowCount: result.rowCount || 0,
+        sizeBytes: result.content.length,
+      });
+    }
 
     // Step 3: Cleanup old backups (older than 30 days)
     const cleanupResult = await cleanupOldBackups();
@@ -59,22 +72,31 @@ async function runBackup(): Promise<NextResponse> {
     }
 
     const duration = Date.now() - startTime;
-    console.log(`[Backup] Completed in ${duration}ms`);
+    const allSuccess = failedTables.length === 0;
 
-    return NextResponse.json({
-      success: true,
-      backup: {
-        filename,
-        remotePath: uploadResult.remotePath,
-        rowCount: exportResult.rowCount,
-        sizeBytes: exportResult.content.length,
+    console.log(
+      `[Backup] Completed in ${duration}ms: ${uploadedFiles.length} tables backed up, ${failedTables.length} failed`
+    );
+
+    return NextResponse.json(
+      {
+        success: allSuccess,
+        backups: uploadedFiles,
+        failed: failedTables,
+        summary: {
+          tablesBackedUp: uploadedFiles.length,
+          tablesFailed: failedTables.length,
+          totalRows: uploadedFiles.reduce((sum, f) => sum + f.rowCount, 0),
+          totalBytes: uploadedFiles.reduce((sum, f) => sum + f.sizeBytes, 0),
+        },
+        cleanup: {
+          deletedCount: cleanupResult.deleted.length,
+          deleted: cleanupResult.deleted,
+        },
+        durationMs: duration,
       },
-      cleanup: {
-        deletedCount: cleanupResult.deleted.length,
-        deleted: cleanupResult.deleted,
-      },
-      durationMs: duration,
-    });
+      { status: allSuccess ? 200 : 207 } // 207 = Multi-Status (partial success)
+    );
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     console.error('[Backup] Unexpected error:', message);

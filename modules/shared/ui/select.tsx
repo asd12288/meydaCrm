@@ -118,3 +118,5 @@ export const InlineSelect = forwardRef<HTMLSelectElement, InlineSelectProps>(fun
     />
   );
 });
+
+

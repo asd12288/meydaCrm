@@ -206,3 +206,5 @@ export function LeadsTrendChart({ trendData }: LeadsTrendChartProps) {
     </CardBox>
   );
 }
+
+

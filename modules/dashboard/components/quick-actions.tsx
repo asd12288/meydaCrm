@@ -21,7 +21,7 @@ const actions: QuickAction[] = [
   {
     label: 'Importer des leads',
     description: 'CSV ou Excel',
-    href: '/import',
+    href: '/import-v2',
     icon: <IconFileUpload size={20} />,
   },
   {

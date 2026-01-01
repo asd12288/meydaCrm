@@ -154,3 +154,5 @@ If you prefer a different email service, modify `lib/email.ts`:
 - **Nodemailer**: For SMTP-based sending
 
 The email utility functions are designed to be easily replaceable.
+
+

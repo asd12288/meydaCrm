@@ -123,3 +123,5 @@ export function LeadsKanbanBoard({ leads }: KanbanBoardProps) {
     </KanbanBoardProvider>
   );
 }
+
+
