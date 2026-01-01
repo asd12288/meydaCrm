@@ -18,12 +18,14 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Capture critical error to PostHog
-    posthog.captureException(error, {
-      source: 'global_error_boundary',
-      digest: error.digest,
-      severity: 'critical',
-    });
+    // Capture critical error to PostHog (only if initialized)
+    if (typeof window !== 'undefined' && posthog.__loaded) {
+      posthog.captureException(error, {
+        source: 'global_error_boundary',
+        digest: error.digest,
+        severity: 'critical',
+      });
+    }
   }, [error]);
 
   return (

@@ -70,3 +70,5 @@ export interface PaginatedTicketsResponse {
   pageSize: number;
   totalPages: number;
 }
+
+

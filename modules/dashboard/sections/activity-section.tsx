@@ -22,3 +22,5 @@ export async function SalesActivitySection() {
 
   return <ActivityTimeline activities={activities} showActor={false} />;
 }
+
+

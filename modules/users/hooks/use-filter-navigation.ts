@@ -9,3 +9,5 @@ import { useFilterNavigation as useSharedFilterNavigation } from '@/modules/shar
 export function useFilterNavigation() {
   return useSharedFilterNavigation({ defaultSort: 'created_at' });
 }
+
+

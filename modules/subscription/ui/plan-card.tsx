@@ -72,3 +72,5 @@ export function PlanCard({ plan, period, isSelected, onSelect }: PlanCardProps) 
     </button>
   );
 }
+
+

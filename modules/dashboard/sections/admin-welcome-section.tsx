@@ -11,3 +11,5 @@ interface AdminWelcomeSectionProps {
 export function AdminWelcomeSection({ userName, userAvatar }: AdminWelcomeSectionProps) {
   return <WelcomeCard userName={userName} userAvatar={userAvatar} />;
 }
+
+

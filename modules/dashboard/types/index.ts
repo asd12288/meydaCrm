@@ -1,6 +1,9 @@
 import type { AccountStats } from '@/modules/account/types';
 import type { LeadStatus } from '@/db/types';
 
+// Time period filter for charts
+export type ChartTimePeriod = 'week' | 'month' | 'year' | 'all';
+
 // Chart data types for ApexCharts
 export interface ChartSeries {
   name: string;
@@ -92,3 +95,5 @@ export interface AdminDashboardData {
   leadsTrend: LeadsTrendPoint[];
   recentActivity: ActivityItem[];
 }
+
+

@@ -1,18 +1,48 @@
 'use client';
 
+import { useState, useTransition } from 'react';
 import dynamic from 'next/dynamic';
-import { CardBox } from '@/modules/shared';
+import { CardBox, Spinner } from '@/modules/shared';
 import { LEAD_STATUS_LABELS } from '@/db/types';
 import { getStatusChartColor, DISPLAY_LIMITS } from '@/lib/constants';
+import { getStatusChartDataFiltered } from '../lib/actions';
+import type { ChartTimePeriod } from '../types';
 
 const Chart = dynamic(() => import('react-apexcharts'), { ssr: false });
+
+const PERIOD_OPTIONS: { value: ChartTimePeriod; label: string }[] = [
+  { value: 'week', label: 'Semaine' },
+  { value: 'month', label: 'Mois' },
+  { value: 'year', label: 'Année' },
+  { value: 'all', label: 'Total' },
+];
 
 interface LeadsStatusChartProps {
   leadsByStatus: Record<string, number>;
   totalLeads: number;
+  initialPeriod?: ChartTimePeriod;
 }
 
-export function LeadsStatusChart({ leadsByStatus, totalLeads }: LeadsStatusChartProps) {
+export function LeadsStatusChart({
+  leadsByStatus: initialLeadsByStatus,
+  totalLeads: initialTotalLeads,
+  initialPeriod = 'month',
+}: LeadsStatusChartProps) {
+  const [period, setPeriod] = useState<ChartTimePeriod>(initialPeriod);
+  const [leadsByStatus, setLeadsByStatus] = useState(initialLeadsByStatus);
+  const [totalLeads, setTotalLeads] = useState(initialTotalLeads);
+  const [isPending, startTransition] = useTransition();
+
+  const handlePeriodChange = (newPeriod: ChartTimePeriod) => {
+    if (newPeriod === period) return;
+    setPeriod(newPeriod);
+
+    startTransition(async () => {
+      const data = await getStatusChartDataFiltered(newPeriod);
+      setLeadsByStatus(data.leadsByStatus);
+      setTotalLeads(data.totalLeads);
+    });
+  };
   // Sort statuses by count and get top ones
   const sortedStatuses = Object.entries(leadsByStatus)
     .sort(([, a], [, b]) => b - a)
@@ -95,9 +125,32 @@ export function LeadsStatusChart({ leadsByStatus, totalLeads }: LeadsStatusChart
 
   return (
     <CardBox className="h-full">
-      <h5 className="card-title mb-6">Répartition par statut</h5>
+      <div className="flex items-center justify-between mb-6">
+        <h5 className="card-title">Répartition par statut</h5>
+        <div className="flex items-center gap-1">
+          {PERIOD_OPTIONS.map((option) => (
+            <button
+              key={option.value}
+              onClick={() => handlePeriodChange(option.value)}
+              disabled={isPending}
+              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                period === option.value
+                  ? 'bg-primary text-white'
+                  : 'text-darklink hover:bg-lightprimary hover:text-primary'
+              } ${isPending ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
-      <div className="grid grid-cols-12 gap-6 items-center">
+      <div className={`grid grid-cols-12 gap-6 items-center relative ${isPending ? 'opacity-50' : ''}`}>
+        {isPending && (
+          <div className="absolute inset-0 flex items-center justify-center z-10">
+            <Spinner size="md" />
+          </div>
+        )}
         <div className="lg:col-span-6 col-span-12">
           <Chart
             options={chartConfig}

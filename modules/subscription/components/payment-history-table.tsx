@@ -88,3 +88,5 @@ export function PaymentHistoryTable({ payments }: PaymentHistoryTableProps) {
     </CardBox>
   );
 }
+
+

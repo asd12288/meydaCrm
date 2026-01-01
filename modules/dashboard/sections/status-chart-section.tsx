@@ -1,17 +1,19 @@
-import { getStatusChartData, getSalesStatusChartData } from '../lib/actions';
+import { getStatusChartDataFiltered, getSalesStatusChartData } from '../lib/actions';
 import { LeadsStatusChart } from '../components/leads-status-chart';
 
 /**
  * Async server component for admin status chart
  * Wrapped in Suspense for streaming
+ * Default period: month (last 30 days)
  */
 export async function AdminStatusChartSection() {
-  const data = await getStatusChartData();
+  const data = await getStatusChartDataFiltered('month');
 
   return (
     <LeadsStatusChart
       leadsByStatus={data.leadsByStatus}
       totalLeads={data.totalLeads}
+      initialPeriod="month"
     />
   );
 }
@@ -30,3 +32,5 @@ export async function SalesStatusChartSection() {
     />
   );
 }
+
+

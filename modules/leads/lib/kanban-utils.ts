@@ -38,3 +38,5 @@ export function formatLeadName(lead: LeadForKanban): string {
   const fullName = `${firstName} ${lastName}`.trim();
   return fullName || 'Sans nom';
 }
+
+

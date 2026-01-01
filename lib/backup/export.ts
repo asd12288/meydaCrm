@@ -11,49 +11,25 @@ function getSupabaseAdmin() {
   );
 }
 
-// CSV column headers (French labels for client)
-const CSV_HEADERS = [
-  'ID',
-  'ID Externe',
-  'Prenom',
-  'Nom',
-  'Email',
-  'Telephone',
-  'Entreprise',
-  'Poste',
-  'Adresse',
-  'Ville',
-  'Code Postal',
-  'Pays',
-  'Statut',
-  'Source',
-  'Notes',
-  'Assigne A',
-  'Date Creation',
-  'Date Modification',
-];
+/**
+ * Tables to backup with their configuration
+ */
+export const BACKUP_TABLES = [
+  { name: 'profiles', orderBy: 'created_at' },
+  { name: 'leads', orderBy: 'created_at', softDelete: true },
+  { name: 'lead_comments', orderBy: 'created_at' },
+  { name: 'lead_history', orderBy: 'created_at' },
+  { name: 'meetings', orderBy: 'created_at' },
+  { name: 'notes', orderBy: 'created_at' },
+  { name: 'payments', orderBy: 'created_at' },
+  { name: 'subscriptions', orderBy: 'created_at' },
+  { name: 'support_tickets', orderBy: 'created_at' },
+  { name: 'support_ticket_comments', orderBy: 'created_at' },
+  { name: 'notifications', orderBy: 'created_at' },
+  { name: 'system_banners', orderBy: 'created_at' },
+] as const;
 
-// Map database columns to CSV
-const COLUMN_MAPPING: Record<string, string> = {
-  id: 'ID',
-  external_id: 'ID Externe',
-  first_name: 'Prenom',
-  last_name: 'Nom',
-  email: 'Email',
-  phone: 'Telephone',
-  company: 'Entreprise',
-  job_title: 'Poste',
-  address: 'Adresse',
-  city: 'Ville',
-  postal_code: 'Code Postal',
-  country: 'Pays',
-  status_label: 'Statut',
-  source: 'Source',
-  notes: 'Notes',
-  assigned_to: 'Assigne A',
-  created_at: 'Date Creation',
-  updated_at: 'Date Modification',
-};
+export type BackupTableName = (typeof BACKUP_TABLES)[number]['name'];
 
 /**
  * Escape a value for CSV (handle commas, quotes, newlines)
@@ -90,138 +66,177 @@ function formatDate(dateStr: string | null): string {
   }
 }
 
-/**
- * Export all leads to CSV format
- * Returns the CSV content as a string
- */
-export async function exportLeadsToCSV(): Promise<{
+export type ExportResult = {
   success: boolean;
   content?: string;
   rowCount?: number;
   error?: string;
-}> {
+};
+
+/**
+ * Generic export function for any table
+ * Automatically generates headers from first row
+ */
+export async function exportTableToCSV(
+  tableName: string,
+  options: {
+    orderBy?: string;
+    softDelete?: boolean;
+  } = {}
+): Promise<ExportResult> {
+  const { orderBy = 'created_at', softDelete = false } = options;
+
   try {
-    console.log('[Export] Starting leads export...');
+    console.log(`[Export] Starting ${tableName} export...`);
 
-    // Get Supabase admin client (lazy initialization)
     const supabase = getSupabaseAdmin();
-
-    // Fetch all leads with assigned user info
-    // Using pagination to handle large datasets
     const BATCH_SIZE = 5000;
-    let allLeads: Record<string, unknown>[] = [];
+    let allRows: Record<string, unknown>[] = [];
     let offset = 0;
     let hasMore = true;
 
     while (hasMore) {
-      const { data: leads, error } = await supabase
-        .from('leads')
-        .select(
-          `
-          id,
-          external_id,
-          first_name,
-          last_name,
-          email,
-          phone,
-          company,
-          job_title,
-          address,
-          city,
-          postal_code,
-          country,
-          status_label,
-          source,
-          notes,
-          assigned_to,
-          created_at,
-          updated_at,
-          profiles:assigned_to (display_name)
-        `
-        )
-        .is('deleted_at', null)
-        .order('created_at', { ascending: false })
+      let query = supabase.from(tableName).select('*');
+
+      // Apply soft delete filter if applicable
+      if (softDelete) {
+        query = query.is('deleted_at', null);
+      }
+
+      const { data: rows, error } = await query
+        .order(orderBy, { ascending: false })
         .range(offset, offset + BATCH_SIZE - 1);
 
       if (error) {
-        console.error('[Export] Database error:', error);
+        console.error(`[Export] Database error for ${tableName}:`, error);
         return { success: false, error: error.message };
       }
 
-      if (!leads || leads.length === 0) {
+      if (!rows || rows.length === 0) {
         hasMore = false;
       } else {
-        allLeads = allLeads.concat(leads);
+        allRows = allRows.concat(rows);
         offset += BATCH_SIZE;
-        hasMore = leads.length === BATCH_SIZE;
-        console.log(`[Export] Fetched ${allLeads.length} leads so far...`);
+        hasMore = rows.length === BATCH_SIZE;
       }
     }
 
-    console.log(`[Export] Total leads fetched: ${allLeads.length}`);
+    console.log(`[Export] Total ${tableName} rows: ${allRows.length}`);
 
-    // Build CSV content
-    const rows: string[] = [];
+    // Build CSV content dynamically from data
+    const csvRows: string[] = [];
 
-    // Header row
-    rows.push(CSV_HEADERS.join(','));
+    if (allRows.length > 0) {
+      // Get headers from first row keys
+      const headers = Object.keys(allRows[0]);
+      csvRows.push(headers.map(escapeCSV).join(','));
 
-    // Data rows
-    for (const lead of allLeads) {
-      // Get assigned user display name
-      const assignedToName =
-        lead.profiles && typeof lead.profiles === 'object' && 'display_name' in lead.profiles
-          ? (lead.profiles as { display_name: string }).display_name
-          : '';
-
-      const row = [
-        escapeCSV(lead.id),
-        escapeCSV(lead.external_id),
-        escapeCSV(lead.first_name),
-        escapeCSV(lead.last_name),
-        escapeCSV(lead.email),
-        escapeCSV(lead.phone),
-        escapeCSV(lead.company),
-        escapeCSV(lead.job_title),
-        escapeCSV(lead.address),
-        escapeCSV(lead.city),
-        escapeCSV(lead.postal_code),
-        escapeCSV(lead.country),
-        escapeCSV(lead.status_label),
-        escapeCSV(lead.source),
-        escapeCSV(lead.notes),
-        escapeCSV(assignedToName),
-        escapeCSV(formatDate(lead.created_at as string)),
-        escapeCSV(formatDate(lead.updated_at as string)),
-      ];
-
-      rows.push(row.join(','));
+      // Data rows
+      for (const row of allRows) {
+        const values = headers.map((key) => {
+          const value = row[key];
+          // Format dates
+          if (
+            key.endsWith('_at') &&
+            typeof value === 'string' &&
+            value.includes('T')
+          ) {
+            return escapeCSV(formatDate(value));
+          }
+          return escapeCSV(value);
+        });
+        csvRows.push(values.join(','));
+      }
     }
 
     // Add BOM for Excel UTF-8 compatibility
     const BOM = '\uFEFF';
-    const content = BOM + rows.join('\n');
+    const content = BOM + csvRows.join('\n');
 
-    console.log(`[Export] CSV generated: ${allLeads.length} rows, ${content.length} bytes`);
+    console.log(
+      `[Export] ${tableName} CSV: ${allRows.length} rows, ${content.length} bytes`
+    );
 
     return {
       success: true,
       content,
-      rowCount: allLeads.length,
+      rowCount: allRows.length,
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown export error';
-    console.error('[Export] Failed:', message);
+    console.error(`[Export] ${tableName} failed:`, message);
     return { success: false, error: message };
   }
 }
 
 /**
- * Generate backup filename with date
+ * Export all tables and return results
  */
-export function generateBackupFilename(): string {
+export async function exportAllTables(): Promise<{
+  success: boolean;
+  results: {
+    table: string;
+    success: boolean;
+    rowCount?: number;
+    content?: string;
+    error?: string;
+  }[];
+  error?: string;
+}> {
+  const results: {
+    table: string;
+    success: boolean;
+    rowCount?: number;
+    content?: string;
+    error?: string;
+  }[] = [];
+
+  console.log(`[Export] Starting full backup of ${BACKUP_TABLES.length} tables...`);
+
+  for (const tableConfig of BACKUP_TABLES) {
+    const result = await exportTableToCSV(tableConfig.name, {
+      orderBy: tableConfig.orderBy,
+      softDelete: 'softDelete' in tableConfig ? tableConfig.softDelete : false,
+    });
+
+    results.push({
+      table: tableConfig.name,
+      success: result.success,
+      rowCount: result.rowCount,
+      content: result.content,
+      error: result.error,
+    });
+
+    if (!result.success) {
+      console.error(`[Export] Failed to export ${tableConfig.name}: ${result.error}`);
+    }
+  }
+
+  const allSuccess = results.every((r) => r.success);
+  console.log(
+    `[Export] Full backup complete: ${results.filter((r) => r.success).length}/${results.length} tables`
+  );
+
+  return {
+    success: allSuccess,
+    results,
+  };
+}
+
+/**
+ * Export all leads to CSV format (legacy function for backwards compatibility)
+ * Uses the generic exportTableToCSV function
+ */
+export async function exportLeadsToCSV(): Promise<ExportResult> {
+  return exportTableToCSV('leads', { orderBy: 'created_at', softDelete: true });
+}
+
+/**
+ * Generate backup filename with date for a specific table
+ */
+export function generateBackupFilename(tableName: string = 'leads'): string {
   const now = new Date();
   const dateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
   const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-'); // HH-MM-SS
-  return `leads-backup-${dateStr}_${timeStr}.csv`;
+  return `${tableName}-backup-${dateStr}_${timeStr}.csv`;
 }
