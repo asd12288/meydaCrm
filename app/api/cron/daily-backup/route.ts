@@ -6,9 +6,9 @@ import {
   cleanupOldBackups,
 } from '@/lib/backup';
 
-// Extend function timeout to 60 seconds (backup takes ~35s)
+// Extend function timeout to 120 seconds (backup takes ~35s, allow buffer)
 // Requires Vercel Pro plan for >10s, but setting this prevents silent timeout
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 // Vercel Cron sends this header to verify authenticity
 const CRON_SECRET = process.env.CRON_SECRET;
