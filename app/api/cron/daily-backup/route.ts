@@ -6,6 +6,10 @@ import {
   cleanupOldBackups,
 } from '@/lib/backup';
 
+// Extend function timeout to 60 seconds (backup takes ~35s)
+// Requires Vercel Pro plan for >10s, but setting this prevents silent timeout
+export const maxDuration = 60;
+
 // Vercel Cron sends this header to verify authenticity
 const CRON_SECRET = process.env.CRON_SECRET;
 
@@ -145,21 +149,27 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   const cronHeader = request.headers.get('x-vercel-cron');
+  const authHeader = request.headers.get('authorization');
+
+  // Log all incoming requests for debugging
+  console.log('[Backup] GET request received', {
+    cronHeader,
+    hasAuthHeader: !!authHeader,
+    url: request.url,
+  });
 
   // If this is a Vercel Cron request, run the backup
   if (cronHeader === '1') {
-    console.log('[Backup] Triggered by Vercel Cron');
+    console.log('[Backup] Triggered by Vercel Cron - starting backup');
     return runBackup();
   }
 
-  // Otherwise, just return status (for manual status checks)
-  const authHeader = request.headers.get('authorization');
-
+  // Also run backup if authorized via Bearer token (for manual GET triggers)
   if (process.env.NODE_ENV === 'production') {
-    const isValidToken =
-      CRON_SECRET && authHeader === `Bearer ${CRON_SECRET}`;
+    const isValidToken = CRON_SECRET && authHeader === `Bearer ${CRON_SECRET}`;
 
     if (!isValidToken) {
+      console.log('[Backup] Unauthorized GET request - returning 401');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
   }
