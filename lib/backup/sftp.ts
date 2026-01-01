@@ -11,17 +11,33 @@ const BACKUP_PATH = process.env.BACKUP_SFTP_PATH || '/var/backups/crm';
 const RETENTION_DAYS = 30;
 
 /**
+ * Get today's date directory name (YYYY-MM-DD)
+ */
+function getTodayDir(): string {
+  return new Date().toISOString().split('T')[0]; // e.g., "2026-01-01"
+}
+
+/**
  * Upload a backup file to the SFTP server
+ * Organizes backups in daily directories: /var/backups/crm/2026-01-01/profiles.csv
  */
 export async function uploadBackup(
   content: string,
   filename: string
 ): Promise<{ success: boolean; remotePath: string; error?: string }> {
   const sftp = new Client();
-  const remotePath = `${BACKUP_PATH}/${filename}`;
+  const dailyDir = `${BACKUP_PATH}/${getTodayDir()}`;
+  const remotePath = `${dailyDir}/${filename}`;
 
   try {
     await sftp.connect(SFTP_CONFIG);
+
+    // Create daily directory if it doesn't exist
+    const dirExists = await sftp.exists(dailyDir);
+    if (!dirExists) {
+      await sftp.mkdir(dailyDir, true);
+      console.log(`[Backup] Created directory: ${dailyDir}`);
+    }
 
     // Convert string content to Buffer
     const buffer = Buffer.from(content, 'utf-8');
@@ -42,7 +58,7 @@ export async function uploadBackup(
 }
 
 /**
- * List all backup files on the SFTP server
+ * List all backup directories on the SFTP server
  */
 export async function listBackups(): Promise<
   { name: string; size: number; modifyTime: Date }[]
@@ -52,16 +68,17 @@ export async function listBackups(): Promise<
   try {
     await sftp.connect(SFTP_CONFIG);
 
-    const files = await sftp.list(BACKUP_PATH);
+    const items = await sftp.list(BACKUP_PATH);
 
-    return files
-      .filter((f) => f.type === '-' && f.name.endsWith('.csv'))
+    // Return directories (daily backup folders) sorted by date descending
+    return items
+      .filter((f) => f.type === 'd' && /^\d{4}-\d{2}-\d{2}$/.test(f.name))
       .map((f) => ({
         name: f.name,
         size: f.size,
         modifyTime: new Date(f.modifyTime),
       }))
-      .sort((a, b) => b.modifyTime.getTime() - a.modifyTime.getTime());
+      .sort((a, b) => b.name.localeCompare(a.name)); // Sort by date string descending
   } catch (error) {
     console.error(`[Backup] Failed to list backups:`, error);
     return [];
@@ -71,7 +88,8 @@ export async function listBackups(): Promise<
 }
 
 /**
- * Delete old backups (older than RETENTION_DAYS)
+ * Delete old backup directories (older than RETENTION_DAYS)
+ * Deletes entire daily directories that are past the retention period
  */
 export async function cleanupOldBackups(): Promise<{
   deleted: string[];
@@ -84,22 +102,25 @@ export async function cleanupOldBackups(): Promise<{
   try {
     await sftp.connect(SFTP_CONFIG);
 
-    const files = await sftp.list(BACKUP_PATH);
+    const items = await sftp.list(BACKUP_PATH);
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - RETENTION_DAYS);
+    const cutoffStr = cutoffDate.toISOString().split('T')[0]; // YYYY-MM-DD
 
-    for (const file of files) {
-      if (file.type !== '-' || !file.name.endsWith('.csv')) continue;
+    for (const item of items) {
+      // Only process daily backup directories (format: YYYY-MM-DD)
+      if (item.type !== 'd' || !/^\d{4}-\d{2}-\d{2}$/.test(item.name)) continue;
 
-      const modifyTime = new Date(file.modifyTime);
-      if (modifyTime < cutoffDate) {
+      // Compare date strings directly (works because YYYY-MM-DD sorts correctly)
+      if (item.name < cutoffStr) {
         try {
-          await sftp.delete(`${BACKUP_PATH}/${file.name}`);
-          deleted.push(file.name);
-          console.log(`[Backup] Deleted old backup: ${file.name}`);
+          const dirPath = `${BACKUP_PATH}/${item.name}`;
+          await sftp.rmdir(dirPath, true); // recursive delete
+          deleted.push(item.name);
+          console.log(`[Backup] Deleted old backup directory: ${item.name}`);
         } catch (err) {
           const msg = err instanceof Error ? err.message : 'Unknown error';
-          errors.push(`${file.name}: ${msg}`);
+          errors.push(`${item.name}: ${msg}`);
         }
       }
     }
