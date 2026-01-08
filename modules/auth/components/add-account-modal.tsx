@@ -26,7 +26,7 @@ const loginSchema = z.object({
 });
 
 export function AddAccountModal() {
-  const { isAddModalOpen, closeAddModal, accounts, switchAccount } =
+  const { isAddModalOpen, closeAddModal, accounts, switchAccount, currentUserId } =
     useAccountSwitcher();
   const supabase = createClient();
 
@@ -69,6 +69,13 @@ export function AddAccountModal() {
 
       if (!authData.session || !authData.user) {
         setError('Erreur de connexion');
+        setIsLoading(false);
+        return;
+      }
+
+      // Check if user is trying to add their own currently active account
+      if (authData.user.id === currentUserId) {
+        setError('Ce compte est déjà actif');
         setIsLoading(false);
         return;
       }
