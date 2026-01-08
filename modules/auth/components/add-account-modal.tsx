@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { IconUserPlus } from '@tabler/icons-react';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/client';
@@ -11,7 +10,11 @@ import {
   FormErrorAlert,
   PasswordInput,
 } from '@/modules/shared';
-import { useAccountSwitcher, addStoredAccount } from '@/lib/account-switcher';
+import {
+  useAccountSwitcher,
+  addStoredAccount,
+  updateStoredAccountTokens,
+} from '@/lib/account-switcher';
 
 const loginSchema = z.object({
   username: z
@@ -23,8 +26,8 @@ const loginSchema = z.object({
 });
 
 export function AddAccountModal() {
-  const router = useRouter();
-  const { isAddModalOpen, closeAddModal, accounts } = useAccountSwitcher();
+  const { isAddModalOpen, closeAddModal, accounts, switchAccount } =
+    useAccountSwitcher();
   const supabase = createClient();
 
   const [isLoading, setIsLoading] = useState(false);
@@ -75,9 +78,15 @@ export function AddAccountModal() {
         (a) => a.userId === authData.user.id
       );
       if (existingAccount) {
+        // Update tokens for the existing account
+        updateStoredAccountTokens(
+          authData.user.id,
+          authData.session.access_token,
+          authData.session.refresh_token
+        );
         closeAddModal();
-        // Refresh to switch to this account
-        window.location.reload();
+        // Switch to this account
+        await switchAccount(authData.user.id);
         return;
       }
 
@@ -106,12 +115,10 @@ export function AddAccountModal() {
 
       closeAddModal();
 
-      // Refresh the page to load the new user
-      router.refresh();
-      setTimeout(() => {
-        window.location.reload();
-      }, 100);
-    } catch {
+      // Reload to apply the new account
+      window.location.reload();
+    } catch (err) {
+      console.error('Add account error:', err);
       setError('Erreur de connexion');
       setIsLoading(false);
     }

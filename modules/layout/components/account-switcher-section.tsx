@@ -78,13 +78,11 @@ export function AccountSwitcherSection() {
                   <span>Actif</span>
                 </div>
               ) : (
-                <button
+                <Button
                   type="button"
-                  className="
-                    p-1 rounded-full opacity-0 group-hover:opacity-100
-                    hover:bg-error/10 text-darklink hover:text-error
-                    transition-all duration-150
-                  "
+                  variant="ghost"
+                  size="sm"
+                  className="p-1 rounded-full opacity-0 group-hover:opacity-100 hover:bg-error/10 text-darklink hover:text-error transition-all duration-150"
                   onClick={(e) => {
                     e.stopPropagation();
                     removeAccount(account.userId);
@@ -93,7 +91,7 @@ export function AccountSwitcherSection() {
                   disabled={isSwitching}
                 >
                   <IconX size={14} />
-                </button>
+                </Button>
               )}
             </div>
           );
