@@ -232,11 +232,10 @@ export async function exportLeadsToCSV(): Promise<ExportResult> {
 }
 
 /**
- * Generate backup filename with date for a specific table
+ * Generate backup filename for a specific table
+ * Since backups are now organized in daily directories, we just use the table name
+ * Result: /var/backups/crm/2026-01-01/leads.csv
  */
 export function generateBackupFilename(tableName: string = 'leads'): string {
-  const now = new Date();
-  const dateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
-  const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-'); // HH-MM-SS
-  return `${tableName}-backup-${dateStr}_${timeStr}.csv`;
+  return `${tableName}.csv`;
 }
