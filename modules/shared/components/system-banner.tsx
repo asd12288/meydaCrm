@@ -13,20 +13,20 @@ export interface SystemBannerProps {
 
 const bannerStyles: Record<BannerType, { bg: string; icon: React.ReactNode }> = {
   info: {
-    bg: 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white border-transparent',
-    icon: <IconInfoCircle size={18} />,
+    bg: 'bg-gradient-to-l from-cyan-600 to-blue-700 text-white border-transparent',
+    icon: <IconInfoCircle size={22} />,
   },
   warning: {
-    bg: 'bg-gradient-to-r from-amber-500 to-orange-500 text-white border-transparent',
-    icon: <IconAlertTriangle size={18} />,
+    bg: 'bg-gradient-to-l from-amber-500 to-orange-700 text-white border-transparent',
+    icon: <IconAlertTriangle size={22} />,
   },
   success: {
-    bg: 'bg-gradient-to-r from-green-700 to-green-600 text-white border-transparent',
-    icon: <IconCircleCheck size={18} />,
+    bg: 'bg-gradient-to-l from-green-600 to-green-800 text-white border-transparent',
+    icon: <IconCircleCheck size={22} />,
   },
   announcement: {
-    bg: 'bg-gradient-to-r from-primary to-purple-500 text-white border-transparent',
-    icon: <IconSpeakerphone size={18} />,
+    bg: 'bg-gradient-to-l from-purple-500 to-purple-800 text-white border-transparent',
+    icon: <IconSpeakerphone size={22} />,
   },
 };
 
@@ -44,7 +44,7 @@ export function SystemBanner({
         <div className="flex items-center justify-between py-2.5 gap-4">
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <span className="flex-shrink-0">{style.icon}</span>
-            <p className="text-sm font-medium truncate">{message}</p>
+            <p className="text-sm font-medium truncate drop-shadow-md">{message}</p>
           </div>
           {dismissible && onDismiss && (
             <button
