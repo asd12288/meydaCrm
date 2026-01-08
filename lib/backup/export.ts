@@ -239,4 +239,3 @@ export async function exportLeadsToCSV(): Promise<ExportResult> {
 export function generateBackupFilename(tableName: string = 'leads'): string {
   return `${tableName}.csv`;
 }
-

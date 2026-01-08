@@ -4,6 +4,8 @@ import { MainContent } from '../components/main-content';
 import { SidebarProvider } from '../context/sidebar-context';
 import { ExpiryWarningBanner } from '@/modules/subscription/components/expiry-warning-banner';
 import { BannerProvider, BannerContainer } from '@/modules/shared';
+import { AccountSwitcherProvider } from '@/lib/account-switcher';
+import { AddAccountModal } from '@/modules/auth';
 import type { NormalizedProfile } from '@/lib/auth';
 
 interface SubscriptionInfo {
@@ -27,43 +29,55 @@ export function DashboardLayout({ children, profile, subscription }: DashboardLa
 
   return (
     <BannerProvider>
-      <SidebarProvider>
-        <div className="min-h-screen bg-lightgray dark:bg-darkgray">
-          {/* Fixed Sidebar */}
-          <Sidebar userRole={profile.role} />
+      <AccountSwitcherProvider
+        currentUserId={profile.id}
+        currentUserProfile={{
+          displayName: profile.displayName,
+          role: profile.role,
+          avatar: profile.avatar,
+        }}
+      >
+        <SidebarProvider>
+          <div className="min-h-screen bg-lightgray dark:bg-darkgray">
+            {/* Fixed Sidebar */}
+            <Sidebar userRole={profile.role} />
 
-          {/* Main content area with margin for sidebar */}
-          <MainContent>
-            {/* Fixed Header */}
-            <Header
-              displayName={profile.displayName}
-              role={profile.role}
-              avatar={profile.avatar}
-            />
+            {/* Main content area with margin for sidebar */}
+            <MainContent>
+              {/* Fixed Header */}
+              <Header
+                displayName={profile.displayName}
+                role={profile.role}
+                avatar={profile.avatar}
+              />
 
-            {/* System banners (warnings, welcome messages, etc.) */}
-            <BannerContainer />
+              {/* System banners (warnings, welcome messages, etc.) */}
+              <BannerContainer />
 
-            {/* Subscription expiry warning banner */}
-            {showSubscriptionBanner && (
-              <div className="sticky top-16 z-20">
-                <ExpiryWarningBanner
-                  daysRemaining={subscription?.daysRemaining ?? 0}
-                  isGrace={subscription?.isGrace}
-                  graceDaysRemaining={subscription?.graceDaysRemaining}
-                />
-              </div>
-            )}
+              {/* Subscription expiry warning banner */}
+              {showSubscriptionBanner && (
+                <div className="sticky top-16 z-20">
+                  <ExpiryWarningBanner
+                    daysRemaining={subscription?.daysRemaining ?? 0}
+                    isGrace={subscription?.isGrace}
+                    graceDaysRemaining={subscription?.graceDaysRemaining}
+                  />
+                </div>
+              )}
 
-            {/* Scrollable main content */}
-            <main className="p-4 lg:p-5 xl:p-6">
-              <div className="max-w-400 mx-auto">
-                {children}
-              </div>
-            </main>
-          </MainContent>
-        </div>
-      </SidebarProvider>
+              {/* Scrollable main content */}
+              <main className="p-4 lg:p-5 xl:p-6">
+                <div className="max-w-400 mx-auto">
+                  {children}
+                </div>
+              </main>
+            </MainContent>
+
+            {/* Add account modal */}
+            <AddAccountModal />
+          </div>
+        </SidebarProvider>
+      </AccountSwitcherProvider>
     </BannerProvider>
   );
 }

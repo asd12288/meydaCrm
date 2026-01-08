@@ -14,6 +14,7 @@ import {
 } from '@/modules/shared';
 import { NotificationBell } from '@/modules/notifications';
 import { ROLES, getRoleLabel } from '@/lib/constants';
+import { AccountSwitcherSection } from './account-switcher-section';
 
 interface HeaderProps {
   displayName: string;
@@ -77,6 +78,11 @@ export function Header({ displayName, role, avatar }: HeaderProps) {
               <p className="text-sm font-semibold text-ld">{displayName}</p>
               <p className="text-xs text-darklink">{roleLabel}</p>
             </DropdownMenuHeader>
+
+            {/* Account switcher section */}
+            <AccountSwitcherSection />
+
+            <DropdownMenuDivider />
 
             {/* Menu items */}
             <DropdownMenuContent>
