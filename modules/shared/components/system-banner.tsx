@@ -13,19 +13,19 @@ export interface SystemBannerProps {
 
 const bannerStyles: Record<BannerType, { bg: string; icon: React.ReactNode }> = {
   info: {
-    bg: 'bg-blue-50 dark:bg-blue-950/50 text-blue-800 dark:text-blue-200 border-blue-200 dark:border-blue-800',
+    bg: 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white border-transparent',
     icon: <IconInfoCircle size={18} />,
   },
   warning: {
-    bg: 'bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-200 border-amber-200 dark:border-amber-800',
+    bg: 'bg-gradient-to-r from-amber-500 to-orange-500 text-white border-transparent',
     icon: <IconAlertTriangle size={18} />,
   },
   success: {
-    bg: 'bg-green-50 dark:bg-green-950/50 text-green-800 dark:text-green-200 border-green-200 dark:border-green-800',
+    bg: 'bg-gradient-to-r from-green-700 to-green-600 text-white border-transparent',
     icon: <IconCircleCheck size={18} />,
   },
   announcement: {
-    bg: 'bg-primary/10 text-primary dark:text-blue-200 border-primary/20',
+    bg: 'bg-gradient-to-r from-primary to-purple-500 text-white border-transparent',
     icon: <IconSpeakerphone size={18} />,
   },
 };
@@ -49,7 +49,7 @@ export function SystemBanner({
           {dismissible && onDismiss && (
             <button
               onClick={onDismiss}
-              className="flex-shrink-0 p-1 rounded hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+              className="flex-shrink-0 p-1 rounded hover:bg-white/20 transition-colors"
               aria-label="Fermer"
             >
               <IconX size={16} />

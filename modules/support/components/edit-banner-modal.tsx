@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { IconEdit } from '@tabler/icons-react';
 import {
   Modal,
+  FormField,
   FormTextarea,
   FormSelectDropdown,
   FormErrorAlert,
@@ -35,6 +36,7 @@ const editBannerSchema = z.object({
   type: z.enum(['info', 'warning', 'success', 'announcement']),
   target_audience: z.enum(['all', 'admin']),
   is_dismissible: z.boolean(),
+  expires_at: z.string().nullable().optional(),
 });
 
 type EditBannerFormData = z.infer<typeof editBannerSchema>;
@@ -68,17 +70,26 @@ export function EditBannerModal({
       type: 'info',
       target_audience: 'all',
       is_dismissible: true,
+      expires_at: null,
     },
   });
 
   // Reset form when banner changes
   useEffect(() => {
     if (banner) {
+      // Format expires_at for datetime-local input (YYYY-MM-DDTHH:mm)
+      let formattedExpiresAt = null;
+      if (banner.expires_at) {
+        const date = new Date(banner.expires_at);
+        formattedExpiresAt = date.toISOString().slice(0, 16);
+      }
+
       reset({
         message: banner.message,
         type: banner.type,
         target_audience: banner.target_audience,
         is_dismissible: banner.is_dismissible,
+        expires_at: formattedExpiresAt,
       });
     }
   }, [banner, reset]);
@@ -154,6 +165,12 @@ export function EditBannerModal({
             )}
           />
         </div>
+
+        <FormField
+          type="datetime-local"
+          label="Date d'expiration (optionnel)"
+          {...register('expires_at')}
+        />
 
         <Controller
           name="is_dismissible"

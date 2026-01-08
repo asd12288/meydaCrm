@@ -9,16 +9,22 @@ export function BannerContainer() {
   const { banners: contextBanners, hideBanner } = useBanner();
   const { banners: dbBanners, dismissBanner } = useSystemBanners();
 
+  // Filter out expired banners client-side (in case page was open when banner expired)
+  const now = new Date();
+  const visibleDbBanners = dbBanners.filter(
+    (banner) => !banner.expires_at || new Date(banner.expires_at) > now
+  );
+
   // Combine context banners and DB banners
   const hasContextBanners = contextBanners.length > 0;
-  const hasDbBanners = dbBanners.length > 0;
+  const hasDbBanners = visibleDbBanners.length > 0;
 
   if (!hasContextBanners && !hasDbBanners) return null;
 
   return (
     <div className="sticky top-16 z-20">
       {/* Database-backed system banners (persistent) */}
-      {dbBanners.map((banner) => (
+      {visibleDbBanners.map((banner) => (
         <SystemBanner
           key={`db-${banner.id}`}
           message={banner.message}

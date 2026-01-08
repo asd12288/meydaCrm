@@ -13,6 +13,7 @@ import {
   IconCircleCheck,
   IconUsers,
   IconShieldCheck,
+  IconClock,
 } from '@tabler/icons-react';
 import {
   CardBox,
@@ -184,10 +185,23 @@ export function BannerManagement() {
                       )}
                     </div>
                     <p className="text-sm text-ld">{banner.message}</p>
-                    <div className="mt-2 text-xs text-darklink">
-                      Créée le {new Date(banner.created_at).toLocaleDateString('fr-FR')}
-                      {banner.creator?.display_name && (
-                        <span> par {banner.creator.display_name}</span>
+                    <div className="mt-2 text-xs text-darklink flex flex-wrap items-center gap-x-3 gap-y-1">
+                      <span>
+                        Créée le {new Date(banner.created_at).toLocaleDateString('fr-FR')}
+                        {banner.creator?.display_name && (
+                          <span> par {banner.creator.display_name}</span>
+                        )}
+                      </span>
+                      {banner.expires_at && (
+                        <span className="flex items-center gap-1">
+                          <IconClock size={12} />
+                          Expire le {new Date(banner.expires_at).toLocaleDateString('fr-FR', {
+                            day: 'numeric',
+                            month: 'short',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </span>
                       )}
                     </div>
                   </div>
