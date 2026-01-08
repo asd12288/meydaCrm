@@ -124,6 +124,10 @@ export function MeetingForm({
     if (date) {
       setValue('scheduledStart', formatDateForInput(date));
       setValue('scheduledEnd', getEndDateString(date, duration));
+    } else {
+      // Clear form values when date is cleared
+      setValue('scheduledStart', '');
+      setValue('scheduledEnd', '');
     }
   };
 
