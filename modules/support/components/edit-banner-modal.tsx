@@ -36,10 +36,7 @@ const editBannerSchema = z.object({
   type: z.enum(['info', 'warning', 'success', 'announcement']),
   target_audience: z.enum(['all', 'admin']),
   is_dismissible: z.boolean(),
-  expires_at: z.preprocess(
-    (val) => (val === '' ? null : val),
-    z.string().nullable().optional()
-  ),
+  expires_at: z.string().nullable().optional(),
 });
 
 type EditBannerFormData = z.infer<typeof editBannerSchema>;
@@ -101,10 +98,16 @@ export function EditBannerModal({
     if (!banner) return;
     resetError();
 
+    // Transform empty string to null for expires_at
+    const payload = {
+      ...data,
+      expires_at: data.expires_at === '' ? null : data.expires_at,
+    };
+
     startTransition(async () => {
       const result = await updateBanner({
         id: banner.id,
-        ...data,
+        ...payload,
       });
 
       if (result.error) {

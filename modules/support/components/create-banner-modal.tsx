@@ -35,10 +35,7 @@ const createBannerSchema = z.object({
   type: z.enum(['info', 'warning', 'success', 'announcement']),
   target_audience: z.enum(['all', 'admin']),
   is_dismissible: z.boolean(),
-  expires_at: z.preprocess(
-    (val) => (val === '' ? null : val),
-    z.string().nullable().optional()
-  ),
+  expires_at: z.string().nullable().optional(),
 });
 
 type CreateBannerFormData = z.infer<typeof createBannerSchema>;
@@ -77,8 +74,14 @@ export function CreateBannerModal({
   const onSubmit = (data: CreateBannerFormData) => {
     resetError();
 
+    // Transform empty string to null for expires_at
+    const payload = {
+      ...data,
+      expires_at: data.expires_at === '' ? null : data.expires_at,
+    };
+
     startTransition(async () => {
-      const result = await createBanner(data);
+      const result = await createBanner(payload);
 
       if (result.error) {
         setError(result.error);
