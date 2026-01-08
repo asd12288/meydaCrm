@@ -17,6 +17,7 @@ export { isDeveloper, isAdminOrDeveloper, isAdmin } from './lib/utils';
 
 // UI components
 export { LoginForm } from './ui/login-form';
+export { AddAccountModal } from './components/add-account-modal';
 
 // Views
 export { LoginView } from './views/login-view';
