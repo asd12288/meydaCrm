@@ -18,6 +18,7 @@ import { TOAST, TEXTAREA_ROWS } from '@/lib/constants';
 import { useEffect } from 'react';
 import { z } from 'zod';
 import { updateBanner, type SystemBanner } from '../lib/banner-actions';
+import { formatDateForInput } from '@/lib/utils';
 
 const BANNER_TYPE_OPTIONS = [
   { value: 'info', label: 'Information' },
@@ -77,19 +78,12 @@ export function EditBannerModal({
   // Reset form when banner changes
   useEffect(() => {
     if (banner) {
-      // Format expires_at for datetime-local input (YYYY-MM-DDTHH:mm)
-      let formattedExpiresAt = null;
-      if (banner.expires_at) {
-        const date = new Date(banner.expires_at);
-        formattedExpiresAt = date.toISOString().slice(0, 16);
-      }
-
       reset({
         message: banner.message,
         type: banner.type,
         target_audience: banner.target_audience,
         is_dismissible: banner.is_dismissible,
-        expires_at: formattedExpiresAt,
+        expires_at: formatDateForInput(banner.expires_at) || null,
       });
     }
   }, [banner, reset]);
