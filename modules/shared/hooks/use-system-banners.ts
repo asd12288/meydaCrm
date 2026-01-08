@@ -8,6 +8,7 @@ import {
   type SystemBanner,
 } from '@/modules/support';
 import { useToast } from './use-toast';
+import { TOAST } from '@/lib/constants';
 
 interface UseSystemBannersOptions {
   /** Enable/disable fetching */
@@ -89,7 +90,7 @@ export function useSystemBanners(options: UseSystemBannersOptions = {}): UseSyst
         next.delete(bannerId);
         return next;
       });
-      toast.error(result.error || 'Erreur lors du masquage');
+      toast.error(result.error || TOAST.BANNER_DISMISS_ERROR);
     }
   }, [toast]);
 

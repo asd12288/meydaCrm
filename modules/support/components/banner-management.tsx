@@ -192,17 +192,22 @@ export function BannerManagement() {
                           <span> par {banner.creator.display_name}</span>
                         )}
                       </span>
-                      {banner.expires_at && (
-                        <span className="flex items-center gap-1">
-                          <IconClock size={12} />
-                          Expire le {new Date(banner.expires_at).toLocaleDateString('fr-FR', {
-                            day: 'numeric',
-                            month: 'short',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
-                        </span>
-                      )}
+                      {(() => {
+                        if (!banner.expires_at) return null;
+                        const expiryDate = new Date(banner.expires_at);
+                        if (!isFinite(expiryDate.getTime())) return null;
+                        return (
+                          <span className="flex items-center gap-1">
+                            <IconClock size={12} />
+                            Expire le {expiryDate.toLocaleDateString('fr-FR', {
+                              day: 'numeric',
+                              month: 'short',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                          </span>
+                        );
+                      })()}
                     </div>
                   </div>
                   <div className="flex items-center gap-1">

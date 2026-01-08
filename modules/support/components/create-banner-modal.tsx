@@ -35,7 +35,10 @@ const createBannerSchema = z.object({
   type: z.enum(['info', 'warning', 'success', 'announcement']),
   target_audience: z.enum(['all', 'admin']),
   is_dismissible: z.boolean(),
-  expires_at: z.string().nullable().optional(),
+  expires_at: z.preprocess(
+    (val) => (val === '' ? null : val),
+    z.string().nullable().optional()
+  ),
 });
 
 type CreateBannerFormData = z.infer<typeof createBannerSchema>;
