@@ -164,6 +164,6 @@ enabled = true
 site_url = "https://meyda-crm.vercel.app"
 
 [remotes.production.auth.email]
+enable_signup = true
 enable_confirmations = false
 double_confirm_changes = false
-enable_signup = false
