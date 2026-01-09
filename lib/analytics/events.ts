@@ -168,6 +168,53 @@ export const analytics = {
     }
   },
 
+  // Account Switching Events
+  accountSwitchStarted: (props: {
+    toUserId: string;
+    toDisplayName: string;
+  }) => {
+    if (isClient) {
+      posthog.capture('account_switch_started', props);
+    }
+  },
+
+  accountSwitchSuccess: (props: {
+    toUserId: string;
+    toDisplayName: string;
+  }) => {
+    if (isClient) {
+      posthog.capture('account_switch_success', props);
+    }
+  },
+
+  accountSwitchFailed: (props: {
+    toUserId: string;
+    toDisplayName: string;
+    error: string;
+    reason: 'session_expired' | 'invalid_token' | 'network_error' | 'unknown';
+  }) => {
+    if (isClient) {
+      posthog.capture('account_switch_failed', props);
+    }
+  },
+
+  accountAdded: (props: {
+    role: string;
+    totalAccounts: number;
+  }) => {
+    if (isClient) {
+      posthog.capture('account_added', props);
+    }
+  },
+
+  accountRemoved: (props: {
+    reason: 'manual' | 'session_expired';
+  }) => {
+    if (isClient) {
+      posthog.capture('account_removed', props);
+    }
+  },
+
   // Export Events
   exportStarted: (props: {
     limit: number | null;
