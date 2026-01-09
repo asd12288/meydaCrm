@@ -7,6 +7,8 @@ import {
   dismissBanner as dismissBannerAction,
   type SystemBanner,
 } from '@/modules/support';
+import { useToast } from './use-toast';
+import { TOAST } from '@/lib/constants';
 
 interface UseSystemBannersOptions {
   /** Enable/disable fetching */
@@ -33,6 +35,7 @@ interface UseSystemBannersReturn {
  */
 export function useSystemBanners(options: UseSystemBannersOptions = {}): UseSystemBannersReturn {
   const { enabled = true } = options;
+  const { toast } = useToast();
 
   const [banners, setBanners] = useState<SystemBanner[]>([]);
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
@@ -87,9 +90,9 @@ export function useSystemBanners(options: UseSystemBannersOptions = {}): UseSyst
         next.delete(bannerId);
         return next;
       });
-      console.error('Error dismissing banner:', result.error);
+      toast.error(result.error || TOAST.BANNER_DISMISS_ERROR);
     }
-  }, []);
+  }, [toast]);
 
   // Filter out dismissed banners
   const visibleBanners = banners.filter((banner) => !dismissedIds.has(banner.id));

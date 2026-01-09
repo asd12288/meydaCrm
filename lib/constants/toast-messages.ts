@@ -63,6 +63,7 @@ export const TOAST = {
   ERROR_SAVE: 'Erreur lors de la sauvegarde',
   ERROR_START: 'Erreur lors du démarrage',
   PAYMENT_ERROR: 'Une erreur est survenue. Veuillez réessayer.',
+  BANNER_DISMISS_ERROR: 'Erreur lors du masquage',
 } as const;
 
 // Type for toast message keys

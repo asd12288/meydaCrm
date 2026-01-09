@@ -6,6 +6,9 @@ import {
   cleanupOldBackups,
 } from '@/lib/backup';
 
+// Force dynamic execution - required for cron jobs to run fresh each time
+export const dynamic = 'force-dynamic';
+
 // Extend function timeout to 120 seconds (backup takes ~35s, allow buffer)
 // Requires Vercel Pro plan for >10s, but setting this prevents silent timeout
 export const maxDuration = 120;

@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { IconEdit } from '@tabler/icons-react';
 import {
   Modal,
+  FormField,
   FormTextarea,
   FormSelectDropdown,
   FormErrorAlert,
@@ -17,6 +18,7 @@ import { TOAST, TEXTAREA_ROWS } from '@/lib/constants';
 import { useEffect } from 'react';
 import { z } from 'zod';
 import { updateBanner, type SystemBanner } from '../lib/banner-actions';
+import { formatDateForInput } from '@/lib/utils';
 
 const BANNER_TYPE_OPTIONS = [
   { value: 'info', label: 'Information' },
@@ -35,6 +37,7 @@ const editBannerSchema = z.object({
   type: z.enum(['info', 'warning', 'success', 'announcement']),
   target_audience: z.enum(['all', 'admin']),
   is_dismissible: z.boolean(),
+  expires_at: z.string().nullable().optional(),
 });
 
 type EditBannerFormData = z.infer<typeof editBannerSchema>;
@@ -68,6 +71,7 @@ export function EditBannerModal({
       type: 'info',
       target_audience: 'all',
       is_dismissible: true,
+      expires_at: null,
     },
   });
 
@@ -79,6 +83,7 @@ export function EditBannerModal({
         type: banner.type,
         target_audience: banner.target_audience,
         is_dismissible: banner.is_dismissible,
+        expires_at: formatDateForInput(banner.expires_at) || null,
       });
     }
   }, [banner, reset]);
@@ -87,10 +92,16 @@ export function EditBannerModal({
     if (!banner) return;
     resetError();
 
+    // Transform empty string to null for expires_at
+    const payload = {
+      ...data,
+      expires_at: data.expires_at === '' ? null : data.expires_at,
+    };
+
     startTransition(async () => {
       const result = await updateBanner({
         id: banner.id,
-        ...data,
+        ...payload,
       });
 
       if (result.error) {
@@ -154,6 +165,12 @@ export function EditBannerModal({
             )}
           />
         </div>
+
+        <FormField
+          type="datetime-local"
+          label="Date d'expiration (optionnel)"
+          {...register('expires_at')}
+        />
 
         <Controller
           name="is_dismissible"

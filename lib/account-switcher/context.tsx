@@ -10,6 +10,7 @@ import {
 } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { useToast } from '@/modules/shared';
 import type { StoredAccount, AccountSwitcherContextValue } from './types';
 import {
   getStoredAccounts,
@@ -17,7 +18,6 @@ import {
   removeStoredAccount,
   updateStoredAccountTokens,
   isMaxAccountsReached as checkMaxAccounts,
-  getMaxAccounts,
 } from './storage';
 
 const AccountSwitcherContext = createContext<AccountSwitcherContextValue | undefined>(undefined);
@@ -39,9 +39,11 @@ export function AccountSwitcherProvider({
 }: AccountSwitcherProviderProps) {
   const router = useRouter();
   const supabase = createClient();
+  const { toast } = useToast();
 
   const [accounts, setAccounts] = useState<StoredAccount[]>([]);
   const [isSwitching, setIsSwitching] = useState(false);
+  const [switchingToUserId, setSwitchingToUserId] = useState<string | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -146,6 +148,7 @@ export function AccountSwitcherProvider({
       }
 
       setIsSwitching(true);
+      setSwitchingToUserId(userId);
 
       try {
         // Set the session using stored tokens
@@ -158,7 +161,9 @@ export function AccountSwitcherProvider({
           // Token likely expired - remove the invalid account from storage
           removeStoredAccount(userId);
           setAccounts((prev) => prev.filter((a) => a.userId !== userId));
+          toast.error(`Session expirée pour ${account.displayName}. Veuillez vous reconnecter.`);
           setIsSwitching(false);
+          setSwitchingToUserId(null);
           return;
         }
 
@@ -170,10 +175,13 @@ export function AccountSwitcherProvider({
           window.location.reload();
         }, 100);
       } catch {
+        // Reset state on any error
         setIsSwitching(false);
+        setSwitchingToUserId(null);
+        toast.error('Erreur lors du changement de compte');
       }
     },
-    [currentUserId, accounts, supabase.auth, router]
+    [currentUserId, accounts, supabase.auth, router, toast]
   );
 
   // Add a new account
@@ -233,6 +241,7 @@ export function AccountSwitcherProvider({
     accounts,
     currentUserId,
     isSwitching,
+    switchingToUserId,
     switchAccount,
     addAccount,
     removeAccount,

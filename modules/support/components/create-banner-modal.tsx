@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { IconSpeakerphone } from '@tabler/icons-react';
 import {
   Modal,
+  FormField,
   FormTextarea,
   FormSelectDropdown,
   FormErrorAlert,
@@ -34,6 +35,7 @@ const createBannerSchema = z.object({
   type: z.enum(['info', 'warning', 'success', 'announcement']),
   target_audience: z.enum(['all', 'admin']),
   is_dismissible: z.boolean(),
+  expires_at: z.string().nullable().optional(),
 });
 
 type CreateBannerFormData = z.infer<typeof createBannerSchema>;
@@ -65,14 +67,21 @@ export function CreateBannerModal({
       type: 'info',
       target_audience: 'all',
       is_dismissible: true,
+      expires_at: null,
     },
   });
 
   const onSubmit = (data: CreateBannerFormData) => {
     resetError();
 
+    // Transform empty string to null for expires_at
+    const payload = {
+      ...data,
+      expires_at: data.expires_at === '' ? null : data.expires_at,
+    };
+
     startTransition(async () => {
-      const result = await createBanner(data);
+      const result = await createBanner(payload);
 
       if (result.error) {
         setError(result.error);
@@ -137,6 +146,12 @@ export function CreateBannerModal({
             )}
           />
         </div>
+
+        <FormField
+          type="datetime-local"
+          label="Date d'expiration (optionnel)"
+          {...register('expires_at')}
+        />
 
         <Controller
           name="is_dismissible"

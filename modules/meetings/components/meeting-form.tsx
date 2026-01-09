@@ -22,6 +22,7 @@ import {
   MEETING_FIELD_LABELS,
 } from '../config/constants';
 import { TIMING, TEXTAREA_ROWS } from '@/lib/constants';
+import { formatDateForInput } from '@/lib/utils';
 
 interface MeetingFormProps {
   leadId: string;
@@ -86,11 +87,11 @@ export function MeetingForm({
     meeting ? new Date(meeting.scheduled_start) : getDefaultStartDate()
   );
 
-  // Calculate end date from start + duration
+  // Calculate end date from start + duration (returns local time formatted string)
   const getEndDateString = (start: Date, durationMinutes: number) => {
     const end = new Date(start);
     end.setMinutes(end.getMinutes() + durationMinutes);
-    return end.toISOString();
+    return formatDateForInput(end);
   };
 
   // Minimum date is today
@@ -111,10 +112,8 @@ export function MeetingForm({
       title: meeting?.title || '',
       description: meeting?.description || '',
       location: meeting?.location || '',
-      scheduledStart: selectedDate?.toISOString().slice(0, 16) || '',
-      scheduledEnd: selectedDate
-        ? getEndDateString(selectedDate, duration).slice(0, 16)
-        : '',
+      scheduledStart: formatDateForInput(selectedDate),
+      scheduledEnd: selectedDate ? getEndDateString(selectedDate, duration) : '',
       leadId,
     },
   });
@@ -123,8 +122,12 @@ export function MeetingForm({
   const handleDateChange = (date: Date | undefined) => {
     setSelectedDate(date);
     if (date) {
-      setValue('scheduledStart', date.toISOString().slice(0, 16));
-      setValue('scheduledEnd', getEndDateString(date, duration).slice(0, 16));
+      setValue('scheduledStart', formatDateForInput(date));
+      setValue('scheduledEnd', getEndDateString(date, duration));
+    } else {
+      // Clear form values when date is cleared
+      setValue('scheduledStart', '');
+      setValue('scheduledEnd', '');
     }
   };
 
@@ -133,10 +136,7 @@ export function MeetingForm({
     const newDuration = parseInt(e.target.value, 10);
     setDuration(newDuration);
     if (selectedDate) {
-      setValue(
-        'scheduledEnd',
-        getEndDateString(selectedDate, newDuration).slice(0, 16)
-      );
+      setValue('scheduledEnd', getEndDateString(selectedDate, newDuration));
     }
   };
 

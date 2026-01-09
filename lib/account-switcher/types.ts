@@ -21,6 +21,8 @@ export interface AccountSwitcherContextValue {
   currentUserId: string | null;
   /** Whether currently switching accounts */
   isSwitching: boolean;
+  /** User ID being switched to (for loading indicator) */
+  switchingToUserId: string | null;
   /** Switch to a different account */
   switchAccount: (userId: string) => Promise<void>;
   /** Add a new account to storage */
