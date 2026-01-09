@@ -11,6 +11,8 @@ import {
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/modules/shared';
+import { FR_MESSAGES } from '@/lib/errors';
+import { analytics } from '@/lib/analytics';
 import type { StoredAccount, AccountSwitcherContextValue } from './types';
 import {
   getStoredAccounts,
@@ -150,6 +152,12 @@ export function AccountSwitcherProvider({
       setIsSwitching(true);
       setSwitchingToUserId(userId);
 
+      // Track switch started
+      analytics.accountSwitchStarted({
+        toUserId: userId,
+        toDisplayName: account.displayName,
+      });
+
       try {
         // Set the session using stored tokens
         const { error } = await supabase.auth.setSession({
@@ -159,13 +167,27 @@ export function AccountSwitcherProvider({
 
         if (error) {
           // Token likely expired - remove the invalid account from storage
+          analytics.accountSwitchFailed({
+            toUserId: userId,
+            toDisplayName: account.displayName,
+            error: error.message,
+            reason: 'session_expired',
+          });
+          analytics.accountRemoved({ reason: 'session_expired' });
+
           removeStoredAccount(userId);
           setAccounts((prev) => prev.filter((a) => a.userId !== userId));
-          toast.error(`Session expirée pour ${account.displayName}. Veuillez vous reconnecter.`);
+          toast.error(FR_MESSAGES.SESSION_EXPIRED_FOR_USER(account.displayName));
           setIsSwitching(false);
           setSwitchingToUserId(null);
           return;
         }
+
+        // Track success before reload
+        analytics.accountSwitchSuccess({
+          toUserId: userId,
+          toDisplayName: account.displayName,
+        });
 
         // Success - refresh the page to get new user data
         router.refresh();
@@ -174,11 +196,19 @@ export function AccountSwitcherProvider({
         setTimeout(() => {
           window.location.reload();
         }, 100);
-      } catch {
+      } catch (err) {
+        // Track failure
+        analytics.accountSwitchFailed({
+          toUserId: userId,
+          toDisplayName: account.displayName,
+          error: err instanceof Error ? err.message : 'Unknown error',
+          reason: 'unknown',
+        });
+
         // Reset state on any error
         setIsSwitching(false);
         setSwitchingToUserId(null);
-        toast.error('Erreur lors du changement de compte');
+        toast.error(FR_MESSAGES.ERROR_ACCOUNT_SWITCH);
       }
     },
     [currentUserId, accounts, supabase.auth, router, toast]
@@ -193,7 +223,14 @@ export function AccountSwitcherProvider({
 
       const success = addStoredAccount(account);
       if (success) {
-        setAccounts(getStoredAccounts());
+        const updatedAccounts = getStoredAccounts();
+        setAccounts(updatedAccounts);
+
+        // Track account added
+        analytics.accountAdded({
+          role: account.role,
+          totalAccounts: updatedAccounts.length,
+        });
       }
     },
     []
@@ -208,6 +245,9 @@ export function AccountSwitcherProvider({
 
       removeStoredAccount(userId);
       setAccounts((prev) => prev.filter((a) => a.userId !== userId));
+
+      // Track manual account removal
+      analytics.accountRemoved({ reason: 'manual' });
     },
     [currentUserId]
   );
