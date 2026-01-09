@@ -26,7 +26,7 @@ const loginSchema = z.object({
 });
 
 export function AddAccountModal() {
-  const { isAddModalOpen, closeAddModal, accounts, switchAccount, currentUserId } =
+  const { isAddModalOpen, closeAddModal, accounts, currentUserId } =
     useAccountSwitcher();
   const supabase = createClient();
 
@@ -85,15 +85,16 @@ export function AddAccountModal() {
         (a) => a.userId === authData.user.id
       );
       if (existingAccount) {
-        // Update tokens for the existing account
+        // Update tokens for the existing account in localStorage
         updateStoredAccountTokens(
           authData.user.id,
           authData.session.access_token,
           authData.session.refresh_token
         );
         closeAddModal();
-        // Switch to this account
-        await switchAccount(authData.user.id);
+        // Reload to apply the session (avoid race condition with stale React state)
+        // The signInWithPassword already set the session, so we just need to reload
+        window.location.reload();
         return;
       }
 

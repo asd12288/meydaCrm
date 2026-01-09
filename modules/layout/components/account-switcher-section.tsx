@@ -1,6 +1,6 @@
 'use client';
 
-import { IconCheck, IconPlus, IconX } from '@tabler/icons-react';
+import { IconCheck, IconPlus, IconX, IconLoader2 } from '@tabler/icons-react';
 import { UserAvatar, Button } from '@/modules/shared';
 import { useAccountSwitcher } from '@/lib/account-switcher';
 import { getRoleLabel } from '@/lib/constants';
@@ -14,6 +14,7 @@ export function AccountSwitcherSection() {
     accounts,
     currentUserId,
     isSwitching,
+    switchingToUserId,
     switchAccount,
     removeAccount,
     openAddModal,
@@ -38,14 +39,17 @@ export function AccountSwitcherSection() {
       <div className="space-y-0.5">
         {sortedAccounts.map((account) => {
           const isCurrent = account.userId === currentUserId;
+          const isBeingSwitchedTo = switchingToUserId === account.userId;
 
           return (
             <div
               key={account.userId}
+              data-menu-item
               className={`
                 group flex items-center gap-3 px-4 py-2.5
                 ${isCurrent ? 'bg-lightprimary/50 dark:bg-primary/10' : 'hover:bg-lightgray dark:hover:bg-darkgray'}
                 ${!isCurrent && !isSwitching ? 'cursor-pointer' : ''}
+                ${isBeingSwitchedTo ? 'opacity-70' : ''}
                 transition-colors duration-150
               `}
               onClick={() => {
@@ -71,11 +75,16 @@ export function AccountSwitcherSection() {
                 </p>
               </div>
 
-              {/* Status indicator or remove button */}
+              {/* Status indicator, loading spinner, or remove button */}
               {isCurrent ? (
                 <div className="flex items-center gap-1 text-xs text-primary font-medium">
                   <IconCheck size={14} />
                   <span>Actif</span>
+                </div>
+              ) : isBeingSwitchedTo ? (
+                <div className="flex items-center gap-1 text-xs text-primary font-medium">
+                  <IconLoader2 size={14} className="animate-spin" />
+                  <span>Connexion...</span>
                 </div>
               ) : (
                 <Button
@@ -84,6 +93,7 @@ export function AccountSwitcherSection() {
                   size="sm"
                   className="p-1 rounded-full opacity-0 group-hover:opacity-100 hover:bg-error/10 text-darklink hover:text-error transition-all duration-150"
                   onClick={(e) => {
+                    e.preventDefault();
                     e.stopPropagation();
                     removeAccount(account.userId);
                   }}
