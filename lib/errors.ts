@@ -58,8 +58,11 @@ export const FR_MESSAGES = {
   // Authentication
   UNAUTHENTICATED: 'Non authentifié',
   SESSION_EXPIRED: 'Session expirée',
+  SESSION_EXPIRED_FOR_USER: (displayName: string) =>
+    `Session expirée pour ${displayName}. Veuillez vous reconnecter.`,
   UNAUTHORIZED: "Vous n'avez pas accès à cette ressource",
   ADMIN_REQUIRED: 'Accès réservé aux administrateurs',
+  ERROR_ACCOUNT_SWITCH: 'Erreur lors du changement de compte',
 
   // Validation
   INVALID_DATA: 'Données invalides',

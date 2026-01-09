@@ -11,6 +11,7 @@ import {
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/modules/shared';
+import { FR_MESSAGES } from '@/lib/errors';
 import type { StoredAccount, AccountSwitcherContextValue } from './types';
 import {
   getStoredAccounts,
@@ -161,7 +162,7 @@ export function AccountSwitcherProvider({
           // Token likely expired - remove the invalid account from storage
           removeStoredAccount(userId);
           setAccounts((prev) => prev.filter((a) => a.userId !== userId));
-          toast.error(`Session expirée pour ${account.displayName}. Veuillez vous reconnecter.`);
+          toast.error(FR_MESSAGES.SESSION_EXPIRED_FOR_USER(account.displayName));
           setIsSwitching(false);
           setSwitchingToUserId(null);
           return;
@@ -178,7 +179,7 @@ export function AccountSwitcherProvider({
         // Reset state on any error
         setIsSwitching(false);
         setSwitchingToUserId(null);
-        toast.error('Erreur lors du changement de compte');
+        toast.error(FR_MESSAGES.ERROR_ACCOUNT_SWITCH);
       }
     },
     [currentUserId, accounts, supabase.auth, router, toast]
